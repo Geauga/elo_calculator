@@ -1,0 +1,392 @@
+"""Tests for the Elo league rules."""
+
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import unittest
+from unittest.mock import Mock, patch
+
+from elo_calculator import (
+    ApplicationInstanceLock,
+    EloCalculatorApp,
+    load_theme,
+    save_theme,
+)
+from elo_model import (
+    INITIAL_RATING,
+    MAX_PLAYER_COUNT,
+    MIN_PLAYER_COUNT,
+    League,
+    expected_score,
+    rating_change,
+)
+from elo_storage import AuditLog, BackupManager, LeagueCollection
+
+
+class EloModelTests(unittest.TestCase):
+    def test_equal_players_have_even_expectation(self) -> None:
+        self.assertAlmostEqual(expected_score(1500.0, 1500.0), 0.5)
+
+    def test_score_margins_scale_equal_rating_change(self) -> None:
+        self.assertAlmostEqual(rating_change(1500.0, 1500.0, 2), 8.0)
+        self.assertAlmostEqual(rating_change(1500.0, 1500.0, 1), 12.0)
+        self.assertAlmostEqual(rating_change(1500.0, 1500.0, 0), 16.0)
+
+    def test_match_is_zero_sum_and_keeps_decimal_precision(self) -> None:
+        league = League.new()
+        league.player(0).rating = 1432.25
+        league.player(1).rating = 1617.75
+        total_before = sum(player.rating for player in league.players)
+
+        match = league.record_match(0, 1, 1)
+
+        self.assertGreater(match.rating_change, 12.0)
+        self.assertAlmostEqual(
+            sum(player.rating for player in league.players), total_before
+        )
+        self.assertNotEqual(league.player(0).rating, round(league.player(0).rating))
+
+    def test_match_and_individual_game_statistics(self) -> None:
+        league = League.new(3)
+        league.record_match(0, 1, 2)
+        league.record_match(2, 0, 1)
+
+        stats = league.statistics()
+
+        self.assertEqual((stats[0].matches_won, stats[0].matches_lost), (1, 1))
+        self.assertEqual((stats[0].games_won, stats[0].games_lost), (4, 5))
+        self.assertAlmostEqual(stats[0].match_win_percentage, 50.0)
+        self.assertAlmostEqual(stats[0].game_win_percentage, 100.0 * 4 / 9)
+        self.assertEqual((stats[1].games_won, stats[1].games_lost), (2, 3))
+        self.assertAlmostEqual(stats[1].game_win_percentage, 40.0)
+        self.assertEqual((stats[2].games_won, stats[2].games_lost), (3, 1))
+        self.assertAlmostEqual(stats[2].game_win_percentage, 75.0)
+
+    def test_statistics_follow_undo_and_reset(self) -> None:
+        league = League.new(3)
+        league.record_match(0, 1, 0)
+        league.record_match(1, 2, 1)
+        league.undo_last_match()
+
+        stats = league.statistics()
+        self.assertEqual((stats[0].matches_won, stats[0].games_won), (1, 3))
+        self.assertEqual((stats[2].matches_lost, stats[2].games_lost), (0, 0))
+
+        league.reset_standings()
+        self.assertTrue(
+            all(
+                item.matches_won == item.matches_lost
+                == item.games_won == item.games_lost == 0
+                for item in league.statistics().values()
+            )
+        )
+
+    def test_undo_restores_exact_ratings(self) -> None:
+        league = League.new()
+        league.record_match(0, 1, 2)
+        league.record_match(1, 0, 0)
+
+        league.undo_last_match()
+
+        self.assertAlmostEqual(league.player(0).rating, 1508.0)
+        self.assertAlmostEqual(league.player(1).rating, 1492.0)
+        self.assertEqual(len(league.matches), 1)
+
+    def test_reset_restores_ratings_and_records_but_keeps_names(self) -> None:
+        league = League.new()
+        league.rename_player(0, "Alice")
+        league.record_match(0, 1, 0)
+        league.record_match(2, 3, 2)
+
+        league.reset_standings()
+
+        self.assertEqual(league.player(0).name, "Alice")
+        self.assertTrue(
+            all(player.rating == INITIAL_RATING for player in league.players)
+        )
+        self.assertEqual(league.matches, [])
+        self.assertTrue(all(record == (0, 0) for record in league.records().values()))
+
+    def test_persistence_round_trip(self) -> None:
+        league = League.new()
+        league.rename_player(0, "Alice")
+        league.record_match(0, 1, 1)
+
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "league.json"
+            league.save(path)
+            restored = League.load(path)
+
+        self.assertEqual(restored.player(0).name, "Alice")
+        self.assertAlmostEqual(restored.player(0).rating, 1512.0)
+        self.assertAlmostEqual(restored.player(1).rating, 1488.0)
+        self.assertEqual(len(restored.matches), 1)
+
+    def test_new_league_has_twelve_players_at_1500(self) -> None:
+        league = League.new()
+        self.assertEqual(len(league.players), 12)
+        self.assertTrue(
+            all(player.rating == INITIAL_RATING for player in league.players)
+        )
+
+    def test_eight_player_save_is_migrated_without_losing_results(self) -> None:
+        legacy_league = League.new()
+        legacy_league.players = legacy_league.players[:8]
+        legacy_league.rename_player(0, "Alice")
+        legacy_league.record_match(0, 1, 1)
+
+        legacy_data = legacy_league.to_dict()
+        legacy_data["schema_version"] = 1
+        migrated = League.from_dict(legacy_data)
+
+        self.assertEqual(len(migrated.players), 12)
+        self.assertEqual(migrated.player(0).name, "Alice")
+        self.assertAlmostEqual(migrated.player(0).rating, 1512.0)
+        self.assertEqual(len(migrated.matches), 1)
+        self.assertEqual(migrated.players[-1].name, "Player 12")
+
+    def test_invalid_match_is_rejected(self) -> None:
+        league = League.new()
+        with self.assertRaises(ValueError):
+            league.record_match(0, 0, 2)
+        with self.assertRaises(ValueError):
+            league.record_match(0, 1, 3)
+        with self.assertRaises(ValueError):
+            league.record_match(0, 1, True)
+
+    def test_malformed_saved_match_and_rating_fields_are_rejected(self) -> None:
+        data = League.new().to_dict()
+        data["players"][0]["rating"] = True
+        with self.assertRaises(ValueError):
+            League.from_dict(data)
+
+        data = League.new().to_dict()
+        data["matches"] = [{
+            "timestamp": None,
+            "winner_id": [],
+            "loser_id": 1,
+            "loser_games": 0,
+            "rating_change": "bad",
+            "winner_rating_before": float("nan"),
+            "loser_rating_before": 1500.0,
+        }]
+        with self.assertRaises(ValueError):
+            League.from_dict(data)
+
+    def test_application_instance_lock_is_exclusive_and_reusable(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "app.lock"
+            first = ApplicationInstanceLock(path)
+            second = ApplicationInstanceLock(path)
+            try:
+                self.assertTrue(first.acquire())
+                self.assertFalse(second.acquire())
+                first.release()
+                self.assertTrue(second.acquire())
+            finally:
+                first.release()
+                second.release()
+
+    def test_theme_preference_round_trip(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.json"
+            self.assertEqual(load_theme(path), "light")
+            save_theme(path, "dark")
+            self.assertEqual(load_theme(path), "dark")
+
+    def test_invalid_theme_file_falls_back_to_light(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.json"
+            path.write_text('{"theme": "neon"}', encoding="utf-8")
+            self.assertEqual(load_theme(path), "light")
+
+    def test_multiple_leagues_keep_independent_ratings_and_history(self) -> None:
+        collection = LeagueCollection.new()
+        first_id = collection.active.id
+        collection.active.league.rename_player(0, "Alice")
+        collection.active.league.record_match(0, 1, 0)
+
+        second = collection.create_league("Tuesday League")
+        second.league.rename_player(0, "Bob")
+        second.league.record_match(1, 0, 2)
+
+        collection.switch_to(first_id)
+        self.assertEqual(collection.active.league.player(0).name, "Alice")
+        self.assertAlmostEqual(collection.active.league.player(0).rating, 1516.0)
+        self.assertEqual(len(collection.active.league.matches), 1)
+        collection.switch_to(second.id)
+        self.assertEqual(collection.active.league.player(0).name, "Bob")
+        self.assertAlmostEqual(collection.active.league.player(0).rating, 1492.0)
+
+    def test_single_league_save_migrates_to_collection(self) -> None:
+        league = League.new()
+        league.rename_player(0, "Alice")
+        league.record_match(0, 1, 1)
+
+        legacy_data = league.to_dict()
+        legacy_data["schema_version"] = 1
+        collection = LeagueCollection.from_dict(legacy_data)
+
+        self.assertTrue(collection.migrated_from_single_league)
+        self.assertEqual(len(collection.leagues), 1)
+        self.assertEqual(collection.active.league.player(0).name, "Alice")
+        self.assertEqual(len(collection.active.league.matches), 1)
+
+    def test_collection_persistence_round_trip(self) -> None:
+        collection = LeagueCollection.new()
+        collection.create_league("Second League")
+        collection.active.league.record_match(2, 3, 2)
+
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "leagues.json"
+            collection.save(path)
+            restored = LeagueCollection.load(path)
+
+        self.assertEqual(len(restored.leagues), 2)
+        self.assertEqual(restored.active.name, "Second League")
+        self.assertEqual(len(restored.active.league.matches), 1)
+
+    def test_malformed_collection_name_raises_value_error(self) -> None:
+        data = LeagueCollection.new().to_dict()
+        data["leagues"][0]["name"] = 123
+        with self.assertRaises(ValueError):
+            LeagueCollection.from_dict(data)
+
+        data = LeagueCollection.new().to_dict()
+        data["active_league_id"] = []
+        with self.assertRaises(ValueError):
+            LeagueCollection.from_dict(data)
+
+        data = LeagueCollection.new().to_dict()
+        data["leagues"][0]["league"] = []
+        with self.assertRaises(ValueError):
+            LeagueCollection.from_dict(data)
+
+    def test_navigation_commit_does_not_create_recovery_backup(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.collection = LeagueCollection.new()
+        first_id = app.collection.active.id
+        app.collection.create_league("Second League")
+        previous_state = app.collection.to_dict()
+        app.collection.switch_to(first_id)
+        app.backups = Mock()
+        app.audit_log = Mock()
+
+        with TemporaryDirectory() as directory:
+            data_file = Path(directory) / "leagues.json"
+            with patch("elo_calculator.DATA_FILE", data_file):
+                app._commit_edit(
+                    previous_state,
+                    "league_switched",
+                    "Switched leagues.",
+                    create_backup=False,
+                )
+            restored = LeagueCollection.load(data_file)
+
+        app.backups.create.assert_not_called()
+        self.assertEqual(restored.active_league_id, first_id)
+
+    def test_backup_restores_all_leagues(self) -> None:
+        collection = LeagueCollection.new()
+        collection.active.league.rename_player(0, "Before Backup")
+
+        with TemporaryDirectory() as directory:
+            backups = BackupManager(Path(directory) / "backups")
+            backup = backups.create(collection, "manual-backup")
+            collection.active.league.rename_player(0, "After Backup")
+            collection.create_league("Extra League")
+            restored = backups.restore(backup)
+
+        self.assertEqual(len(restored.leagues), 1)
+        self.assertEqual(restored.active.league.player(0).name, "Before Backup")
+
+    def test_malformed_backup_json_is_ignored_and_cannot_be_restored(self) -> None:
+        collection = LeagueCollection.new()
+        with TemporaryDirectory() as directory:
+            backups = BackupManager(Path(directory))
+            backup = backups.create(collection, "manual")
+            backup.path.write_text("[]", encoding="utf-8")
+
+            self.assertEqual(backups.list(), [])
+            with self.assertRaises(ValueError):
+                backups.restore(backup)
+
+    def test_audit_log_is_append_only_and_tracks_leagues(self) -> None:
+        with TemporaryDirectory() as directory:
+            log = AuditLog(Path(directory) / "audit.jsonl")
+            log.append("player_renamed", "league-1", "Friday", "A to Alice")
+            log.append("league_reset", "league-1", "Friday", "Cleared 4 matches")
+            entries = log.read()
+
+        self.assertEqual([entry["action"] for entry in entries], [
+            "player_renamed", "league_reset"
+        ])
+        self.assertTrue(all(entry["league_name"] == "Friday" for entry in entries))
+
+    def test_only_league_cannot_be_deleted(self) -> None:
+        collection = LeagueCollection.new()
+        with self.assertRaises(ValueError):
+            collection.delete_league(collection.active.id)
+
+    def test_new_league_accepts_adjustable_player_count(self) -> None:
+        league = League.new(20)
+        self.assertEqual(len(league.players), 20)
+        self.assertTrue(all(player.rating == INITIAL_RATING for player in league.players))
+        with self.assertRaises(ValueError):
+            League.new(MIN_PLAYER_COUNT - 1)
+        with self.assertRaises(ValueError):
+            League.new(MAX_PLAYER_COUNT + 1)
+
+    def test_increasing_player_count_preserves_existing_league(self) -> None:
+        league = League.new(4)
+        league.rename_player(0, "Alice")
+        league.record_match(0, 1, 1)
+        alice_rating = league.player(0).rating
+
+        result = league.resize_players(7)
+
+        self.assertEqual(len(league.players), 7)
+        self.assertEqual(league.player(0).name, "Alice")
+        self.assertAlmostEqual(league.player(0).rating, alice_rating)
+        self.assertEqual(len(league.matches), 1)
+        self.assertEqual(result["added"], ["Player 5", "Player 6", "Player 7"])
+
+    def test_decreasing_player_count_removes_related_matches_and_replays(self) -> None:
+        league = League.new(6)
+        league.record_match(0, 1, 0)
+        league.record_match(5, 0, 0)
+        league.record_match(1, 2, 2)
+
+        expected = League.new(4)
+        expected.record_match(0, 1, 0)
+        expected.record_match(1, 2, 2)
+        result = league.resize_players(4)
+
+        self.assertEqual(len(league.players), 4)
+        self.assertEqual(len(league.matches), 2)
+        self.assertEqual(result["removed_match_count"], 1)
+        for player in league.players:
+            self.assertAlmostEqual(player.rating, expected.player(player.id).rating)
+
+    def test_adjustable_player_count_persists_per_league(self) -> None:
+        collection = LeagueCollection.new()
+        collection.active.league.resize_players(8)
+        second = collection.create_league("Large League", 24)
+
+        restored = LeagueCollection.from_dict(collection.to_dict())
+
+        self.assertEqual(len(restored.leagues[0].league.players), 8)
+        self.assertEqual(len(restored.by_id(second.id).league.players), 24)
+
+    def test_previous_multi_league_database_upgrades_to_variable_rosters(self) -> None:
+        collection = LeagueCollection.new()
+        previous_data = collection.to_dict()
+        previous_data["leagues"][0]["league"]["schema_version"] = 1
+
+        upgraded = LeagueCollection.from_dict(previous_data)
+
+        self.assertEqual(len(upgraded.active.league.players), 12)
+        self.assertEqual(upgraded.active.league.to_dict()["schema_version"], 2)
+
+
+if __name__ == "__main__":
+    unittest.main()
