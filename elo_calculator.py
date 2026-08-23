@@ -14,7 +14,6 @@ from elo_model import (
     MAX_PLAYER_COUNT,
     MIN_PLAYER_COUNT,
     SCORE_MULTIPLIERS,
-    WinCondition,
 )
 from elo_storage import AuditLog, BackupManager, LeagueCollection
 
@@ -169,7 +168,6 @@ class EloCalculatorApp:
         self.winner_var = tk.StringVar()
         self.loser_var = tk.StringVar()
         self.loser_games_var = tk.StringVar(value="0")
-        self.winner_score_var = tk.StringVar(value="3 –")
         self.theme_var = tk.StringVar(value=load_theme(SETTINGS_FILE))
         self.preview_var = tk.StringVar(
             value="Select two different players to preview the Elo change."
@@ -277,9 +275,6 @@ class EloCalculatorApp:
         ttk.Button(league_tools, text="Delete", command=self._delete_league).grid(
             row=0, column=5, padx=3
         )
-        ttk.Button(league_tools, text="Edit Rules", command=self._edit_rules).grid(
-            row=0, column=6, padx=3
-        )
 
         standings_frame = ttk.LabelFrame(outer, text="Standings", padding=10)
         standings_frame.grid(
@@ -366,7 +361,7 @@ class EloCalculatorApp:
         )
         score_frame = ttk.Frame(match_frame)
         score_frame.grid(row=2, column=1, sticky="w", pady=5)
-        ttk.Label(score_frame, textvariable=self.winner_score_var).pack(side="left", padx=(0, 5))
+        ttk.Label(score_frame, text="3 –").pack(side="left", padx=(0, 5))
         self.score_combo = ttk.Combobox(
             score_frame,
             textvariable=self.loser_games_var,
@@ -523,28 +518,6 @@ class EloCalculatorApp:
         )
         self.style.map(
             "TMenubutton", background=[("active", colors["button_active"])]
-        )
-        self.style.configure(
-            "TEntry",
-            fieldbackground=colors["field"],
-            foreground=colors["foreground"],
-            insertcolor=colors["foreground"],
-        )
-        self.style.configure(
-            "TSpinbox",
-            fieldbackground=colors["field"],
-            foreground=colors["foreground"],
-            arrowcolor=colors["foreground"],
-            insertcolor=colors["foreground"],
-        )
-        self.style.configure(
-            "TCheckbutton",
-            background=colors["background"],
-            foreground=colors["foreground"],
-        )
-        self.style.map(
-            "TCheckbutton",
-            background=[("active", colors["button_active"])],
         )
         self.style.configure(
             "TCombobox",
@@ -785,83 +758,6 @@ class EloCalculatorApp:
             return
         self.status_var.set(f"Renamed league to {new_name}.")
         self._refresh_all()
-
-    def _edit_rules(self) -> None:
-        dialog = tk.Toplevel(self.root)
-        dialog.title("Edit League Rules")
-        dialog.geometry("350x500")
-        dialog.transient(self.root)
-        dialog.grab_set()
-
-        colors = THEME_PALETTES[self.theme_var.get()]
-        dialog.configure(background=colors["background"])
-
-        ttk.Label(dialog, text="Games to Win:").grid(row=0, column=0, padx=10, pady=10, sticky="w")
-        games_var = tk.IntVar(value=self.league.win_condition.games_to_win)
-        ttk.Spinbox(dialog, from_=1, to=100, textvariable=games_var, width=5).grid(row=0, column=1, padx=10, pady=10, sticky="w")
-
-        calc_elo_var = tk.BooleanVar(value=self.league.calculate_elo)
-        ttk.Checkbutton(dialog, text="Auto-calculate Elo", variable=calc_elo_var).grid(row=1, column=0, columnspan=2, padx=10, pady=(0, 10), sticky="w")
-
-        mult_frame = ttk.LabelFrame(dialog, text="Score Multipliers", padding=10)
-        mult_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
-        
-        canvas = tk.Canvas(mult_frame, borderwidth=0, highlightthickness=0, background=colors["background"])
-        scrollbar = ttk.Scrollbar(mult_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
-        
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        mult_vars = {}
-        for i in range(100):
-            mult_vars[i] = tk.StringVar(value=str(self.league.win_condition.score_multipliers.get(i, 1.0)))
-
-        def update_mults(*args):
-            for widget in scrollable_frame.winfo_children():
-                widget.destroy()
-            try:
-                g = games_var.get()
-            except tk.TclError:
-                return
-            for i in range(g):
-                ttk.Label(scrollable_frame, text=f"Loser scores {i}:").grid(row=i, column=0, sticky="w", pady=2)
-                ttk.Entry(scrollable_frame, textvariable=mult_vars[i], width=8).grid(row=i, column=1, sticky="w", pady=2)
-
-        games_var.trace_add("write", update_mults)
-        update_mults()
-
-        def save():
-            try:
-                g = games_var.get()
-                new_mults = {}
-                for i in range(g):
-                    new_mults[i] = float(mult_vars[i].get())
-            except (ValueError, tk.TclError):
-                messagebox.showerror("Invalid Input", "Multipliers must be numbers.", parent=dialog)
-                return
-                
-            previous_state = self.collection.to_dict()
-            self.league.win_condition = WinCondition(games_to_win=g, score_multipliers=new_mults)
-            self.league.calculate_elo = calc_elo_var.get()
-            try:
-                self._commit_edit(previous_state, "rules_edited", f"Updated win conditions for {self.collection.active.name}.")
-            except (OSError, ValueError) as e:
-                self._restore_collection(previous_state)
-                messagebox.showerror("Error", str(e), parent=dialog)
-                return
-            
-            self._refresh_all()
-            dialog.destroy()
-
-        ttk.Button(dialog, text="Save", command=save).grid(row=3, column=0, columnspan=2, pady=10)
 
     def _change_player_count(self) -> None:
         current = self.collection.active
@@ -1104,12 +1000,6 @@ class EloCalculatorApp:
         }
         self.winner_combo["values"] = names
         self.loser_combo["values"] = names
-        
-        self.winner_score_var.set(f"{self.league.win_condition.games_to_win} –")
-        valid_scores = tuple(str(i) for i in sorted(self.league.win_condition.score_multipliers.keys()))
-        self.score_combo["values"] = valid_scores
-        if self.loser_games_var.get() not in valid_scores:
-            self.loser_games_var.set(valid_scores[0] if valid_scores else "0")
 
         if selected_winner_id is not None:
             self.winner_var.set(self.league.player(selected_winner_id).name)

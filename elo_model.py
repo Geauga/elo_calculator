@@ -16,21 +16,10 @@ PLAYER_COUNT = DEFAULT_PLAYER_COUNT
 LEGACY_PLAYER_COUNT = 8
 MIN_PLAYER_COUNT = 2
 MAX_PLAYER_COUNT = 64
-LEAGUE_SCHEMA_VERSION = 4
+LEAGUE_SCHEMA_VERSION = 2
 INITIAL_RATING = 1500.0
 K_FACTOR = 32.0
 SCORE_MULTIPLIERS = {0: 1.0, 1: 0.75, 2: 0.50}
-
-
-@dataclass
-class WinCondition:
-    games_to_win: int = 3
-    score_multipliers: dict[int, float] = field(default_factory=lambda: {0: 1.0, 1: 0.75, 2: 0.50})
-
-    def get_multiplier(self, loser_games: int) -> float:
-        if not isinstance(loser_games, int) or isinstance(loser_games, bool) or loser_games < 0 or loser_games >= self.games_to_win:
-            raise ValueError(f"Loser games must be between 0 and {self.games_to_win - 1}.")
-        return self.score_multipliers.get(loser_games, 1.0)
 
 
 def validate_player_count(player_count: int) -> int:
@@ -53,13 +42,18 @@ def expected_score(rating: float, opponent_rating: float) -> float:
 def rating_change(
     winner_rating: float,
     loser_rating: float,
-    multiplier: float = 1.0,
+    loser_games: int,
 ) -> float:
-    """Return the Elo transferred."""
-    if not isinstance(multiplier, (int, float)) or isinstance(multiplier, bool):
-        raise ValueError("Multiplier must be a number.")
+    """Return the Elo transferred after a 3-0, 3-1, or 3-2 match."""
+    if (
+        not isinstance(loser_games, int)
+        or isinstance(loser_games, bool)
+        or loser_games not in SCORE_MULTIPLIERS
+    ):
+        raise ValueError("The losing score must be 0, 1, or 2.")
 
-    return K_FACTOR * multiplier * (
+    margin_multiplier = SCORE_MULTIPLIERS[loser_games]
+    return K_FACTOR * margin_multiplier * (
         1.0 - expected_score(winner_rating, loser_rating)
     )
 
@@ -80,8 +74,6 @@ class Match:
     rating_change: float
     winner_rating_before: float
     loser_rating_before: float
-    multiplier: float = 0.0
-    winner_games: int = 3
 
 
 @dataclass
@@ -106,8 +98,6 @@ class PlayerStatistics:
 class League:
     players: list[Player]
     matches: list[Match] = field(default_factory=list)
-    win_condition: WinCondition = field(default_factory=WinCondition)
-    calculate_elo: bool = True
 
     @classmethod
     def new(cls, player_count: int = DEFAULT_PLAYER_COUNT) -> "League":
@@ -133,12 +123,11 @@ class League:
 
         winner = self.player(winner_id)
         loser = self.player(loser_id)
-        multiplier = self.win_condition.get_multiplier(loser_games)
-        change = rating_change(winner.rating, loser.rating, multiplier) if self.calculate_elo else 0.0
+        change = rating_change(winner.rating, loser.rating, loser_games)
         return {
             "winner_expected": expected_score(winner.rating, loser.rating),
             "loser_expected": expected_score(loser.rating, winner.rating),
-            "multiplier": multiplier,
+            "multiplier": SCORE_MULTIPLIERS[loser_games],
             "change": change,
             "winner_after": winner.rating + change,
             "loser_after": loser.rating - change,
@@ -159,8 +148,6 @@ class League:
             rating_change=preview["change"],
             winner_rating_before=winner.rating,
             loser_rating_before=loser.rating,
-            multiplier=preview["multiplier"],
-            winner_games=self.win_condition.games_to_win,
         )
         winner.rating = preview["winner_after"]
         loser.rating = preview["loser_after"]
@@ -223,7 +210,7 @@ class League:
             winner = self.player(old_match.winner_id)
             loser = self.player(old_match.loser_id)
             change = rating_change(
-                winner.rating, loser.rating, old_match.multiplier
+                winner.rating, loser.rating, old_match.loser_games
             )
             rebuilt_matches.append(
                 Match(
@@ -234,8 +221,6 @@ class League:
                     rating_change=change,
                     winner_rating_before=winner.rating,
                     loser_rating_before=loser.rating,
-                    multiplier=old_match.multiplier,
-                    winner_games=old_match.winner_games,
                 )
             )
             winner.rating += change
@@ -277,10 +262,10 @@ class League:
             loser = statistics[match.loser_id]
             winner.matches_won += 1
             loser.matches_lost += 1
-            winner.games_won += match.winner_games
+            winner.games_won += 3
             winner.games_lost += match.loser_games
             loser.games_won += match.loser_games
-            loser.games_lost += match.winner_games
+            loser.games_lost += 3
         return statistics
 
     def to_dict(self) -> dict[str, Any]:
@@ -288,8 +273,6 @@ class League:
             "schema_version": LEAGUE_SCHEMA_VERSION,
             "players": [asdict(player) for player in self.players],
             "matches": [asdict(match) for match in self.matches],
-            "win_condition": asdict(self.win_condition),
-            "calculate_elo": self.calculate_elo,
         }
 
     @classmethod
@@ -297,29 +280,12 @@ class League:
         if not isinstance(data, dict):
             raise ValueError("The save file must contain a JSON object.")
         schema_version = data.get("schema_version")
-        if schema_version not in (1, 2, 3, LEAGUE_SCHEMA_VERSION):
+        if schema_version not in (1, LEAGUE_SCHEMA_VERSION):
             raise ValueError("Unsupported save-file version.")
-
-        win_cond_data = data.get("win_condition")
-        if win_cond_data:
-            mults = {int(k): float(v) for k, v in win_cond_data.get("score_multipliers", {}).items()}
-            win_condition = WinCondition(
-                games_to_win=win_cond_data.get("games_to_win", 3),
-                score_multipliers=mults
-            )
-        else:
-            win_condition = WinCondition()
 
         try:
             players = [Player(**item) for item in data["players"]]
-            matches = []
-            for item in data.get("matches", []):
-                m_data = dict(item)
-                if "multiplier" not in m_data:
-                    m_data["multiplier"] = SCORE_MULTIPLIERS.get(m_data.get("loser_games", 0), 1.0)
-                if "winner_games" not in m_data:
-                    m_data["winner_games"] = 3
-                matches.append(Match(**m_data))
+            matches = [Match(**item) for item in data.get("matches", [])]
         except (KeyError, TypeError) as error:
             raise ValueError("The save file is malformed.") from error
 
@@ -365,13 +331,7 @@ class League:
                 existing_names.add(name.casefold())
                 next_id += 1
 
-        calculate_elo = data.get("calculate_elo", True)
-        league = cls(
-            players=players, 
-            matches=matches, 
-            win_condition=win_condition, 
-            calculate_elo=calculate_elo
-        )
+        league = cls(players=players, matches=matches)
         valid_ids = {player.id for player in players}
         for match in matches:
             if (
@@ -395,10 +355,7 @@ class League:
                 or match.winner_id not in valid_ids
                 or match.loser_id not in valid_ids
                 or match.winner_id == match.loser_id
-                or not isinstance(match.multiplier, (int, float))
-                or isinstance(match.multiplier, bool)
-                or not math.isfinite(match.multiplier)
-                or match.multiplier < 0
+                or match.loser_games not in SCORE_MULTIPLIERS
             ):
                 raise ValueError("The save file contains an invalid match.")
             try:
