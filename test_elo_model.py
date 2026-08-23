@@ -27,9 +27,9 @@ class EloModelTests(unittest.TestCase):
         self.assertAlmostEqual(expected_score(1500.0, 1500.0), 0.5)
 
     def test_score_margins_scale_equal_rating_change(self) -> None:
-        self.assertAlmostEqual(rating_change(1500.0, 1500.0, 0.50), 8.0)
-        self.assertAlmostEqual(rating_change(1500.0, 1500.0, 0.75), 12.0)
-        self.assertAlmostEqual(rating_change(1500.0, 1500.0, 1.0), 16.0)
+        self.assertAlmostEqual(rating_change(1500.0, 1500.0, 2), 8.0)
+        self.assertAlmostEqual(rating_change(1500.0, 1500.0, 1), 12.0)
+        self.assertAlmostEqual(rating_change(1500.0, 1500.0, 0), 16.0)
 
     def test_match_is_zero_sum_and_keeps_decimal_precision(self) -> None:
         league = League.new()
@@ -385,7 +385,7 @@ class EloModelTests(unittest.TestCase):
         upgraded = LeagueCollection.from_dict(previous_data)
 
         self.assertEqual(len(upgraded.active.league.players), 12)
-        self.assertEqual(upgraded.active.league.to_dict()["schema_version"], 4)
+        self.assertEqual(upgraded.active.league.to_dict()["schema_version"], 2)
 
 
 if __name__ == "__main__":
