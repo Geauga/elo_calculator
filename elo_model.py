@@ -20,12 +20,47 @@ LEAGUE_SCHEMA_VERSION = 4
 INITIAL_RATING = 1500.0
 K_FACTOR = 32.0
 SCORE_MULTIPLIERS = {0: 1.0, 1: 0.75, 2: 0.50}
+MAX_GAMES_TO_WIN = 100
 
 
 @dataclass
 class WinCondition:
     games_to_win: int = 3
     score_multipliers: dict[int, float] = field(default_factory=lambda: {0: 1.0, 1: 0.75, 2: 0.50})
+
+    def __post_init__(self) -> None:
+        if (
+            not isinstance(self.games_to_win, int)
+            or isinstance(self.games_to_win, bool)
+            or not 1 <= self.games_to_win <= MAX_GAMES_TO_WIN
+        ):
+            raise ValueError(
+                f"Games to win must be between 1 and {MAX_GAMES_TO_WIN}."
+            )
+        if not isinstance(self.score_multipliers, dict):
+            raise ValueError("Score multipliers must be a mapping.")
+
+        normalized: dict[int, float] = {}
+        for loser_games in range(self.games_to_win):
+            multiplier = self.score_multipliers.get(loser_games, 1.0)
+            if (
+                not isinstance(multiplier, (int, float))
+                or isinstance(multiplier, bool)
+                or not math.isfinite(multiplier)
+                or multiplier < 0
+            ):
+                raise ValueError(
+                    "Score multipliers must be finite, nonnegative numbers."
+                )
+            normalized[loser_games] = float(multiplier)
+        if any(
+            not isinstance(key, int)
+            or isinstance(key, bool)
+            or key not in normalized
+            for key in self.score_multipliers
+        ):
+            raise ValueError("Every multiplier score must be a valid losing score.")
+        self.score_multipliers = normalized
 
     def get_multiplier(self, loser_games: int) -> float:
         if not isinstance(loser_games, int) or isinstance(loser_games, bool) or loser_games < 0 or loser_games >= self.games_to_win:
@@ -56,8 +91,13 @@ def rating_change(
     multiplier: float = 1.0,
 ) -> float:
     """Return the Elo transferred."""
-    if not isinstance(multiplier, (int, float)) or isinstance(multiplier, bool):
-        raise ValueError("Multiplier must be a number.")
+    if (
+        not isinstance(multiplier, (int, float))
+        or isinstance(multiplier, bool)
+        or not math.isfinite(multiplier)
+        or multiplier < 0
+    ):
+        raise ValueError("Multiplier must be a finite, nonnegative number.")
 
     return K_FACTOR * multiplier * (
         1.0 - expected_score(winner_rating, loser_rating)
@@ -82,6 +122,7 @@ class Match:
     loser_rating_before: float
     multiplier: float = 0.0
     winner_games: int = 3
+    rated: bool = True
 
 
 @dataclass
@@ -161,6 +202,7 @@ class League:
             loser_rating_before=loser.rating,
             multiplier=preview["multiplier"],
             winner_games=self.win_condition.games_to_win,
+            rated=self.calculate_elo,
         )
         winner.rating = preview["winner_after"]
         loser.rating = preview["loser_after"]
@@ -222,8 +264,10 @@ class League:
         for old_match in retained_matches:
             winner = self.player(old_match.winner_id)
             loser = self.player(old_match.loser_id)
-            change = rating_change(
-                winner.rating, loser.rating, old_match.multiplier
+            change = (
+                rating_change(winner.rating, loser.rating, old_match.multiplier)
+                if old_match.rated
+                else 0.0
             )
             rebuilt_matches.append(
                 Match(
@@ -236,6 +280,7 @@ class League:
                     loser_rating_before=loser.rating,
                     multiplier=old_match.multiplier,
                     winner_games=old_match.winner_games,
+                    rated=old_match.rated,
                 )
             )
             winner.rating += change
@@ -300,17 +345,25 @@ class League:
         if schema_version not in (1, 2, 3, LEAGUE_SCHEMA_VERSION):
             raise ValueError("Unsupported save-file version.")
 
-        win_cond_data = data.get("win_condition")
-        if win_cond_data:
-            mults = {int(k): float(v) for k, v in win_cond_data.get("score_multipliers", {}).items()}
-            win_condition = WinCondition(
-                games_to_win=win_cond_data.get("games_to_win", 3),
-                score_multipliers=mults
-            )
-        else:
-            win_condition = WinCondition()
-
         try:
+            win_cond_data = data.get("win_condition")
+            if win_cond_data is not None:
+                if not isinstance(win_cond_data, dict):
+                    raise TypeError
+                raw_multipliers = win_cond_data.get("score_multipliers", {})
+                if not isinstance(raw_multipliers, dict):
+                    raise TypeError
+                mults = {
+                    int(key): float(value)
+                    for key, value in raw_multipliers.items()
+                }
+                win_condition = WinCondition(
+                    games_to_win=win_cond_data.get("games_to_win", 3),
+                    score_multipliers=mults,
+                )
+            else:
+                win_condition = WinCondition()
+
             players = [Player(**item) for item in data["players"]]
             matches = []
             for item in data.get("matches", []):
@@ -319,8 +372,10 @@ class League:
                     m_data["multiplier"] = SCORE_MULTIPLIERS.get(m_data.get("loser_games", 0), 1.0)
                 if "winner_games" not in m_data:
                     m_data["winner_games"] = 3
+                if "rated" not in m_data:
+                    m_data["rated"] = m_data.get("rating_change", 0.0) != 0.0
                 matches.append(Match(**m_data))
-        except (KeyError, TypeError) as error:
+        except (KeyError, TypeError, ValueError, OverflowError) as error:
             raise ValueError("The save file is malformed.") from error
 
         if schema_version == 1:
@@ -366,6 +421,8 @@ class League:
                 next_id += 1
 
         calculate_elo = data.get("calculate_elo", True)
+        if not isinstance(calculate_elo, bool):
+            raise ValueError("The auto-calculate Elo setting must be true or false.")
         league = cls(
             players=players, 
             matches=matches, 
@@ -382,6 +439,7 @@ class League:
                 or isinstance(match.loser_id, bool)
                 or not isinstance(match.loser_games, int)
                 or isinstance(match.loser_games, bool)
+                or match.loser_games < 0
                 or not isinstance(match.rating_change, (int, float))
                 or isinstance(match.rating_change, bool)
                 or not math.isfinite(match.rating_change)
@@ -399,6 +457,11 @@ class League:
                 or isinstance(match.multiplier, bool)
                 or not math.isfinite(match.multiplier)
                 or match.multiplier < 0
+                or not isinstance(match.winner_games, int)
+                or isinstance(match.winner_games, bool)
+                or match.winner_games <= 0
+                or match.loser_games >= match.winner_games
+                or not isinstance(match.rated, bool)
             ):
                 raise ValueError("The save file contains an invalid match.")
             try:
@@ -413,7 +476,7 @@ class League:
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary_path = path.with_suffix(path.suffix + ".tmp")
         temporary_path.write_text(
-            json.dumps(self.to_dict(), indent=2), encoding="utf-8"
+            json.dumps(self.to_dict(), indent=2, allow_nan=False), encoding="utf-8"
         )
         temporary_path.replace(path)
 

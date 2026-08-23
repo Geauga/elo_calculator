@@ -26,7 +26,9 @@ def now_iso() -> str:
 def _atomic_json_write(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path = path.with_suffix(path.suffix + ".tmp")
-    temporary_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    temporary_path.write_text(
+        json.dumps(data, indent=2, allow_nan=False), encoding="utf-8"
+    )
     temporary_path.replace(path)
 
 

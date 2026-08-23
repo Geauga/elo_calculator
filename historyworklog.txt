@@ -1,0 +1,17 @@
+# History Worklog
+
+## 2026-08-22 22:18
+- Implemented customizable win conditions (`WinCondition`) in `elo_model.py`, allowing users to define games required to win and custom score multipliers.
+- Updated `elo_calculator.py` UI to feature a dynamic score selector in the Match Record panel.
+- Added an "Edit Rules" dialog to allow users to modify league win conditions and score multipliers.
+- Fixed dark mode UI styling bugs in the "Edit Rules" dialog.
+- Added an "Auto-calculate Elo" toggle to allow users to disable Elo changes while continuing to track match history.
+- Bumped `LEAGUE_SCHEMA_VERSION` and updated backwards compatibility layers.
+- Rebuilt `dist/EloLeagueCalculator.exe` with the latest changes.
+- Committed and pushed changes to GitHub.
+
+## 2026-08-23 09:56
+- Added strict type checking and value validation for `WinCondition` variables (e.g. `games_to_win`, `score_multipliers`).
+- Enforced finite/nonnegative constraints for all score multipliers.
+- Validated `loser_games` against the `games_to_win` bound directly inside `rating_change`.
+- Built new `EloLeagueCalculator.exe` and merged to `release/EloLeagueCalculator-v8-Windows-x64` zip.
