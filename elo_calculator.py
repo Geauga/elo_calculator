@@ -841,15 +841,20 @@ class EloCalculatorApp:
         def save():
             try:
                 g = games_var.get()
+                if not 1 <= g <= 100:
+                    raise ValueError("Games to win must be between 1 and 100.")
                 new_mults = {}
                 for i in range(g):
                     new_mults[i] = float(mult_vars[i].get())
-            except (ValueError, tk.TclError):
-                messagebox.showerror("Invalid Input", "Multipliers must be numbers.", parent=dialog)
+                new_rules = WinCondition(
+                    games_to_win=g, score_multipliers=new_mults
+                )
+            except (ValueError, tk.TclError) as error:
+                messagebox.showerror("Invalid Input", str(error), parent=dialog)
                 return
                 
             previous_state = self.collection.to_dict()
-            self.league.win_condition = WinCondition(games_to_win=g, score_multipliers=new_mults)
+            self.league.win_condition = new_rules
             self.league.calculate_elo = calc_elo_var.get()
             try:
                 self._commit_edit(previous_state, "rules_edited", f"Updated win conditions for {self.collection.active.name}.")
@@ -1169,7 +1174,7 @@ class EloCalculatorApp:
                 "end",
                 values=(
                     timestamp,
-                    f"{winner} 3–{match.loser_games} {loser}",
+                    f"{winner} {match.winner_games}–{match.loser_games} {loser}",
                     f"±{match.rating_change:.2f}",
                 ),
             )
@@ -1219,7 +1224,8 @@ class EloCalculatorApp:
             self._commit_edit(
                 previous_state,
                 "match_recorded",
-                f"{winner} defeated {loser} 3-{loser_games}; transferred "
+                f"{winner} defeated {loser} "
+                f"{match.winner_games}-{loser_games}; transferred "
                 f"{match.rating_change:.4f} Elo.",
                 current.id,
                 current.name,
@@ -1231,7 +1237,8 @@ class EloCalculatorApp:
             return
 
         self.status_var.set(
-            f"Saved: {winner} defeated {loser} 3–{loser_games}; "
+            f"Saved: {winner} defeated {loser} "
+            f"{match.winner_games}–{loser_games}; "
             f"±{match.rating_change:.2f} Elo"
         )
         self._refresh_all()
@@ -1244,7 +1251,7 @@ class EloCalculatorApp:
         loser = self.league.player(match.loser_id).name
         if not messagebox.askyesno(
             "Undo last match",
-            f"Undo {winner} 3–{match.loser_games} {loser}?",
+            f"Undo {winner} {match.winner_games}–{match.loser_games} {loser}?",
             parent=self.root,
         ):
             return
@@ -1255,7 +1262,8 @@ class EloCalculatorApp:
             self._commit_edit(
                 previous_state,
                 "match_undone",
-                f"Undid {winner} 3-{match.loser_games} {loser}; restored the prior ratings.",
+                f"Undid {winner} {match.winner_games}-{match.loser_games} "
+                f"{loser}; restored the prior ratings.",
                 current.id,
                 current.name,
             )

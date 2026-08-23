@@ -16,6 +16,7 @@ from elo_model import (
     MAX_PLAYER_COUNT,
     MIN_PLAYER_COUNT,
     League,
+    WinCondition,
     expected_score,
     rating_change,
 )
@@ -152,6 +153,59 @@ class EloModelTests(unittest.TestCase):
             league.record_match(0, 1, 3)
         with self.assertRaises(ValueError):
             league.record_match(0, 1, True)
+
+    def test_custom_rules_reject_invalid_values(self) -> None:
+        valid = {0: 1.0, 1: 0.75, 2: 0.5}
+        for games_to_win in (0, 101, True):
+            with self.subTest(games_to_win=games_to_win):
+                with self.assertRaises(ValueError):
+                    WinCondition(games_to_win, valid)
+
+        for multiplier in (float("nan"), float("inf"), -0.1, True):
+            with self.subTest(multiplier=multiplier):
+                invalid = {0: multiplier, 1: 0.75, 2: 0.5}
+                with self.assertRaises(ValueError):
+                    WinCondition(3, invalid)
+                with self.assertRaises(ValueError):
+                    rating_change(1500.0, 1500.0, multiplier)
+
+    def test_unrated_matches_remain_unrated_when_roster_is_replayed(self) -> None:
+        league = League.new(4)
+        league.calculate_elo = False
+        match = league.record_match(0, 1, 0)
+
+        league.resize_players(3)
+
+        self.assertFalse(match.rated)
+        self.assertEqual(league.matches[0].rating_change, 0.0)
+        self.assertFalse(league.matches[0].rated)
+        self.assertEqual(league.player(0).rating, INITIAL_RATING)
+        self.assertEqual(league.player(1).rating, INITIAL_RATING)
+
+    def test_custom_winner_score_is_persisted_and_counted(self) -> None:
+        league = League.new(2)
+        league.win_condition = WinCondition(
+            5, {0: 1.0, 1: 0.9, 2: 0.8, 3: 0.7, 4: 0.6}
+        )
+        match = league.record_match(0, 1, 4)
+
+        restored = League.from_dict(league.to_dict())
+        stats = restored.statistics()
+
+        self.assertEqual(match.winner_games, 5)
+        self.assertEqual(restored.matches[0].winner_games, 5)
+        self.assertEqual((stats[0].games_won, stats[0].games_lost), (5, 4))
+
+    def test_invalid_historical_winner_score_is_rejected(self) -> None:
+        league = League.new(2)
+        league.record_match(0, 1, 0)
+        data = league.to_dict()
+
+        for winner_games in ("three", 0, True):
+            with self.subTest(winner_games=winner_games):
+                data["matches"][0]["winner_games"] = winner_games
+                with self.assertRaises(ValueError):
+                    League.from_dict(data)
 
     def test_malformed_saved_match_and_rating_fields_are_rejected(self) -> None:
         data = League.new().to_dict()
