@@ -1,7 +1,7 @@
 # Adjustable-Player Elo League
 
-A Python desktop program for configurable first-to-N leagues with adjustable
-rosters.
+A Python desktop program for configurable first-to-N or custom-score leagues
+with adjustable rosters.
 
 ## Rules
 
@@ -16,9 +16,14 @@ rosters.
   wins and losses, and game win percentage.
 - New leagues use first-to-three rules: 3-2 applies 50%, 3-1 applies 75%, and
   3-0 applies 100% of the normal Elo change.
-- Edit Rules changes the games needed to win and the Elo multiplier for every
-  possible losing score. It can also disable automatic Elo calculation while
-  continuing to record match and game results.
+- Edit Rules selects a separate match format for each league. First-to-N mode
+  sets the games needed to win and the Elo multiplier for every possible losing
+  score. Custom-score mode accepts any whole-number result where the winner's
+  score is higher.
+- In custom-score mode, a shutout applies 100% of the normal Elo change and the
+  closest possible win applies 50%; intermediate margins scale proportionally.
+  Either format can disable automatic Elo calculation while continuing to
+  record match and game results.
 - The Settings button switches between persistent Windows-style light and dark
   themes.
 - The Reset league button restores every rating to 1500.00 and clears match
