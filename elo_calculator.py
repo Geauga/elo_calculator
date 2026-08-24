@@ -11,9 +11,11 @@ from tkinter import messagebox, simpledialog, ttk
 
 from elo_model import (
     DEFAULT_PLAYER_COUNT,
+    MAX_CUSTOM_SCORE,
     MAX_PLAYER_COUNT,
     MIN_PLAYER_COUNT,
-    SCORE_MULTIPLIERS,
+    SCORE_MODE_CUSTOM,
+    SCORE_MODE_FIXED,
     WinCondition,
 )
 from elo_storage import AuditLog, BackupManager, LeagueCollection
@@ -169,6 +171,7 @@ class EloCalculatorApp:
         self.winner_var = tk.StringVar()
         self.loser_var = tk.StringVar()
         self.loser_games_var = tk.StringVar(value="0")
+        self.winner_games_var = tk.StringVar(value="3")
         self.winner_score_var = tk.StringVar(value="3 –")
         self.theme_var = tk.StringVar(value=load_theme(SETTINGS_FILE))
         self.preview_var = tk.StringVar(
@@ -364,17 +367,41 @@ class EloCalculatorApp:
         ttk.Label(match_frame, text="Final score").grid(
             row=2, column=0, sticky="w", padx=(0, 8), pady=5
         )
-        score_frame = ttk.Frame(match_frame)
-        score_frame.grid(row=2, column=1, sticky="w", pady=5)
-        ttk.Label(score_frame, textvariable=self.winner_score_var).pack(side="left", padx=(0, 5))
+        self.fixed_score_frame = ttk.Frame(match_frame)
+        self.fixed_score_frame.grid(row=2, column=1, sticky="w", pady=5)
+        ttk.Label(
+            self.fixed_score_frame, textvariable=self.winner_score_var
+        ).pack(side="left", padx=(0, 5))
         self.score_combo = ttk.Combobox(
-            score_frame,
+            self.fixed_score_frame,
             textvariable=self.loser_games_var,
             values=("0", "1", "2"),
             state="readonly",
             width=4,
         )
         self.score_combo.pack(side="left")
+
+        self.custom_score_frame = ttk.Frame(match_frame)
+        self.custom_score_frame.grid(row=2, column=1, sticky="w", pady=5)
+        self.winner_score_spin = ttk.Spinbox(
+            self.custom_score_frame,
+            from_=1,
+            to=MAX_CUSTOM_SCORE,
+            textvariable=self.winner_games_var,
+            width=6,
+            command=self._update_preview,
+        )
+        self.winner_score_spin.pack(side="left")
+        ttk.Label(self.custom_score_frame, text=" – ").pack(side="left")
+        self.loser_score_spin = ttk.Spinbox(
+            self.custom_score_frame,
+            from_=0,
+            to=MAX_CUSTOM_SCORE - 1,
+            textvariable=self.loser_games_var,
+            width=6,
+            command=self._update_preview,
+        )
+        self.loser_score_spin.pack(side="left")
 
         actions = ttk.Frame(match_frame)
         actions.grid(
@@ -402,6 +429,9 @@ class EloCalculatorApp:
 
         for widget in (self.winner_combo, self.loser_combo, self.score_combo):
             widget.bind("<<ComboboxSelected>>", lambda _event: self._update_preview())
+        for widget in (self.winner_score_spin, self.loser_score_spin):
+            widget.bind("<KeyRelease>", lambda _event: self._update_preview())
+            widget.bind("<FocusOut>", lambda _event: self._update_preview())
 
         activity_notebook = ttk.Notebook(outer)
         activity_notebook.grid(row=2, column=1, sticky="nsew", pady=(12, 0))
@@ -673,9 +703,16 @@ class EloCalculatorApp:
         self.league_combo["values"] = names
         self.league_var.set(self.collection.active.name)
         player_count = len(self.collection.active.league.players)
-        self.heading_var.set(f"{player_count}-Player Elo League")
+        win_condition = self.collection.active.league.win_condition
+        format_name = (
+            "Custom Scores"
+            if win_condition.score_mode == SCORE_MODE_CUSTOM
+            else f"First to {win_condition.games_to_win}"
+        )
+        self.heading_var.set(f"{player_count}-Player Elo League — {format_name}")
         self.root.title(
-            f"{self.collection.active.name} — {player_count}-Player Elo League"
+            f"{self.collection.active.name} — {player_count}-Player Elo League — "
+            f"{format_name}"
         )
 
     def _refresh_activity_log(self) -> None:
@@ -789,22 +826,64 @@ class EloCalculatorApp:
     def _edit_rules(self) -> None:
         dialog = tk.Toplevel(self.root)
         dialog.title("Edit League Rules")
-        dialog.geometry("350x500")
+        dialog.geometry("440x590")
+        dialog.minsize(400, 470)
         dialog.transient(self.root)
         dialog.grab_set()
+        dialog.columnconfigure(0, weight=1)
+        dialog.rowconfigure(3, weight=1)
 
         colors = THEME_PALETTES[self.theme_var.get()]
         dialog.configure(background=colors["background"])
 
-        ttk.Label(dialog, text="Games to Win:").grid(row=0, column=0, padx=10, pady=10, sticky="w")
+        format_frame = ttk.LabelFrame(dialog, text="Match format", padding=10)
+        format_frame.grid(row=0, column=0, padx=10, pady=(10, 5), sticky="ew")
+        format_frame.columnconfigure(1, weight=1)
+        ttk.Label(format_frame, text="Format:").grid(
+            row=0, column=0, padx=(0, 8), sticky="w"
+        )
+        format_labels = {
+            "First to N": SCORE_MODE_FIXED,
+            "Custom scores": SCORE_MODE_CUSTOM,
+        }
+        current_format_label = (
+            "Custom scores"
+            if self.league.win_condition.score_mode == SCORE_MODE_CUSTOM
+            else "First to N"
+        )
+        format_var = tk.StringVar(value=current_format_label)
+        format_combo = ttk.Combobox(
+            format_frame,
+            textvariable=format_var,
+            state="readonly",
+            values=tuple(format_labels),
+            width=18,
+        )
+        format_combo.grid(row=0, column=1, sticky="w")
+        format_combo.set(current_format_label)
+        format_help = ttk.Label(format_frame, wraplength=370, justify="left")
+        format_help.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(8, 0))
+
+        fixed_frame = ttk.LabelFrame(dialog, text="First-to-N settings", padding=10)
+        fixed_frame.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
+        fixed_frame.columnconfigure(1, weight=1)
+        ttk.Label(fixed_frame, text="Games to win:").grid(
+            row=0, column=0, padx=(0, 8), pady=(0, 5), sticky="w"
+        )
         games_var = tk.IntVar(value=self.league.win_condition.games_to_win)
-        ttk.Spinbox(dialog, from_=1, to=100, textvariable=games_var, width=5).grid(row=0, column=1, padx=10, pady=10, sticky="w")
+        ttk.Spinbox(
+            fixed_frame, from_=1, to=100, textvariable=games_var, width=6
+        ).grid(row=0, column=1, pady=(0, 5), sticky="w")
 
         calc_elo_var = tk.BooleanVar(value=self.league.calculate_elo)
-        ttk.Checkbutton(dialog, text="Auto-calculate Elo", variable=calc_elo_var).grid(row=1, column=0, columnspan=2, padx=10, pady=(0, 10), sticky="w")
+        ttk.Checkbutton(
+            dialog, text="Auto-calculate Elo", variable=calc_elo_var
+        ).grid(row=2, column=0, padx=12, pady=5, sticky="w")
 
         mult_frame = ttk.LabelFrame(dialog, text="Score Multipliers", padding=10)
-        mult_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+        mult_frame.grid(row=3, column=0, padx=10, pady=5, sticky="nsew")
+        mult_frame.rowconfigure(0, weight=1)
+        mult_frame.columnconfigure(0, weight=1)
         
         canvas = tk.Canvas(mult_frame, borderwidth=0, highlightthickness=0, background=colors["background"])
         scrollbar = ttk.Scrollbar(mult_frame, orient="vertical", command=canvas.yview)
@@ -817,14 +896,14 @@ class EloCalculatorApp:
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
         
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
 
         mult_vars = {}
         for i in range(100):
             mult_vars[i] = tk.StringVar(value=str(self.league.win_condition.score_multipliers.get(i, 1.0)))
 
-        def update_mults(*args):
+        def update_mults(*_args):
             for widget in scrollable_frame.winfo_children():
                 widget.destroy()
             try:
@@ -835,11 +914,33 @@ class EloCalculatorApp:
                 ttk.Label(scrollable_frame, text=f"Loser scores {i}:").grid(row=i, column=0, sticky="w", pady=2)
                 ttk.Entry(scrollable_frame, textvariable=mult_vars[i], width=8).grid(row=i, column=1, sticky="w", pady=2)
 
+        def update_format(*_args):
+            if format_labels.get(format_var.get()) == SCORE_MODE_CUSTOM:
+                fixed_frame.grid_remove()
+                mult_frame.grid_remove()
+                format_help.configure(
+                    text="Enter both final scores for each match. A shutout uses "
+                    "100% of the Elo change; the closest possible win uses 50%; "
+                    "other margins scale proportionally."
+                )
+            else:
+                fixed_frame.grid()
+                mult_frame.grid()
+                format_help.configure(
+                    text="The winner reaches the fixed target. Set the Elo margin "
+                    "multiplier for every possible losing score."
+                )
+
         games_var.trace_add("write", update_mults)
+        format_var.trace_add("write", update_format)
         update_mults()
+        update_format()
 
         def save():
             try:
+                score_mode = format_labels.get(format_var.get())
+                if score_mode is None:
+                    raise ValueError("Select a valid match format.")
                 g = games_var.get()
                 if not 1 <= g <= 100:
                     raise ValueError("Games to win must be between 1 and 100.")
@@ -847,7 +948,9 @@ class EloCalculatorApp:
                 for i in range(g):
                     new_mults[i] = float(mult_vars[i].get())
                 new_rules = WinCondition(
-                    games_to_win=g, score_multipliers=new_mults
+                    games_to_win=g,
+                    score_multipliers=new_mults,
+                    score_mode=score_mode,
                 )
             except (ValueError, tk.TclError) as error:
                 messagebox.showerror("Invalid Input", str(error), parent=dialog)
@@ -857,7 +960,17 @@ class EloCalculatorApp:
             self.league.win_condition = new_rules
             self.league.calculate_elo = calc_elo_var.get()
             try:
-                self._commit_edit(previous_state, "rules_edited", f"Updated win conditions for {self.collection.active.name}.")
+                format_name = (
+                    "custom scores"
+                    if score_mode == SCORE_MODE_CUSTOM
+                    else f"first to {g}"
+                )
+                self._commit_edit(
+                    previous_state,
+                    "rules_edited",
+                    f"Set {self.collection.active.name} to {format_name}; "
+                    f"automatic Elo {'on' if calc_elo_var.get() else 'off'}.",
+                )
             except (OSError, ValueError) as e:
                 self._restore_collection(previous_state)
                 messagebox.showerror("Error", str(e), parent=dialog)
@@ -866,7 +979,12 @@ class EloCalculatorApp:
             self._refresh_all()
             dialog.destroy()
 
-        ttk.Button(dialog, text="Save", command=save).grid(row=3, column=0, columnspan=2, pady=10)
+        buttons = ttk.Frame(dialog)
+        buttons.grid(row=4, column=0, padx=10, pady=10, sticky="e")
+        ttk.Button(buttons, text="Cancel", command=dialog.destroy).pack(
+            side="left", padx=(0, 8)
+        )
+        ttk.Button(buttons, text="Save", command=save).pack(side="left")
 
     def _change_player_count(self) -> None:
         current = self.collection.active
@@ -1110,11 +1228,28 @@ class EloCalculatorApp:
         self.winner_combo["values"] = names
         self.loser_combo["values"] = names
         
-        self.winner_score_var.set(f"{self.league.win_condition.games_to_win} –")
-        valid_scores = tuple(str(i) for i in sorted(self.league.win_condition.score_multipliers.keys()))
-        self.score_combo["values"] = valid_scores
-        if self.loser_games_var.get() not in valid_scores:
-            self.loser_games_var.set(valid_scores[0] if valid_scores else "0")
+        win_condition = self.league.win_condition
+        if win_condition.score_mode == SCORE_MODE_CUSTOM:
+            self.fixed_score_frame.grid_remove()
+            self.custom_score_frame.grid()
+            try:
+                winner_games = int(self.winner_games_var.get())
+                loser_games = int(self.loser_games_var.get())
+                win_condition.get_multiplier(loser_games, winner_games)
+            except ValueError:
+                self.winner_games_var.set(str(win_condition.games_to_win))
+                self.loser_games_var.set("0")
+        else:
+            self.custom_score_frame.grid_remove()
+            self.fixed_score_frame.grid()
+            self.winner_games_var.set(str(win_condition.games_to_win))
+            self.winner_score_var.set(f"{win_condition.games_to_win} –")
+            valid_scores = tuple(
+                str(i) for i in sorted(win_condition.score_multipliers.keys())
+            )
+            self.score_combo["values"] = valid_scores
+            if self.loser_games_var.get() not in valid_scores:
+                self.loser_games_var.set(valid_scores[0] if valid_scores else "0")
 
         if selected_winner_id is not None:
             self.winner_var.set(self.league.player(selected_winner_id).name)
@@ -1179,23 +1314,25 @@ class EloCalculatorApp:
                 ),
             )
 
-    def _selected_match(self) -> tuple[int, int, int]:
+    def _selected_match(self) -> tuple[int, int, int, int]:
         winner_id = self.player_name_to_id.get(self.winner_var.get())
         loser_id = self.player_name_to_id.get(self.loser_var.get())
         if winner_id is None or loser_id is None:
             raise ValueError("Select both a winner and a loser.")
         try:
+            winner_games = int(self.winner_games_var.get())
             loser_games = int(self.loser_games_var.get())
         except ValueError as error:
-            raise ValueError("Select a valid final score.") from error
-        if loser_games not in SCORE_MULTIPLIERS:
-            raise ValueError("Select a valid final score.")
-        return winner_id, loser_id, loser_games
+            raise ValueError("Final scores must be whole numbers.") from error
+        self.league.win_condition.get_multiplier(loser_games, winner_games)
+        return winner_id, loser_id, winner_games, loser_games
 
     def _update_preview(self) -> None:
         try:
-            winner_id, loser_id, loser_games = self._selected_match()
-            preview = self.league.preview_match(winner_id, loser_id, loser_games)
+            winner_id, loser_id, winner_games, loser_games = self._selected_match()
+            preview = self.league.preview_match(
+                winner_id, loser_id, loser_games, winner_games
+            )
             winner = self.league.player(winner_id)
             loser = self.league.player(loser_id)
         except ValueError as error:
@@ -1217,8 +1354,10 @@ class EloCalculatorApp:
         previous_state = self.collection.to_dict()
         current = self.collection.active
         try:
-            winner_id, loser_id, loser_games = self._selected_match()
-            match = self.league.record_match(winner_id, loser_id, loser_games)
+            winner_id, loser_id, winner_games, loser_games = self._selected_match()
+            match = self.league.record_match(
+                winner_id, loser_id, loser_games, winner_games
+            )
             winner = self.league.player(match.winner_id).name
             loser = self.league.player(match.loser_id).name
             self._commit_edit(

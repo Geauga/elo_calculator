@@ -16,19 +16,26 @@ PLAYER_COUNT = DEFAULT_PLAYER_COUNT
 LEGACY_PLAYER_COUNT = 8
 MIN_PLAYER_COUNT = 2
 MAX_PLAYER_COUNT = 64
-LEAGUE_SCHEMA_VERSION = 4
+LEAGUE_SCHEMA_VERSION = 5
 INITIAL_RATING = 1500.0
 K_FACTOR = 32.0
 SCORE_MULTIPLIERS = {0: 1.0, 1: 0.75, 2: 0.50}
 MAX_GAMES_TO_WIN = 100
+MAX_CUSTOM_SCORE = 9999
+SCORE_MODE_FIXED = "fixed_target"
+SCORE_MODE_CUSTOM = "custom"
+SCORE_MODES = (SCORE_MODE_FIXED, SCORE_MODE_CUSTOM)
 
 
 @dataclass
 class WinCondition:
     games_to_win: int = 3
     score_multipliers: dict[int, float] = field(default_factory=lambda: {0: 1.0, 1: 0.75, 2: 0.50})
+    score_mode: str = SCORE_MODE_FIXED
 
     def __post_init__(self) -> None:
+        if self.score_mode not in SCORE_MODES:
+            raise ValueError("Score format must be fixed-target or custom.")
         if (
             not isinstance(self.games_to_win, int)
             or isinstance(self.games_to_win, bool)
@@ -62,10 +69,37 @@ class WinCondition:
             raise ValueError("Every multiplier score must be a valid losing score.")
         self.score_multipliers = normalized
 
-    def get_multiplier(self, loser_games: int) -> float:
+    def get_multiplier(
+        self, loser_games: int, winner_games: int | None = None
+    ) -> float:
+        if winner_games is None:
+            winner_games = self.games_to_win
+        if self.score_mode == SCORE_MODE_CUSTOM:
+            validate_custom_score(winner_games, loser_games)
+            if winner_games == 1:
+                return 1.0
+            # A shutout uses the full Elo change and the closest possible win
+            # uses half. Scores between those endpoints scale proportionally.
+            return 1.0 - loser_games / (2.0 * (winner_games - 1))
+        if winner_games != self.games_to_win:
+            raise ValueError(
+                f"The winner must score {self.games_to_win} in this league."
+            )
         if not isinstance(loser_games, int) or isinstance(loser_games, bool) or loser_games < 0 or loser_games >= self.games_to_win:
             raise ValueError(f"Loser games must be between 0 and {self.games_to_win - 1}.")
         return self.score_multipliers.get(loser_games, 1.0)
+
+
+def validate_custom_score(winner_games: int, loser_games: int) -> None:
+    for score in (winner_games, loser_games):
+        if not isinstance(score, int) or isinstance(score, bool):
+            raise ValueError("Final scores must be whole numbers.")
+    if not 1 <= winner_games <= MAX_CUSTOM_SCORE:
+        raise ValueError(
+            f"Winner score must be between 1 and {MAX_CUSTOM_SCORE}."
+        )
+    if not 0 <= loser_games < winner_games:
+        raise ValueError("Winner score must be greater than loser score.")
 
 
 def validate_player_count(player_count: int) -> int:
@@ -167,14 +201,20 @@ class League:
         raise ValueError(f"Unknown player ID: {player_id}")
 
     def preview_match(
-        self, winner_id: int, loser_id: int, loser_games: int
+        self,
+        winner_id: int,
+        loser_id: int,
+        loser_games: int,
+        winner_games: int | None = None,
     ) -> dict[str, float]:
         if winner_id == loser_id:
             raise ValueError("Winner and loser must be different players.")
 
         winner = self.player(winner_id)
         loser = self.player(loser_id)
-        multiplier = self.win_condition.get_multiplier(loser_games)
+        if winner_games is None:
+            winner_games = self.win_condition.games_to_win
+        multiplier = self.win_condition.get_multiplier(loser_games, winner_games)
         change = rating_change(winner.rating, loser.rating, multiplier) if self.calculate_elo else 0.0
         return {
             "winner_expected": expected_score(winner.rating, loser.rating),
@@ -186,9 +226,17 @@ class League:
         }
 
     def record_match(
-        self, winner_id: int, loser_id: int, loser_games: int
+        self,
+        winner_id: int,
+        loser_id: int,
+        loser_games: int,
+        winner_games: int | None = None,
     ) -> Match:
-        preview = self.preview_match(winner_id, loser_id, loser_games)
+        if winner_games is None:
+            winner_games = self.win_condition.games_to_win
+        preview = self.preview_match(
+            winner_id, loser_id, loser_games, winner_games
+        )
         winner = self.player(winner_id)
         loser = self.player(loser_id)
 
@@ -201,7 +249,7 @@ class League:
             winner_rating_before=winner.rating,
             loser_rating_before=loser.rating,
             multiplier=preview["multiplier"],
-            winner_games=self.win_condition.games_to_win,
+            winner_games=winner_games,
             rated=self.calculate_elo,
         )
         winner.rating = preview["winner_after"]
@@ -342,7 +390,7 @@ class League:
         if not isinstance(data, dict):
             raise ValueError("The save file must contain a JSON object.")
         schema_version = data.get("schema_version")
-        if schema_version not in (1, 2, 3, LEAGUE_SCHEMA_VERSION):
+        if schema_version not in (1, 2, 3, 4, LEAGUE_SCHEMA_VERSION):
             raise ValueError("Unsupported save-file version.")
 
         try:
@@ -360,6 +408,9 @@ class League:
                 win_condition = WinCondition(
                     games_to_win=win_cond_data.get("games_to_win", 3),
                     score_multipliers=mults,
+                    score_mode=win_cond_data.get(
+                        "score_mode", SCORE_MODE_FIXED
+                    ),
                 )
             else:
                 win_condition = WinCondition()

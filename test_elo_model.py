@@ -13,8 +13,11 @@ from elo_calculator import (
 )
 from elo_model import (
     INITIAL_RATING,
+    MAX_CUSTOM_SCORE,
     MAX_PLAYER_COUNT,
     MIN_PLAYER_COUNT,
+    SCORE_MODE_CUSTOM,
+    SCORE_MODE_FIXED,
     League,
     WinCondition,
     expected_score,
@@ -195,6 +198,51 @@ class EloModelTests(unittest.TestCase):
         self.assertEqual(match.winner_games, 5)
         self.assertEqual(restored.matches[0].winner_games, 5)
         self.assertEqual((stats[0].games_won, stats[0].games_lost), (5, 4))
+
+    def test_custom_scores_scale_margin_and_persist(self) -> None:
+        league = League.new(2)
+        league.win_condition = WinCondition(score_mode=SCORE_MODE_CUSTOM)
+
+        self.assertAlmostEqual(league.win_condition.get_multiplier(0, 3), 1.0)
+        self.assertAlmostEqual(league.win_condition.get_multiplier(1, 3), 0.75)
+        self.assertAlmostEqual(league.win_condition.get_multiplier(2, 3), 0.50)
+        self.assertAlmostEqual(league.win_condition.get_multiplier(9, 10), 0.50)
+
+        match = league.record_match(0, 1, 7, winner_games=11)
+        restored = League.from_dict(league.to_dict())
+        stats = restored.statistics()
+
+        self.assertEqual((match.winner_games, match.loser_games), (11, 7))
+        self.assertEqual(restored.win_condition.score_mode, SCORE_MODE_CUSTOM)
+        self.assertEqual((stats[0].games_won, stats[0].games_lost), (11, 7))
+        self.assertAlmostEqual(match.multiplier, 0.65)
+
+    def test_custom_scores_reject_ties_losses_and_out_of_range_values(self) -> None:
+        rules = WinCondition(score_mode=SCORE_MODE_CUSTOM)
+        for winner_games, loser_games in (
+            (3, 3),
+            (2, 3),
+            (0, 0),
+            (3, -1),
+            (True, 0),
+            (MAX_CUSTOM_SCORE + 1, 0),
+        ):
+            with self.subTest(
+                winner_games=winner_games, loser_games=loser_games
+            ):
+                with self.assertRaises(ValueError):
+                    rules.get_multiplier(loser_games, winner_games)
+
+    def test_schema_four_league_defaults_to_fixed_target_scores(self) -> None:
+        data = League.new(2).to_dict()
+        data["schema_version"] = 4
+        data["win_condition"].pop("score_mode")
+
+        restored = League.from_dict(data)
+
+        self.assertEqual(restored.win_condition.score_mode, SCORE_MODE_FIXED)
+        with self.assertRaises(ValueError):
+            restored.win_condition.get_multiplier(1, 4)
 
     def test_invalid_historical_winner_score_is_rejected(self) -> None:
         league = League.new(2)
@@ -439,7 +487,7 @@ class EloModelTests(unittest.TestCase):
         upgraded = LeagueCollection.from_dict(previous_data)
 
         self.assertEqual(len(upgraded.active.league.players), 12)
-        self.assertEqual(upgraded.active.league.to_dict()["schema_version"], 4)
+        self.assertEqual(upgraded.active.league.to_dict()["schema_version"], 5)
 
 
 if __name__ == "__main__":
