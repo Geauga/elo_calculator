@@ -7,7 +7,7 @@ import json
 import os
 from pathlib import Path
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import messagebox, ttk
 
 from elo_model import (
     DEFAULT_PLAYER_COUNT,
@@ -198,7 +198,7 @@ class EloCalculatorApp:
                 )
             self.root.after(
                 100,
-                lambda: messagebox.showwarning(
+                lambda: self._show_warning(
                     warning_title,
                     warning_text,
                     parent=self.root,
@@ -212,6 +212,354 @@ class EloCalculatorApp:
         self.style = ttk.Style(self.root)
         self.style.theme_use("clam")
         self._apply_theme(self.theme_var.get(), save=False)
+
+    def _set_title_bar_theme(self, window: tk.Misc) -> None:
+        """Match a Windows title bar to the selected application theme."""
+        if os.name != "nt":
+            return
+        try:
+            import ctypes
+
+            window.update_idletasks()
+            get_parent = ctypes.windll.user32.GetParent
+            get_parent.argtypes = (ctypes.c_void_p,)
+            get_parent.restype = ctypes.c_void_p
+            set_window_attribute = ctypes.windll.dwmapi.DwmSetWindowAttribute
+            set_window_attribute.argtypes = (
+                ctypes.c_void_p,
+                ctypes.c_uint,
+                ctypes.c_void_p,
+                ctypes.c_uint,
+            )
+            set_window_attribute.restype = ctypes.c_long
+            window_handle = get_parent(window.winfo_id())
+            use_dark = ctypes.c_int(self.theme_var.get() == "dark")
+            for attribute in (20, 19):
+                result = set_window_attribute(
+                    window_handle,
+                    attribute,
+                    ctypes.byref(use_dark),
+                    ctypes.sizeof(use_dark),
+                )
+                if result == 0:
+                    break
+        except (AttributeError, OSError, tk.TclError):
+            # Older Windows versions may not expose the dark-title-bar flag.
+            pass
+
+    def _center_dialog(self, dialog: tk.Toplevel, parent: tk.Misc) -> None:
+        dialog.update_idletasks()
+        width = dialog.winfo_width()
+        height = dialog.winfo_height()
+        parent.update_idletasks()
+        x = parent.winfo_rootx() + max(0, (parent.winfo_width() - width) // 2)
+        y = parent.winfo_rooty() + max(0, (parent.winfo_height() - height) // 2)
+        x = min(max(0, x), max(0, dialog.winfo_screenwidth() - width))
+        y = min(max(0, y), max(0, dialog.winfo_screenheight() - height))
+        dialog.geometry(f"+{x}+{y}")
+
+    def _configure_dialog(
+        self,
+        dialog: tk.Toplevel,
+        parent: tk.Misc | None = None,
+        *,
+        resizable: tuple[bool, bool] = (False, False),
+    ) -> tk.Misc:
+        """Apply one visual and modal standard to every in-app dialog."""
+        owner = parent or self.root
+        colors = THEME_PALETTES[self.theme_var.get()]
+        dialog.configure(background=colors["background"])
+        dialog.transient(owner)
+        dialog.resizable(*resizable)
+        dialog.grab_set()
+        dialog.bind("<Escape>", lambda _event: dialog.destroy())
+        dialog.after_idle(lambda: self._set_title_bar_theme(dialog))
+        return owner
+
+    def _ask_value(
+        self,
+        title: str,
+        prompt: str,
+        initial_value: str | int,
+        *,
+        integer: bool = False,
+        minimum: int | None = None,
+        maximum: int | None = None,
+        parent: tk.Misc | None = None,
+    ) -> str | int | None:
+        """Show a themed text or whole-number prompt."""
+        owner = parent or self.root
+        previous_grab = owner.grab_current()
+        dialog = tk.Toplevel(owner, name="themed_input_dialog")
+        dialog.title(title)
+        self._configure_dialog(dialog, owner)
+
+        content = ttk.Frame(dialog, padding=16)
+        content.grid(row=0, column=0, sticky="nsew")
+        content.columnconfigure(0, weight=1)
+        ttk.Label(
+            content,
+            text=prompt,
+            wraplength=430,
+            justify="left",
+        ).grid(row=0, column=0, sticky="ew", pady=(0, 10))
+
+        value_var = tk.StringVar(value=str(initial_value))
+        if integer:
+            input_widget = ttk.Spinbox(
+                content,
+                textvariable=value_var,
+                from_=minimum if minimum is not None else -999999,
+                to=maximum if maximum is not None else 999999,
+                width=18,
+            )
+        else:
+            input_widget = ttk.Entry(content, textvariable=value_var, width=36)
+        input_widget.grid(row=1, column=0, sticky="ew")
+
+        error_var = tk.StringVar()
+        ttk.Label(
+            content,
+            textvariable=error_var,
+            style="Error.TLabel",
+            wraplength=430,
+        ).grid(row=2, column=0, sticky="ew", pady=(6, 0))
+
+        result: dict[str, str | int | None] = {"value": None}
+
+        def accept() -> None:
+            raw_value = value_var.get()
+            if integer:
+                try:
+                    converted = int(raw_value)
+                except ValueError:
+                    error_var.set("Enter a whole number.")
+                    input_widget.focus_set()
+                    return
+                if minimum is not None and converted < minimum:
+                    error_var.set(f"Enter a number from {minimum} to {maximum}.")
+                    input_widget.focus_set()
+                    return
+                if maximum is not None and converted > maximum:
+                    error_var.set(f"Enter a number from {minimum} to {maximum}.")
+                    input_widget.focus_set()
+                    return
+                result["value"] = converted
+            else:
+                result["value"] = raw_value
+            dialog.destroy()
+
+        buttons = ttk.Frame(content)
+        buttons.grid(row=3, column=0, sticky="e", pady=(14, 0))
+        ttk.Button(buttons, text="Cancel", command=dialog.destroy).pack(
+            side="left", padx=(0, 8)
+        )
+        ttk.Button(buttons, text="OK", command=accept).pack(side="left")
+
+        dialog.bind("<Return>", lambda _event: accept())
+        dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+        dialog.update_idletasks()
+        dialog.minsize(max(380, dialog.winfo_reqwidth()), dialog.winfo_reqheight())
+        self._center_dialog(dialog, owner)
+        input_widget.focus_set()
+        input_widget.selection_range(0, "end")
+        owner.wait_window(dialog)
+        if previous_grab is not None and previous_grab.winfo_exists():
+            previous_grab.grab_set()
+        return result["value"]
+
+    def _ask_text(
+        self,
+        title: str,
+        prompt: str,
+        initial_value: str,
+        parent: tk.Misc | None = None,
+    ) -> str | None:
+        result = self._ask_value(
+            title, prompt, initial_value, parent=parent
+        )
+        return result if isinstance(result, str) else None
+
+    def _ask_integer(
+        self,
+        title: str,
+        prompt: str,
+        initial_value: int,
+        minimum: int,
+        maximum: int,
+        parent: tk.Misc | None = None,
+    ) -> int | None:
+        result = self._ask_value(
+            title,
+            prompt,
+            initial_value,
+            integer=True,
+            minimum=minimum,
+            maximum=maximum,
+            parent=parent,
+        )
+        return result if isinstance(result, int) else None
+
+    def _message_dialog(
+        self,
+        title: str,
+        message: str,
+        *,
+        kind: str = "information",
+        confirmation: bool = False,
+        parent: tk.Misc | None = None,
+    ) -> bool:
+        """Show a consistently themed notice or confirmation dialog."""
+        owner = parent or self.root
+        previous_grab = owner.grab_current()
+        dialog = tk.Toplevel(owner, name="themed_message_dialog")
+        dialog.title(title)
+        self._configure_dialog(dialog, owner)
+
+        content = ttk.Frame(dialog, padding=16)
+        content.grid(row=0, column=0, sticky="nsew")
+        content.columnconfigure(0, weight=1)
+        ttk.Label(
+            content,
+            text=kind.title(),
+            style=f"{kind.title()}.TLabel",
+        ).grid(row=0, column=0, sticky="w", pady=(0, 8))
+        ttk.Label(
+            content,
+            text=message,
+            wraplength=500,
+            justify="left",
+        ).grid(row=1, column=0, sticky="ew")
+
+        result = {"accepted": False}
+
+        def accept() -> None:
+            result["accepted"] = True
+            dialog.destroy()
+
+        buttons = ttk.Frame(content)
+        buttons.grid(row=2, column=0, sticky="e", pady=(16, 0))
+        if confirmation:
+            decline_button = ttk.Button(
+                buttons, text="No", command=dialog.destroy
+            )
+            decline_button.pack(side="left", padx=(0, 8))
+            ttk.Button(buttons, text="Yes", command=accept).pack(side="left")
+            decline_button.focus_set()
+            dialog.bind("<Return>", lambda _event: dialog.destroy())
+        else:
+            ok_button = ttk.Button(buttons, text="OK", command=accept)
+            ok_button.pack(side="left")
+            ok_button.focus_set()
+            dialog.bind("<Return>", lambda _event: accept())
+
+        dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+        dialog.update_idletasks()
+        dialog.minsize(max(400, dialog.winfo_reqwidth()), dialog.winfo_reqheight())
+        self._center_dialog(dialog, owner)
+        owner.wait_window(dialog)
+        if previous_grab is not None and previous_grab.winfo_exists():
+            previous_grab.grab_set()
+        return result["accepted"]
+
+    def _show_error(
+        self, title: str, message: str, parent: tk.Misc | None = None
+    ) -> None:
+        self._message_dialog(title, message, kind="error", parent=parent)
+
+    def _show_warning(
+        self, title: str, message: str, parent: tk.Misc | None = None
+    ) -> None:
+        self._message_dialog(title, message, kind="warning", parent=parent)
+
+    def _show_info(
+        self, title: str, message: str, parent: tk.Misc | None = None
+    ) -> None:
+        self._message_dialog(title, message, parent=parent)
+
+    def _ask_yes_no(
+        self, title: str, message: str, parent: tk.Misc | None = None
+    ) -> bool:
+        return self._message_dialog(
+            title,
+            message,
+            kind="warning",
+            confirmation=True,
+            parent=parent,
+        )
+
+    def _build_ui(self) -> None:
+        outer = ttk.Frame(self.root, padding=16)
+        outer.pack(fill="both", expand=True)
+        outer.columnconfigure(0, weight=3)
+        outer.columnconfigure(1, weight=2)
+        # Let the match-entry panel keep the height requested by its controls.
+        # Giving this row flexible weight can shrink its bottom buttons under
+        # Windows display scaling when the history panel also requests space.
+        outer.rowconfigure(1, weight=0)
+        outer.rowconfigure(2, weight=1)
+
+        header = ttk.Frame(outer)
+        header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 12))
+        header.columnconfigure(0, weight=1)
+        ttk.Label(
+            header, textvariable=self.heading_var, style="Heading.TLabel"
+        ).grid(row=0, column=0, sticky="w")
+        ttk.Button(header, text="Backups", command=self._open_backups).grid(
+            row=0, column=1, padx=(12, 3), sticky="e"
+        )
+        self.settings_button = ttk.Menubutton(header, text="Settings")
+        self.settings_menu = tk.Menu(self.settings_button, tearoff=False)
+        self.settings_menu.add_radiobutton(
+            label="Light theme",
+            value="light",
+            variable=self.theme_var,
+            command=self._select_theme,
+        )
+        self.settings_menu.add_radiobutton(
+            label="Dark theme",
+            value="dark",
+            variable=self.theme_var,
+            command=self._select_theme,
+        )
+        self.settings_button.configure(menu=self.settings_menu)
+        self.settings_button.grid(row=0, column=2, padx=(3, 0), sticky="e")
+        self._style_settings_menu()
+
+        league_tools = ttk.Frame(header)
+        league_tools.grid(
+            row=1, column=0, columnspan=3, sticky="w", pady=(8, 0)
+        )
+        ttk.Label(league_tools, text="League:").grid(
+            row=0, column=0, padx=(0, 5)
+        )
+        self.league_combo = ttk.Combobox(
+            league_tools,
+            textvariable=self.league_var,
+            state="readonly",
+            width=20,
+        )
+        self.league_combo.grid(row=0, column=1, padx=(0, 5))
+        self.league_combo.bind("<<ComboboxSelected>>", self._switch_league)
+        ttk.Button(league_tools, text="New", command=self._create_league).grid(
+            row=0, column=2, padx=3
+        )
+        ttk.Button(league_tools, text="Rename", command=self._rename_league).grid(
+            row=0, column=3, padx=3
+        )
+        ttk.Button(
+            league_tools, text="Players", command=self._change_player_count
+        ).grid(
+            row=0, column=4, padx=3
+        )
+        ttk.Button(league_tools, text="Delete", command=self._delete_league).grid(
+            row=0, column=5, padx=3
+        )
+        ttk.Button(league_tools, text="Edit Rules", command=self._edit_rules).grid(
+            row=0, column=6, padx=3
+        )
+
+        standings_frame = ttk.LabelFrame(outer, text="Standings", padding=10)
 
     def _build_ui(self) -> None:
         outer = ttk.Frame(self.root, padding=16)
@@ -297,6 +645,7 @@ class EloCalculatorApp:
                 "rank",
                 "player",
                 "rating",
+                "sb_score",
                 "match_record",
                 "match_pct",
                 "game_record",
@@ -309,6 +658,7 @@ class EloCalculatorApp:
             "rank": ("#", 40, "center"),
             "player": ("Player", 150, "w"),
             "rating": ("Rating", 85, "e"),
+            "sb_score": ("SB", 50, "e"),
             "match_record": ("Match W-L", 80, "center"),
             "match_pct": ("Match %", 70, "e"),
             "game_record": ("Game W-L", 80, "center"),
@@ -523,6 +873,27 @@ class EloCalculatorApp:
             "Subheading.TLabel", font=("Segoe UI", 10, "bold")
         )
         self.style.configure(
+            "Error.TLabel",
+            background=colors["background"],
+            foreground="#c42b1c" if theme == "light" else "#ff99a4",
+        )
+        self.style.configure(
+            "Warning.TLabel",
+            background=colors["background"],
+            foreground="#9d5d00" if theme == "light" else "#fce100",
+            font=("Segoe UI", 11, "bold"),
+        )
+        self.style.configure(
+            "Information.TLabel",
+            background=colors["background"],
+            foreground=colors["selection"],
+            font=("Segoe UI", 11, "bold"),
+        )
+        self.style.configure(
+            "Error.TLabel",
+            font=("Segoe UI", 11, "bold"),
+        )
+        self.style.configure(
             "TLabelframe",
             background=colors["background"],
             bordercolor=colors["border"],
@@ -616,12 +987,17 @@ class EloCalculatorApp:
         )
         self.style.configure("TSeparator", background=colors["border"])
         self._style_settings_menu()
+        self.root.after_idle(lambda: self._set_title_bar_theme(self.root))
+        for child in self.root.winfo_children():
+            if isinstance(child, tk.Toplevel):
+                child.configure(background=colors["background"])
+                child.after_idle(lambda window=child: self._set_title_bar_theme(window))
 
         if save:
             try:
                 save_theme(SETTINGS_FILE, theme)
             except (OSError, ValueError) as error:
-                messagebox.showerror(
+                self._show_error(
                     "Theme not saved",
                     f"The theme changed for this session but could not be saved.\n\n{error}",
                     parent=self.root,
@@ -656,7 +1032,7 @@ class EloCalculatorApp:
                 f"Changed the application theme to {theme}.",
             )
         except OSError as error:
-            messagebox.showwarning(
+            self._show_warning(
                 "Activity not logged",
                 f"The theme changed, but the activity log could not be updated.\n\n{error}",
                 parent=self.root,
@@ -754,25 +1130,25 @@ class EloCalculatorApp:
             )
         except (OSError, ValueError) as error:
             self._restore_collection(previous_state)
-            messagebox.showerror("League not switched", str(error), parent=self.root)
+            self._show_error("League not switched", str(error), parent=self.root)
         self.player_name_to_id.clear()
         self._refresh_all()
 
     def _create_league(self) -> None:
-        name = simpledialog.askstring(
+        name = self._ask_text(
             "New league",
             "League name:",
-            initialvalue=f"League {len(self.collection.leagues) + 1}",
+            f"League {len(self.collection.leagues) + 1}",
             parent=self.root,
         )
         if name is None:
             return
-        player_count = simpledialog.askinteger(
+        player_count = self._ask_integer(
             "New league",
             f"Number of players ({MIN_PLAYER_COUNT}-{MAX_PLAYER_COUNT}):",
-            initialvalue=len(self.collection.active.league.players),
-            minvalue=MIN_PLAYER_COUNT,
-            maxvalue=MAX_PLAYER_COUNT,
+            len(self.collection.active.league.players),
+            MIN_PLAYER_COUNT,
+            MAX_PLAYER_COUNT,
             parent=self.root,
         )
         if player_count is None:
@@ -790,7 +1166,7 @@ class EloCalculatorApp:
             )
         except (OSError, ValueError) as error:
             self._restore_collection(previous_state)
-            messagebox.showerror("League not created", str(error), parent=self.root)
+            self._show_error("League not created", str(error), parent=self.root)
             return
         self.player_name_to_id.clear()
         self.status_var.set(f"Created and switched to {created.name}.")
@@ -798,10 +1174,10 @@ class EloCalculatorApp:
 
     def _rename_league(self) -> None:
         current = self.collection.active
-        name = simpledialog.askstring(
+        name = self._ask_text(
             "Rename league",
             "League name:",
-            initialvalue=current.name,
+            current.name,
             parent=self.root,
         )
         if name is None:
@@ -818,7 +1194,7 @@ class EloCalculatorApp:
             )
         except (OSError, ValueError) as error:
             self._restore_collection(previous_state)
-            messagebox.showerror("League not renamed", str(error), parent=self.root)
+            self._show_error("League not renamed", str(error), parent=self.root)
             return
         self.status_var.set(f"Renamed league to {new_name}.")
         self._refresh_all()
@@ -828,8 +1204,9 @@ class EloCalculatorApp:
         dialog.title("Edit League Rules")
         dialog.geometry("440x590")
         dialog.minsize(400, 470)
-        dialog.transient(self.root)
-        dialog.grab_set()
+        self._configure_dialog(
+            dialog, self.root, resizable=(True, True)
+        )
         dialog.columnconfigure(0, weight=1)
         dialog.rowconfigure(3, weight=1)
 
@@ -941,19 +1318,30 @@ class EloCalculatorApp:
                 score_mode = format_labels.get(format_var.get())
                 if score_mode is None:
                     raise ValueError("Select a valid match format.")
-                g = games_var.get()
-                if not 1 <= g <= 100:
-                    raise ValueError("Games to win must be between 1 and 100.")
-                new_mults = {}
-                for i in range(g):
-                    new_mults[i] = float(mult_vars[i].get())
-                new_rules = WinCondition(
-                    games_to_win=g,
-                    score_multipliers=new_mults,
-                    score_mode=score_mode,
-                )
+                if score_mode == SCORE_MODE_CUSTOM:
+                    current_rules = self.league.win_condition
+                    new_rules = WinCondition(
+                        games_to_win=current_rules.games_to_win,
+                        score_multipliers=dict(current_rules.score_multipliers),
+                        score_mode=score_mode,
+                    )
+                else:
+                    games_to_win = games_var.get()
+                    if not 1 <= games_to_win <= 100:
+                        raise ValueError(
+                            "Games to win must be between 1 and 100."
+                        )
+                    new_mults = {
+                        score: float(mult_vars[score].get())
+                        for score in range(games_to_win)
+                    }
+                    new_rules = WinCondition(
+                        games_to_win=games_to_win,
+                        score_multipliers=new_mults,
+                        score_mode=score_mode,
+                    )
             except (ValueError, tk.TclError) as error:
-                messagebox.showerror("Invalid Input", str(error), parent=dialog)
+                self._show_error("Invalid input", str(error), parent=dialog)
                 return
                 
             previous_state = self.collection.to_dict()
@@ -963,7 +1351,7 @@ class EloCalculatorApp:
                 format_name = (
                     "custom scores"
                     if score_mode == SCORE_MODE_CUSTOM
-                    else f"first to {g}"
+                    else f"first to {new_rules.games_to_win}"
                 )
                 self._commit_edit(
                     previous_state,
@@ -973,7 +1361,7 @@ class EloCalculatorApp:
                 )
             except (OSError, ValueError) as e:
                 self._restore_collection(previous_state)
-                messagebox.showerror("Error", str(e), parent=dialog)
+                self._show_error("Rules not saved", str(e), parent=dialog)
                 return
             
             self._refresh_all()
@@ -985,17 +1373,18 @@ class EloCalculatorApp:
             side="left", padx=(0, 8)
         )
         ttk.Button(buttons, text="Save", command=save).pack(side="left")
+        self._center_dialog(dialog, self.root)
 
     def _change_player_count(self) -> None:
         current = self.collection.active
         old_count = len(self.league.players)
-        player_count = simpledialog.askinteger(
+        player_count = self._ask_integer(
             "Player count",
             f"Number of players for {current.name} "
             f"({MIN_PLAYER_COUNT}-{MAX_PLAYER_COUNT}):",
-            initialvalue=old_count,
-            minvalue=MIN_PLAYER_COUNT,
-            maxvalue=MAX_PLAYER_COUNT,
+            old_count,
+            MIN_PLAYER_COUNT,
+            MAX_PLAYER_COUNT,
             parent=self.root,
         )
         if player_count is None or player_count == old_count:
@@ -1011,14 +1400,13 @@ class EloCalculatorApp:
             visible_names = ", ".join(player.name for player in removed_players[:8])
             if len(removed_players) > 8:
                 visible_names += f", and {len(removed_players) - 8} more"
-            if not messagebox.askyesno(
+            if not self._ask_yes_no(
                 "Reduce player count",
                 f"Reduce {current.name} from {old_count} to {player_count} players?\n\n"
                 f"Players removed from the end of the roster: {visible_names}\n"
                 f"Matches removed: {affected_matches}\n\n"
                 "Remaining matches will be replayed to recalculate accurate Elo "
                 "ratings. An automatic backup will be created first.",
-                icon="warning",
                 parent=self.root,
             ):
                 return
@@ -1047,7 +1435,9 @@ class EloCalculatorApp:
             )
         except (OSError, ValueError) as error:
             self._restore_collection(previous_state)
-            messagebox.showerror("Player count not changed", str(error), parent=self.root)
+            self._show_error(
+                "Player count not changed", str(error), parent=self.root
+            )
             return
 
         self.player_name_to_id.clear()
@@ -1058,11 +1448,10 @@ class EloCalculatorApp:
 
     def _delete_league(self) -> None:
         current = self.collection.active
-        if not messagebox.askyesno(
+        if not self._ask_yes_no(
             "Delete league",
             f"Delete {current.name} and all of its match history?\n\n"
             "An automatic backup will be created first. The activity log will remain.",
-            icon="warning",
             parent=self.root,
         ):
             return
@@ -1079,7 +1468,7 @@ class EloCalculatorApp:
             )
         except (OSError, ValueError) as error:
             self._restore_collection(previous_state)
-            messagebox.showerror("League not deleted", str(error), parent=self.root)
+            self._show_error("League not deleted", str(error), parent=self.root)
             return
         self.player_name_to_id.clear()
         self.status_var.set(
@@ -1092,8 +1481,9 @@ class EloCalculatorApp:
         window.title("Backups")
         window.geometry("720x420")
         window.minsize(580, 320)
-        window.transient(self.root)
-        window.grab_set()
+        self._configure_dialog(
+            window, self.root, resizable=(True, True)
+        )
         colors = THEME_PALETTES[self.theme_var.get()]
         window.configure(background=colors["background"])
 
@@ -1146,7 +1536,7 @@ class EloCalculatorApp:
             try:
                 backup = self.backups.create(self.collection, "manual-backup")
             except OSError as error:
-                messagebox.showerror("Backup not created", str(error), parent=window)
+                self._show_error("Backup not created", str(error), parent=window)
                 return
             active = self.collection.active
             try:
@@ -1157,7 +1547,7 @@ class EloCalculatorApp:
                     f"Created manual backup {backup.path.name}.",
                 )
             except OSError as error:
-                messagebox.showwarning(
+                self._show_warning(
                     "Activity not logged",
                     f"The backup was created, but the activity log could not be "
                     f"updated.\n\n{error}",
@@ -1170,17 +1560,16 @@ class EloCalculatorApp:
         def restore_selected() -> None:
             selection = tree.selection()
             if not selection:
-                messagebox.showinfo(
+                self._show_info(
                     "Restore backup", "Select a backup first.", parent=window
                 )
                 return
             backup = backup_items[selection[0]]
-            if not messagebox.askyesno(
+            if not self._ask_yes_no(
                 "Restore backup",
                 f"Restore {backup.path.name}?\n\n"
                 "All leagues will return to that snapshot. The current database "
                 "will be backed up first, and the activity log will remain.",
-                icon="warning",
                 parent=window,
             ):
                 return
@@ -1196,7 +1585,7 @@ class EloCalculatorApp:
                 )
             except (OSError, ValueError) as error:
                 self._restore_collection(previous_state)
-                messagebox.showerror("Backup not restored", str(error), parent=window)
+                self._show_error("Backup not restored", str(error), parent=window)
                 return
             self.player_name_to_id.clear()
             self.status_var.set(f"Restored backup {backup.path.name}.")
@@ -1215,6 +1604,7 @@ class EloCalculatorApp:
             side="right", padx=(0, 8)
         )
         refresh()
+        self._center_dialog(window, self.root)
 
     def _refresh_all(self) -> None:
         self._refresh_league_selector()
@@ -1274,7 +1664,12 @@ class EloCalculatorApp:
         self.standings.delete(*self.standings.get_children())
         statistics = self.league.statistics()
         ranked_players = sorted(
-            self.league.players, key=lambda player: (-player.rating, player.name.casefold())
+            self.league.players,
+            key=lambda player: (
+                -player.rating,
+                -statistics[player.id].sb_score,
+                player.name.casefold(),
+            ),
         )
         for rank, player in enumerate(ranked_players, start=1):
             stats = statistics[player.id]
@@ -1286,6 +1681,7 @@ class EloCalculatorApp:
                     rank,
                     player.name,
                     f"{player.rating:.2f}",
+                    f"{stats.sb_score:.1f}",
                     f"{stats.matches_won}-{stats.matches_lost}",
                     f"{stats.match_win_percentage:.1f}%",
                     f"{stats.games_won}-{stats.games_lost}",
@@ -1372,7 +1768,7 @@ class EloCalculatorApp:
         except (OSError, ValueError) as error:
             self._restore_collection(previous_state)
             self._refresh_all()
-            messagebox.showerror("Match not recorded", str(error), parent=self.root)
+            self._show_error("Match not recorded", str(error), parent=self.root)
             return
 
         self.status_var.set(
@@ -1388,7 +1784,7 @@ class EloCalculatorApp:
         match = self.league.matches[-1]
         winner = self.league.player(match.winner_id).name
         loser = self.league.player(match.loser_id).name
-        if not messagebox.askyesno(
+        if not self._ask_yes_no(
             "Undo last match",
             f"Undo {winner} {match.winner_games}–{match.loser_games} {loser}?",
             parent=self.root,
@@ -1409,7 +1805,7 @@ class EloCalculatorApp:
         except (OSError, ValueError) as error:
             self._restore_collection(previous_state)
             self._refresh_all()
-            messagebox.showerror("Match not undone", str(error), parent=self.root)
+            self._show_error("Match not undone", str(error), parent=self.root)
             return
         self.status_var.set("The last match was undone and the ratings were restored.")
         self._refresh_all()
@@ -1417,15 +1813,15 @@ class EloCalculatorApp:
     def _rename_player(self) -> None:
         selected = self.standings.selection()
         if not selected:
-            messagebox.showinfo(
+            self._show_info(
                 "Rename player", "Select a player in the standings first.", parent=self.root
             )
             return
         player = self.league.player(int(selected[0]))
-        new_name = simpledialog.askstring(
+        new_name = self._ask_text(
             "Rename player",
             "Player name:",
-            initialvalue=player.name,
+            player.name,
             parent=self.root,
         )
         if new_name is None:
@@ -1446,17 +1842,16 @@ class EloCalculatorApp:
         except (OSError, ValueError) as error:
             self._restore_collection(previous_state)
             self._refresh_all()
-            messagebox.showerror("Player not renamed", str(error), parent=self.root)
+            self._show_error("Player not renamed", str(error), parent=self.root)
             return
         self.status_var.set(f"Renamed player to {self.league.player(player.id).name}.")
         self._refresh_all()
 
     def _reset_league(self) -> None:
-        if not messagebox.askyesno(
+        if not self._ask_yes_no(
             "Reset league",
             "Reset all ratings to 1500.00 and permanently clear every match "
             "result?\n\nPlayer names and the selected theme will be preserved.",
-            icon="warning",
             parent=self.root,
         ):
             return
@@ -1476,7 +1871,7 @@ class EloCalculatorApp:
         except (OSError, ValueError) as error:
             self._restore_collection(previous_state)
             self._refresh_all()
-            messagebox.showerror("League not reset", str(error), parent=self.root)
+            self._show_error("League not reset", str(error), parent=self.root)
             return
 
         self.status_var.set(
@@ -1515,3 +1910,12 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+# Purpose: Tkinter desktop interface for configuring and operating Elo leagues.
+# Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
+# Upstream purpose: Validate league data and preserve user changes safely.
+# Environment: Python 3.10+ with Tkinter on Windows.
+# Generated: 2026-08-26 17:00 America/New_York.
+# Changes: Preserve hidden custom-mode settings, use pointer-safe Windows handles,
+# and restore complete refresh behavior with the SB standings column.
