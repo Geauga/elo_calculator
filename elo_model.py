@@ -165,6 +165,7 @@ class PlayerStatistics:
     matches_lost: int = 0
     games_won: int = 0
     games_lost: int = 0
+    sb_score: float = 0.0
 
     @property
     def match_win_percentage(self) -> float:
@@ -374,6 +375,12 @@ class League:
             winner.games_lost += match.loser_games
             loser.games_won += match.loser_games
             loser.games_lost += match.winner_games
+
+        for match in self.matches:
+            winner = statistics[match.winner_id]
+            loser = statistics[match.loser_id]
+            winner.sb_score += loser.matches_won
+
         return statistics
 
     def to_dict(self) -> dict[str, Any]:
@@ -511,6 +518,7 @@ class League:
                 or not isinstance(match.winner_games, int)
                 or isinstance(match.winner_games, bool)
                 or match.winner_games <= 0
+                or match.winner_games > MAX_CUSTOM_SCORE
                 or match.loser_games >= match.winner_games
                 or not isinstance(match.rated, bool)
             ):
@@ -542,3 +550,12 @@ class League:
         if not isinstance(data, dict):
             raise ValueError("The save file must contain a JSON object.")
         return cls.from_dict(data)
+
+
+# Purpose: Core Elo rules, match validation, and league persistence.
+# Upstream: UI and storage layers provide league configuration and saved JSON data.
+# Upstream purpose: Collect user-entered results and restore persistent league state.
+# Environment: Python 3.10+ on Windows, with platform-independent model tests.
+# Generated: 2026-08-26 17:00 America/New_York.
+# Changes: Match validation rejects persisted scores above MAX_CUSTOM_SCORE; SB
+# statistics from the concurrent standings update are retained.

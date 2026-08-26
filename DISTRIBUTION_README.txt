@@ -29,6 +29,9 @@ Rules
   game win percentage. For example, a 3-2 result records five individual games.
 - The Settings button switches between light and dark themes and remembers the
   selection between sessions.
+- Prompts, confirmations, warnings, and management windows consistently follow
+  the selected theme, typography, spacing, and Windows display scaling. Window
+  title bars also follow the selected theme on supported Windows versions.
 - Reset league restores all ratings to 1500.00 and clears match history after a
   confirmation prompt. Player names and the theme are preserved.
 - The top toolbar creates, renames, switches, and deletes independent leagues.
