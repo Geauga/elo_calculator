@@ -7,3 +7,11 @@
 - 修改文件：`elo_calculator.py`（主要修改行 216–497、882–928、1137–1840）；`README.md`；`DISTRIBUTION_README.txt`；`AGENT_PERSONAL_CUSTOMIZATION.md`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v10-Windows-x64/README.txt`；`release/EloLeagueCalculator-v10-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v10-Windows-x64.zip`；本文件。
 - 测试或验证结果：并发提交 `ad8f784` 加入 SB 功能后，从该精确 `HEAD` 重新构建以保证源码与 exe 一致；`python -m unittest -v` 共 37 项全部通过；Python 编译检查通过；200% Tk scaling 下验证 dark/light 输入窗口、错误窗口、确认窗口、Edit League Rules 和 Backups 的主题、尺寸、控件与按钮；确认窗口默认 No；PyInstaller v10 构建成功；隔离 `%LOCALAPPDATA%` 的可执行程序启动 smoke test 通过并删除测试数据；exe SHA-256 为 `64437C8036D6FCFCB342A613FB4AD2A6F931984BF7719622EC3E457EA4FBC506`；ZIP SHA-256 为 `A56E46E20142E65C50B659780F031EC1BB78B8E6171A1E49C9CF1C98564912B7`。
 - GitHub Timeline：当前未 commit；用户已明确要求更新 GitHub，完成本记录后将进行 focused commit 和 push。与本任务无关的 `elo_model.py`、`__pycache__`、`.build_tools` 状态及临时 build 目录不会加入提交。
+
+## 2026-08-26 22:02:00 -04:00
+
+- 用户 Prompt 摘要：将标准化图形界面更新到 GitHub。
+- 具体动作：确认并发提交 `ad8f784` 已包含标准化 GUI 源码和 SB 功能；提交 v10 发行文件与项目协议为 `a155416`；将 main 推送至 GitHub；使用 `git ls-remote` 验证 remote main；发现本地 `refs/remotes/origin/main` 文件由 41 个 NUL 字节损坏后，仅删除该精确 tracking ref，并通过 `git fetch origin main` 重建。
+- 修改文件：仅 append 更新 `历史工作记录.txt`；前一提交 `a155416` 包含 v10 release、当前 dist exe、发行说明和 `AGENT_PERSONAL_CUSTOMIZATION.md`。
+- 测试或验证结果：GitHub remote main 返回 `a155416e368c886534f852e6cdde901a5f86258a`；修复后 `origin/main...HEAD` 为 `0 0`；没有重写本地或远端提交历史。
+- GitHub Timeline：`ad8f784` 与 `a155416` 已 push 至 `origin/main`。本条 append-only Timeline 记录将在后续 focused log commit 中提交并 push。
