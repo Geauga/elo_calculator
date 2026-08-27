@@ -15,3 +15,4 @@
 - 修改文件：仅 append 更新 `历史工作记录.txt`；前一提交 `a155416` 包含 v10 release、当前 dist exe、发行说明和 `AGENT_PERSONAL_CUSTOMIZATION.md`。
 - 测试或验证结果：GitHub remote main 返回 `a155416e368c886534f852e6cdde901a5f86258a`；修复后 `origin/main...HEAD` 为 `0 0`；没有重写本地或远端提交历史。
 - GitHub Timeline：`ad8f784` 与 `a155416` 已 push 至 `origin/main`。本条 append-only Timeline 记录将在后续 focused log commit 中提交并 push。
+'
