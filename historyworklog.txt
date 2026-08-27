@@ -15,3 +15,7 @@
 - Enforced finite/nonnegative constraints for all score multipliers.
 - Validated `loser_games` against the `games_to_win` bound directly inside `rating_change`.
 - Built new `EloLeagueCalculator.exe` and merged to `release/EloLeagueCalculator-v8-Windows-x64` zip.
+
+## 2026-08-26 17:03
+- Added Sonneborn-Berger (SB) tiebreaker scoring to league standings in `elo_model.py` based on opponent match wins.
+- Updated `elo_calculator.py` UI to include an 'SB' column and sort by SB score when Elo matches.
