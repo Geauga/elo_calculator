@@ -65,6 +65,20 @@ class EloModelTests(unittest.TestCase):
         self.assertEqual((stats[2].games_won, stats[2].games_lost), (3, 1))
         self.assertAlmostEqual(stats[2].game_win_percentage, 75.0)
 
+    def test_sonneborn_berger_uses_opponents_final_match_wins(self) -> None:
+        league = League.new(4)
+        league.record_match(0, 1, 0)
+        league.record_match(0, 2, 0)
+        league.record_match(1, 3, 0)
+        league.record_match(1, 3, 0)
+        league.record_match(2, 3, 0)
+
+        stats = league.statistics()
+
+        self.assertEqual(stats[0].sb_score, 3.0)
+        self.assertEqual(stats[1].sb_score, 0.0)
+        self.assertEqual(stats[2].sb_score, 0.0)
+
     def test_statistics_follow_undo_and_reset(self) -> None:
         league = League.new(3)
         league.record_match(0, 1, 0)
@@ -254,6 +268,10 @@ class EloModelTests(unittest.TestCase):
                 data["matches"][0]["winner_games"] = winner_games
                 with self.assertRaises(ValueError):
                     League.from_dict(data)
+
+        data["matches"][0]["winner_games"] = MAX_CUSTOM_SCORE + 1
+        with self.assertRaises(ValueError):
+            League.from_dict(data)
 
     def test_malformed_saved_match_and_rating_fields_are_rejected(self) -> None:
         data = League.new().to_dict()
@@ -492,3 +510,11 @@ class EloModelTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# Purpose: Regression tests for Elo rules, persistence, storage, and migrations.
+# Upstream: elo_model.py, elo_storage.py, and selected application helpers.
+# Upstream purpose: Implement the desktop league calculator and durable data model.
+# Environment: Python 3.10+ unittest suite on Windows.
+# Generated: 2026-08-26 17:00 America/New_York.
+# Changes: Added coverage for custom-score bounds and Sonneborn-Berger scoring.

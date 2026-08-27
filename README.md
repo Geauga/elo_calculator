@@ -13,7 +13,8 @@ with adjustable rosters.
 - The K-factor is `32`.
 - Ratings retain full decimal precision and display two decimal places.
 - Standings show match wins and losses, match win percentage, individual game
-  wins and losses, and game win percentage.
+  wins and losses, game win percentage, and a Sonneborn-Berger (SB) score. Elo
+  remains the primary ranking key; equal Elo ratings are ordered by SB score.
 - New leagues use first-to-three rules: 3-2 applies 50%, 3-1 applies 75%, and
   3-0 applies 100% of the normal Elo change.
 - Edit Rules selects a separate match format for each league. First-to-N mode
@@ -26,6 +27,10 @@ with adjustable rosters.
   record match and game results.
 - The Settings button switches between persistent Windows-style light and dark
   themes.
+- All app-owned prompts, confirmations, warnings, and management windows use
+  the same theme, Segoe UI typography, spacing, control styles, centering, and
+  high-DPI scaling. Supported Windows versions also match each window's title
+  bar to the selected light or dark theme.
 - The Reset league button restores every rating to 1500.00 and clears match
   records after confirmation, while keeping player names and the chosen theme.
 - Create, rename, switch between, and delete independent leagues from the top
