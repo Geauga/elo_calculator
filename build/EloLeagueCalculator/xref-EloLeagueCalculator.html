@@ -26,6 +26,7 @@ imports:
  &#8226;   <a href="#collections">collections</a>
  &#8226;   <a href="#collections.abc">collections.abc</a>
  &#8226;   <a href="#copyreg">copyreg</a>
+ &#8226;   <a href="#ctypes">ctypes</a>
  &#8226;   <a href="#datetime">datetime</a>
  &#8226;   <a href="#elo_model">elo_model</a>
  &#8226;   <a href="#elo_storage">elo_storage</a>
@@ -181,7 +182,6 @@ imports:
  &#8226;   <a href="#stat">stat</a>
  &#8226;   <a href="#tkinter">tkinter</a>
  &#8226;   <a href="#tkinter.messagebox">tkinter.messagebox</a>
- &#8226;   <a href="#tkinter.simpledialog">tkinter.simpledialog</a>
  &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
  &#8226;   <a href="#traceback">traceback</a>
  &#8226;   <a href="#types">types</a>
@@ -194,7 +194,7 @@ imports:
 
 <div class="node">
   <a name="pyi_rth__tkinter.py"></a>
-  <a target="code" href="///C:/Code/elo_calculator/.build_tools/PyInstaller/hooks/rthooks/pyi_rth__tkinter.py" type="text/plain"><tt>pyi_rth__tkinter.py</tt></a>
+  <a target="code" href="///C:/Users/danie/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/Lib/site-packages/PyInstaller/hooks/rthooks/pyi_rth__tkinter.py" type="text/plain"><tt>pyi_rth__tkinter.py</tt></a>
 <span class="moduletype">Script</span>  <div class="import">
 imports:
     <a href="#os">os</a>
@@ -211,7 +211,7 @@ imported by:
 
 <div class="node">
   <a name="pyi_rth_inspect.py"></a>
-  <a target="code" href="///C:/Code/elo_calculator/.build_tools/PyInstaller/hooks/rthooks/pyi_rth_inspect.py" type="text/plain"><tt>pyi_rth_inspect.py</tt></a>
+  <a target="code" href="///C:/Users/danie/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/Lib/site-packages/PyInstaller/hooks/rthooks/pyi_rth_inspect.py" type="text/plain"><tt>pyi_rth_inspect.py</tt></a>
 <span class="moduletype">Script</span>  <div class="import">
 imports:
     <a href="#inspect">inspect</a>
@@ -474,6 +474,16 @@ imported by:
   <tt>_csv</tt> <span class="moduletype"><i>(builtin module)</i></span>  <div class="import">
 imported by:
     <a href="#csv">csv</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="_ctypes"></a>
+  <tt>_ctypes</tt> <span class="moduletype"><tt>C:\Users\danie\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\DLLs\_ctypes.pyd</tt></span>  <div class="import">
+imported by:
+    <a href="#ctypes">ctypes</a>
 
   </div>
 
@@ -1637,6 +1647,46 @@ imports:
   <div class="import">
 imported by:
     <a href="#importlib.metadata">importlib.metadata</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="ctypes"></a>
+  <a target="code" href="///C:/Users/danie/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/Lib/ctypes/__init__.py" type="text/plain"><tt>ctypes</tt></a>
+<span class="moduletype">Package</span>  <div class="import">
+imports:
+    <a href="#_ctypes">_ctypes</a>
+ &#8226;   <a href="#ctypes._endian">ctypes._endian</a>
+ &#8226;   <a href="#nt">nt</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#struct">struct</a>
+ &#8226;   <a href="#sys">sys</a>
+ &#8226;   <a href="#types">types</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#ctypes._endian">ctypes._endian</a>
+ &#8226;   <a href="#elo_calculator.py">elo_calculator.py</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="ctypes._endian"></a>
+  <a target="code" href="///C:/Users/danie/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/Lib/ctypes/_endian.py" type="text/plain"><tt>ctypes._endian</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#ctypes">ctypes</a>
+ &#8226;   <a href="#sys">sys</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#ctypes">ctypes</a>
 
   </div>
 
@@ -5077,7 +5127,6 @@ imports:
  &#8226;   <a href="#importlib">importlib</a>
  &#8226;   <a href="#importlib._bootstrap">importlib._bootstrap</a>
  &#8226;   <a href="#importlib._bootstrap_external">importlib._bootstrap_external</a>
- &#8226;   <a href="#importlib.machinery">importlib.machinery</a>
  &#8226;   <a href="#sys">sys</a>
  &#8226;   <a href="#warnings">warnings</a>
 
@@ -5208,8 +5257,7 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#importlib">importlib</a>
- &#8226;   <a href="#importlib.abc">importlib.abc</a>
+    <a href="#importlib.abc">importlib.abc</a>
  &#8226;   <a href="#inspect">inspect</a>
  &#8226;   <a href="#py_compile">py_compile</a>
 
@@ -5966,7 +6014,8 @@ imported by:
   <a name="nt"></a>
   <tt>nt</tt> <span class="moduletype"><i>(builtin module)</i></span>  <div class="import">
 imported by:
-    <a href="#importlib._bootstrap_external">importlib._bootstrap_external</a>
+    <a href="#ctypes">ctypes</a>
+ &#8226;   <a href="#importlib._bootstrap_external">importlib._bootstrap_external</a>
  &#8226;   <a href="#ntpath">ntpath</a>
  &#8226;   <a href="#os">os</a>
  &#8226;   <a href="#shutil">shutil</a>
@@ -6089,6 +6138,7 @@ imported by:
     <a href="#argparse">argparse</a>
  &#8226;   <a href="#bz2">bz2</a>
  &#8226;   <a href="#contextlib">contextlib</a>
+ &#8226;   <a href="#ctypes">ctypes</a>
  &#8226;   <a href="#elo_calculator.py">elo_calculator.py</a>
  &#8226;   <a href="#elo_storage">elo_storage</a>
  &#8226;   <a href="#email.utils">email.utils</a>
@@ -6860,6 +6910,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#base64">base64</a>
+ &#8226;   <a href="#ctypes">ctypes</a>
  &#8226;   <a href="#gettext">gettext</a>
  &#8226;   <a href="#gzip">gzip</a>
  &#8226;   <a href="#pickle">pickle</a>
@@ -6923,6 +6974,8 @@ imported by:
  &#8226;   <a href="#codecs">codecs</a>
  &#8226;   <a href="#collections">collections</a>
  &#8226;   <a href="#contextlib">contextlib</a>
+ &#8226;   <a href="#ctypes">ctypes</a>
+ &#8226;   <a href="#ctypes._endian">ctypes._endian</a>
  &#8226;   <a href="#dataclasses">dataclasses</a>
  &#8226;   <a href="#dis">dis</a>
  &#8226;   <a href="#email._header_value_parser">email._header_value_parser</a>
@@ -7132,7 +7185,6 @@ imports:
  &#8226;   <a href="#sys">sys</a>
  &#8226;   <a href="#tkinter.constants">tkinter.constants</a>
  &#8226;   <a href="#tkinter.messagebox">tkinter.messagebox</a>
- &#8226;   <a href="#tkinter.simpledialog">tkinter.simpledialog</a>
  &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
  &#8226;   <a href="#traceback">traceback</a>
  &#8226;   <a href="#types">types</a>
@@ -7144,7 +7196,6 @@ imported by:
  &#8226;   <a href="#tkinter.commondialog">tkinter.commondialog</a>
  &#8226;   <a href="#tkinter.constants">tkinter.constants</a>
  &#8226;   <a href="#tkinter.messagebox">tkinter.messagebox</a>
- &#8226;   <a href="#tkinter.simpledialog">tkinter.simpledialog</a>
  &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
 
   </div>
@@ -7190,25 +7241,6 @@ imported by:
 imports:
     <a href="#tkinter">tkinter</a>
  &#8226;   <a href="#tkinter.commondialog">tkinter.commondialog</a>
-
-  </div>
-  <div class="import">
-imported by:
-    <a href="#elo_calculator.py">elo_calculator.py</a>
- &#8226;   <a href="#tkinter">tkinter</a>
- &#8226;   <a href="#tkinter.simpledialog">tkinter.simpledialog</a>
-
-  </div>
-
-</div>
-
-<div class="node">
-  <a name="tkinter.simpledialog"></a>
-  <a target="code" href="///C:/Users/danie/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/Lib/tkinter/simpledialog.py" type="text/plain"><tt>tkinter.simpledialog</tt></a>
-<span class="moduletype">SourceModule</span>  <div class="import">
-imports:
-    <a href="#tkinter">tkinter</a>
- &#8226;   <a href="#tkinter.messagebox">tkinter.messagebox</a>
 
   </div>
   <div class="import">
@@ -7343,6 +7375,7 @@ imported by:
  &#8226;   <a href="#contextlib">contextlib</a>
  &#8226;   <a href="#copy">copy</a>
  &#8226;   <a href="#csv">csv</a>
+ &#8226;   <a href="#ctypes">ctypes</a>
  &#8226;   <a href="#dataclasses">dataclasses</a>
  &#8226;   <a href="#dis">dis</a>
  &#8226;   <a href="#elo_calculator.py">elo_calculator.py</a>
