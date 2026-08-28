@@ -22,3 +22,10 @@
 - 具体动作：通过 PyInstaller 生成了 EloLeagueCalculator.exe；将可执行文件和 DISTRIBUTION_README.txt 打包为 `release/EloLeagueCalculator-v11-Windows-x64.zip`。
 - 修改文件：`historyworklog.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v11-Windows-x64/README.txt`；`release/EloLeagueCalculator-v11-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v11-Windows-x64.zip`；本文件。
 - 测试或验证结果：PyInstaller 构建成功，zip 压缩文件已生成并准备完毕。
+
+## 2026-08-28 17:06:00 -04:00
+
+- 用户 Prompt 摘要：为活动日志添加横向滚动条并打包发布 v12 版本。
+- 具体动作：在 `elo_calculator.py` 中的 `Activity log` 树视图底部添加了一个横向滚动条以防止长文本被截断。随后使用 PyInstaller 构建了可执行程序，并将其打包至 `release/EloLeagueCalculator-v12-Windows-x64.zip`。
+- 修改文件：`elo_calculator.py`；`historyworklog.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v12-Windows-x64/README.txt`；`release/EloLeagueCalculator-v12-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v12-Windows-x64.zip`；本文件。
+- 测试或验证结果：UI 更新通过语法测试，PyInstaller 成功将其构建为独立应用包。

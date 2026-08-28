@@ -829,7 +829,15 @@ class EloCalculatorApp:
             log_frame, orient="vertical", command=self.activity_log.yview
         )
         log_scroll.grid(row=0, column=1, sticky="ns")
-        self.activity_log.configure(yscrollcommand=log_scroll.set)
+        
+        log_scroll_x = ttk.Scrollbar(
+            log_frame, orient="horizontal", command=self.activity_log.xview
+        )
+        log_scroll_x.grid(row=1, column=0, sticky="ew")
+        self.activity_log.configure(
+            yscrollcommand=log_scroll.set,
+            xscrollcommand=log_scroll_x.set
+        )
 
         ttk.Label(outer, textvariable=self.status_var, anchor="w").grid(
             row=3, column=0, columnspan=2, sticky="ew", pady=(12, 0)
