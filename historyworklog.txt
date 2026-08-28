@@ -22,3 +22,7 @@
 
 ## 2026-08-27 17:10
 - Built and packaged version 11 executable to `release/EloLeagueCalculator-v11-Windows-x64.zip`.
+
+## 2026-08-28 17:06
+- Added a horizontal scrollbar to the "Activity log" Treeview in `elo_calculator.py` to prevent text truncation.
+- Built and packaged version 12 executable to `release/EloLeagueCalculator-v12-Windows-x64.zip`.
