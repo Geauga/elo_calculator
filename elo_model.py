@@ -16,9 +16,13 @@ PLAYER_COUNT = DEFAULT_PLAYER_COUNT
 LEGACY_PLAYER_COUNT = 8
 MIN_PLAYER_COUNT = 2
 MAX_PLAYER_COUNT = 64
-LEAGUE_SCHEMA_VERSION = 5
+LEAGUE_SCHEMA_VERSION = 6
 INITIAL_RATING = 1500.0
 K_FACTOR = 32.0
+MIN_K_FACTOR = 0.01
+MAX_K_FACTOR = 1000.0
+DEFAULT_ELO_DECIMAL_PLACES = 2
+MAX_ELO_DECIMAL_PLACES = 6
 SCORE_MULTIPLIERS = {0: 1.0, 1: 0.75, 2: 0.50}
 MAX_GAMES_TO_WIN = 100
 MAX_CUSTOM_SCORE = 9999
@@ -113,6 +117,35 @@ def validate_player_count(player_count: int) -> int:
     return player_count
 
 
+def validate_k_factor(k_factor: float) -> float:
+    if (
+        not isinstance(k_factor, (int, float))
+        or isinstance(k_factor, bool)
+        or not math.isfinite(k_factor)
+        or not MIN_K_FACTOR <= k_factor <= MAX_K_FACTOR
+    ):
+        raise ValueError(
+            f"K-factor must be between {MIN_K_FACTOR:g} and "
+            f"{MAX_K_FACTOR:g}."
+        )
+    return float(k_factor)
+
+
+def validate_elo_decimal_places(decimal_places: int | None) -> int | None:
+    if decimal_places is None:
+        return None
+    if (
+        not isinstance(decimal_places, int)
+        or isinstance(decimal_places, bool)
+        or not 0 <= decimal_places <= MAX_ELO_DECIMAL_PLACES
+    ):
+        raise ValueError(
+            "Elo decimal places must be between 0 and "
+            f"{MAX_ELO_DECIMAL_PLACES}."
+        )
+    return decimal_places
+
+
 def expected_score(rating: float, opponent_rating: float) -> float:
     """Return the standard Elo expected score for one player."""
     exponent = max(-10.0, min(10.0, (opponent_rating - rating) / 400.0))
@@ -123,6 +156,8 @@ def rating_change(
     winner_rating: float,
     loser_rating: float,
     multiplier: float = 1.0,
+    k_factor: float = K_FACTOR,
+    decimal_places: int | None = None,
 ) -> float:
     """Return the Elo transferred."""
     if (
@@ -133,8 +168,15 @@ def rating_change(
     ):
         raise ValueError("Multiplier must be a finite, nonnegative number.")
 
-    return K_FACTOR * multiplier * (
+    validated_k_factor = validate_k_factor(k_factor)
+    validated_decimal_places = validate_elo_decimal_places(decimal_places)
+    change = validated_k_factor * multiplier * (
         1.0 - expected_score(winner_rating, loser_rating)
+    )
+    return (
+        round(change, validated_decimal_places)
+        if validated_decimal_places is not None
+        else change
     )
 
 
@@ -157,6 +199,8 @@ class Match:
     multiplier: float = 0.0
     winner_games: int = 3
     rated: bool = True
+    k_factor: float = K_FACTOR
+    elo_decimal_places: int | None = None
 
 
 @dataclass
@@ -184,6 +228,15 @@ class League:
     matches: list[Match] = field(default_factory=list)
     win_condition: WinCondition = field(default_factory=WinCondition)
     calculate_elo: bool = True
+    k_factor: float = K_FACTOR
+    elo_decimal_places: int = DEFAULT_ELO_DECIMAL_PLACES
+
+    def __post_init__(self) -> None:
+        self.k_factor = validate_k_factor(self.k_factor)
+        validated_places = validate_elo_decimal_places(self.elo_decimal_places)
+        if validated_places is None:
+            raise ValueError("League Elo decimal places cannot be unlimited.")
+        self.elo_decimal_places = validated_places
 
     @classmethod
     def new(cls, player_count: int = DEFAULT_PLAYER_COUNT) -> "League":
@@ -216,7 +269,17 @@ class League:
         if winner_games is None:
             winner_games = self.win_condition.games_to_win
         multiplier = self.win_condition.get_multiplier(loser_games, winner_games)
-        change = rating_change(winner.rating, loser.rating, multiplier) if self.calculate_elo else 0.0
+        change = (
+            rating_change(
+                winner.rating,
+                loser.rating,
+                multiplier,
+                self.k_factor,
+                self.elo_decimal_places,
+            )
+            if self.calculate_elo
+            else 0.0
+        )
         return {
             "winner_expected": expected_score(winner.rating, loser.rating),
             "loser_expected": expected_score(loser.rating, winner.rating),
@@ -252,6 +315,8 @@ class League:
             multiplier=preview["multiplier"],
             winner_games=winner_games,
             rated=self.calculate_elo,
+            k_factor=self.k_factor,
+            elo_decimal_places=self.elo_decimal_places,
         )
         winner.rating = preview["winner_after"]
         loser.rating = preview["loser_after"]
@@ -314,7 +379,13 @@ class League:
             winner = self.player(old_match.winner_id)
             loser = self.player(old_match.loser_id)
             change = (
-                rating_change(winner.rating, loser.rating, old_match.multiplier)
+                rating_change(
+                    winner.rating,
+                    loser.rating,
+                    old_match.multiplier,
+                    old_match.k_factor,
+                    old_match.elo_decimal_places,
+                )
                 if old_match.rated
                 else 0.0
             )
@@ -330,6 +401,8 @@ class League:
                     multiplier=old_match.multiplier,
                     winner_games=old_match.winner_games,
                     rated=old_match.rated,
+                    k_factor=old_match.k_factor,
+                    elo_decimal_places=old_match.elo_decimal_places,
                 )
             )
             winner.rating += change
@@ -390,6 +463,8 @@ class League:
             "matches": [asdict(match) for match in self.matches],
             "win_condition": asdict(self.win_condition),
             "calculate_elo": self.calculate_elo,
+            "k_factor": self.k_factor,
+            "elo_decimal_places": self.elo_decimal_places,
         }
 
     @classmethod
@@ -397,7 +472,7 @@ class League:
         if not isinstance(data, dict):
             raise ValueError("The save file must contain a JSON object.")
         schema_version = data.get("schema_version")
-        if schema_version not in (1, 2, 3, 4, LEAGUE_SCHEMA_VERSION):
+        if schema_version not in (1, 2, 3, 4, 5, LEAGUE_SCHEMA_VERSION):
             raise ValueError("Unsupported save-file version.")
 
         try:
@@ -432,6 +507,10 @@ class League:
                     m_data["winner_games"] = 3
                 if "rated" not in m_data:
                     m_data["rated"] = m_data.get("rating_change", 0.0) != 0.0
+                if "k_factor" not in m_data:
+                    m_data["k_factor"] = K_FACTOR
+                if "elo_decimal_places" not in m_data:
+                    m_data["elo_decimal_places"] = None
                 matches.append(Match(**m_data))
         except (KeyError, TypeError, ValueError, OverflowError) as error:
             raise ValueError("The save file is malformed.") from error
@@ -481,11 +560,24 @@ class League:
         calculate_elo = data.get("calculate_elo", True)
         if not isinstance(calculate_elo, bool):
             raise ValueError("The auto-calculate Elo setting must be true or false.")
+        try:
+            k_factor = validate_k_factor(data.get("k_factor", K_FACTOR))
+            elo_decimal_places = validate_elo_decimal_places(
+                data.get(
+                    "elo_decimal_places", DEFAULT_ELO_DECIMAL_PLACES
+                )
+            )
+        except ValueError as error:
+            raise ValueError("The save file has invalid Elo settings.") from error
+        if elo_decimal_places is None:
+            raise ValueError("The save file has invalid Elo settings.")
         league = cls(
             players=players, 
             matches=matches, 
             win_condition=win_condition, 
-            calculate_elo=calculate_elo
+            calculate_elo=calculate_elo,
+            k_factor=k_factor,
+            elo_decimal_places=elo_decimal_places,
         )
         valid_ids = {player.id for player in players}
         for match in matches:
@@ -521,6 +613,12 @@ class League:
                 or match.winner_games > MAX_CUSTOM_SCORE
                 or match.loser_games >= match.winner_games
                 or not isinstance(match.rated, bool)
+                or not isinstance(match.k_factor, (int, float))
+                or isinstance(match.k_factor, bool)
+                or not math.isfinite(match.k_factor)
+                or not MIN_K_FACTOR <= match.k_factor <= MAX_K_FACTOR
+                or validate_elo_decimal_places(match.elo_decimal_places)
+                != match.elo_decimal_places
             ):
                 raise ValueError("The save file contains an invalid match.")
             try:
@@ -556,6 +654,7 @@ class League:
 # Upstream: UI and storage layers provide league configuration and saved JSON data.
 # Upstream purpose: Collect user-entered results and restore persistent league state.
 # Environment: Python 3.10+ on Windows, with platform-independent model tests.
-# Generated: 2026-08-26 17:00 America/New_York.
+# Generated: 2026-08-30 21:06 America/New_York.
 # Changes: Match validation rejects persisted scores above MAX_CUSTOM_SCORE; SB
-# statistics from the concurrent standings update are retained.
+# statistics are retained; per-league K-factor and Elo rounding are persisted,
+# validated, and recorded per match for historically stable roster replay.

@@ -76,3 +76,11 @@
 - 具体动作：更新了 `README.md`，区分了全局主题 Settings 菜单与具体的联赛 Settings 按钮（原 Edit Rules）；并补充说明了活动日志现在支持横向滚动条并包含 SB 分数记录。
 - 修改文件：`README.md`；`historyworklog.txt`；本文件。
 - 测试或验证结果：文档更新完成。
+
+## 2026-08-30 21:13:00 -04:00
+
+- User Prompt summary: Make the K-factor and Elo rounding customizable, use English, and push the update to GitHub.
+- Actions: Added per-league K-factor and Elo decimal-place controls to Edit League Rules; validated K from 0.01 through 1000 and rounding from 0 through 6 decimal places; persisted both settings in schema v6; stored the settings used by every match so roster replay preserves historical Elo calculations; standardized rating formatting across standings, preview, history, audit text, status text, and reset text; updated documentation; rebuilt the tracked Windows executable.
+- Modified files: `elo_model.py`; `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; append-only update to `历史工作记录.txt`.
+- Tests and verification: All 42 unittest cases passed before and after rebasing onto the newer remote Settings/SB commits; the League Settings GUI smoke check found K-factor, Elo decimal-place, and Save controls; the final merged executable remained running during a three-second isolated launch test; executable SHA-256 is `8AE5DDD03B3ABA2401A08176D124550FAAEF5D7147F7F247E51DA03E80039836`. The first PyInstaller attempt encountered a locked stale `build/EloLeagueCalculator/localpycs` directory, so successful builds used fresh isolated directories; temporary build directories were removed, and only intended generated artifacts remain modified.
+- GitHub Timeline: Not committed or pushed yet. A focused feature/build commit and push to `origin/main` will follow this record.

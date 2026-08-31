@@ -11,12 +11,18 @@ from tkinter import messagebox, ttk
 
 from elo_model import (
     DEFAULT_PLAYER_COUNT,
+    INITIAL_RATING,
     MAX_CUSTOM_SCORE,
+    MAX_ELO_DECIMAL_PLACES,
+    MAX_K_FACTOR,
     MAX_PLAYER_COUNT,
+    MIN_K_FACTOR,
     MIN_PLAYER_COUNT,
     SCORE_MODE_CUSTOM,
     SCORE_MODE_FIXED,
     WinCondition,
+    validate_elo_decimal_places,
+    validate_k_factor,
 )
 from elo_storage import AuditLog, BackupManager, LeagueCollection
 
@@ -172,7 +178,7 @@ class EloCalculatorApp:
         self.loser_var = tk.StringVar()
         self.loser_games_var = tk.StringVar(value="0")
         self.winner_games_var = tk.StringVar(value="3")
-        self.winner_score_var = tk.StringVar(value="3 â€“")
+        self.winner_score_var = tk.StringVar(value="3 –")
         self.theme_var = tk.StringVar(value=load_theme(SETTINGS_FILE))
         self.preview_var = tk.StringVar(
             value="Select two different players to preview the Elo change."
@@ -742,7 +748,7 @@ class EloCalculatorApp:
             command=self._update_preview,
         )
         self.winner_score_spin.pack(side="left")
-        ttk.Label(self.custom_score_frame, text=" â€“ ").pack(side="left")
+        ttk.Label(self.custom_score_frame, text=" – ").pack(side="left")
         self.loser_score_spin = ttk.Spinbox(
             self.custom_score_frame,
             from_=0,
@@ -1093,9 +1099,9 @@ class EloCalculatorApp:
             if win_condition.score_mode == SCORE_MODE_CUSTOM
             else f"First to {win_condition.games_to_win}"
         )
-        self.heading_var.set(f"{player_count}-Player Elo League â€” {format_name}")
+        self.heading_var.set(f"{player_count}-Player Elo League — {format_name}")
         self.root.title(
-            f"{self.collection.active.name} â€” {player_count}-Player Elo League â€” "
+            f"{self.collection.active.name} — {player_count}-Player Elo League — "
             f"{format_name}"
         )
 
@@ -1210,13 +1216,13 @@ class EloCalculatorApp:
     def _edit_rules(self) -> None:
         dialog = tk.Toplevel(self.root)
         dialog.title("League Settings")
-        dialog.geometry("440x590")
-        dialog.minsize(400, 470)
+        dialog.geometry("480x700")
+        dialog.minsize(440, 580)
         self._configure_dialog(
             dialog, self.root, resizable=(True, True)
         )
         dialog.columnconfigure(0, weight=1)
-        dialog.rowconfigure(3, weight=1)
+        dialog.rowconfigure(4, weight=1)
 
         colors = THEME_PALETTES[self.theme_var.get()]
         dialog.configure(background=colors["background"])
@@ -1260,13 +1266,47 @@ class EloCalculatorApp:
             fixed_frame, from_=1, to=100, textvariable=games_var, width=6
         ).grid(row=0, column=1, pady=(0, 5), sticky="w")
 
+        elo_frame = ttk.LabelFrame(dialog, text="Elo settings", padding=10)
+        elo_frame.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
+        elo_frame.columnconfigure(1, weight=1)
+        ttk.Label(elo_frame, text="K-factor:").grid(
+            row=0, column=0, padx=(0, 8), pady=3, sticky="w"
+        )
+        k_factor_var = tk.StringVar(value=f"{self.league.k_factor:g}")
+        ttk.Entry(
+            elo_frame, textvariable=k_factor_var, width=10
+        ).grid(row=0, column=1, pady=3, sticky="w")
+        ttk.Label(elo_frame, text="Elo decimal places:").grid(
+            row=1, column=0, padx=(0, 8), pady=3, sticky="w"
+        )
+        decimal_places_var = tk.IntVar(
+            value=self.league.elo_decimal_places
+        )
+        ttk.Spinbox(
+            elo_frame,
+            from_=0,
+            to=MAX_ELO_DECIMAL_PLACES,
+            textvariable=decimal_places_var,
+            width=6,
+        ).grid(row=1, column=1, pady=3, sticky="w")
+        ttk.Label(
+            elo_frame,
+            text=(
+                f"K-factor range: {MIN_K_FACTOR:g}-{MAX_K_FACTOR:g}. "
+                "Each transferred Elo change is rounded to the selected "
+                "number of decimal places."
+            ),
+            wraplength=410,
+            justify="left",
+        ).grid(row=2, column=0, columnspan=2, sticky="ew", pady=(6, 0))
+
         calc_elo_var = tk.BooleanVar(value=self.league.calculate_elo)
         ttk.Checkbutton(
             dialog, text="Auto-calculate Elo", variable=calc_elo_var
-        ).grid(row=2, column=0, padx=12, pady=5, sticky="w")
+        ).grid(row=3, column=0, padx=12, pady=5, sticky="w")
 
         mult_frame = ttk.LabelFrame(dialog, text="Score Multipliers", padding=10)
-        mult_frame.grid(row=3, column=0, padx=10, pady=5, sticky="nsew")
+        mult_frame.grid(row=4, column=0, padx=10, pady=5, sticky="nsew")
         mult_frame.rowconfigure(0, weight=1)
         mult_frame.columnconfigure(0, weight=1)
         
@@ -1348,6 +1388,14 @@ class EloCalculatorApp:
                         score_multipliers=new_mults,
                         score_mode=score_mode,
                     )
+                new_k_factor = validate_k_factor(float(k_factor_var.get()))
+                new_decimal_places = validate_elo_decimal_places(
+                    decimal_places_var.get()
+                )
+                if new_decimal_places is None:
+                    raise ValueError(
+                        "League Elo decimal places cannot be unlimited."
+                    )
             except (ValueError, tk.TclError) as error:
                 self._show_error("Invalid input", str(error), parent=dialog)
                 return
@@ -1355,6 +1403,8 @@ class EloCalculatorApp:
             previous_state = self.collection.to_dict()
             self.league.win_condition = new_rules
             self.league.calculate_elo = calc_elo_var.get()
+            self.league.k_factor = new_k_factor
+            self.league.elo_decimal_places = new_decimal_places
             try:
                 format_name = (
                     "custom scores"
@@ -1365,7 +1415,9 @@ class EloCalculatorApp:
                     previous_state,
                     "rules_edited",
                     f"Set {self.collection.active.name} to {format_name}; "
-                    f"automatic Elo {'on' if calc_elo_var.get() else 'off'}.",
+                    f"K={new_k_factor:g}; Elo rounding={new_decimal_places} "
+                    f"decimal places; automatic Elo "
+                    f"{'on' if calc_elo_var.get() else 'off'}.",
                 )
             except (OSError, ValueError) as e:
                 self._restore_collection(previous_state)
@@ -1376,7 +1428,7 @@ class EloCalculatorApp:
             dialog.destroy()
 
         buttons = ttk.Frame(dialog)
-        buttons.grid(row=4, column=0, padx=10, pady=10, sticky="e")
+        buttons.grid(row=5, column=0, padx=10, pady=10, sticky="e")
         ttk.Button(buttons, text="Cancel", command=dialog.destroy).pack(
             side="left", padx=(0, 8)
         )
@@ -1641,7 +1693,7 @@ class EloCalculatorApp:
             self.custom_score_frame.grid_remove()
             self.fixed_score_frame.grid()
             self.winner_games_var.set(str(win_condition.games_to_win))
-            self.winner_score_var.set(f"{win_condition.games_to_win} â€“")
+            self.winner_score_var.set(f"{win_condition.games_to_win} –")
             valid_scores = tuple(
                 str(i) for i in sorted(win_condition.score_multipliers.keys())
             )
@@ -1666,6 +1718,9 @@ class EloCalculatorApp:
             state="normal" if self.league.matches else "disabled"
         )
 
+    def _format_elo(self, value: float) -> str:
+        return f"{value:.{self.league.elo_decimal_places}f}"
+
     def _refresh_standings(self) -> None:
         selected = self.standings.selection()
         selected_id = int(selected[0]) if selected else None
@@ -1688,7 +1743,7 @@ class EloCalculatorApp:
                 values=(
                     rank,
                     player.name,
-                    f"{player.rating:.2f}",
+                    self._format_elo(player.rating),
                     f"{stats.sb_score:.1f}",
                     f"{stats.matches_won}-{stats.matches_lost}",
                     f"{stats.match_win_percentage:.1f}%",
@@ -1713,8 +1768,8 @@ class EloCalculatorApp:
                 "end",
                 values=(
                     timestamp,
-                    f"{winner} {match.winner_games}â€“{match.loser_games} {loser}",
-                    f"Â±{match.rating_change:.2f}",
+                    f"{winner} {match.winner_games}–{match.loser_games} {loser}",
+                    f"±{self._format_elo(match.rating_change)}",
                 ),
             )
 
@@ -1748,9 +1803,10 @@ class EloCalculatorApp:
             f"Margin multiplier: {preview['multiplier']:.0%}\n"
             f"Expected chance: {winner.name} {preview['winner_expected']:.1%}, "
             f"{loser.name} {preview['loser_expected']:.1%}\n"
-            f"Change: Â±{preview['change']:.2f} Elo\n"
-            f"New ratings: {winner.name} {preview['winner_after']:.2f}, "
-            f"{loser.name} {preview['loser_after']:.2f}"
+            f"Change: ±{self._format_elo(preview['change'])} Elo\n"
+            f"New ratings: {winner.name} "
+            f"{self._format_elo(preview['winner_after'])}, "
+            f"{loser.name} {self._format_elo(preview['loser_after'])}"
         )
         self.record_button.configure(state="normal")
 
@@ -1772,7 +1828,7 @@ class EloCalculatorApp:
                 "match_recorded",
                 f"{winner} defeated {loser} "
                 f"{match.winner_games}-{loser_games}; transferred "
-                f"{match.rating_change:.4f} Elo "
+                f"{self._format_elo(match.rating_change)} Elo "
                 f"(SB: {winner} {winner_sb:.1f}, {loser} {loser_sb:.1f}).",
                 current.id,
                 current.name,
@@ -1785,8 +1841,8 @@ class EloCalculatorApp:
 
         self.status_var.set(
             f"Saved: {winner} defeated {loser} "
-            f"{match.winner_games}â€“{loser_games}; "
-            f"Â±{match.rating_change:.2f} Elo"
+            f"{match.winner_games}–{loser_games}; "
+            f"±{self._format_elo(match.rating_change)} Elo"
         )
         self._refresh_all()
 
@@ -1798,7 +1854,7 @@ class EloCalculatorApp:
         loser = self.league.player(match.loser_id).name
         if not self._ask_yes_no(
             "Undo last match",
-            f"Undo {winner} {match.winner_games}â€“{match.loser_games} {loser}?",
+            f"Undo {winner} {match.winner_games}–{match.loser_games} {loser}?",
             parent=self.root,
         ):
             return
@@ -1822,6 +1878,7 @@ class EloCalculatorApp:
             self._restore_collection(previous_state)
             self._refresh_all()
             self._show_error("Match not undone", str(error), parent=self.root)
+            return
         self.status_var.set("The last match was undone and the ratings were restored.")
         self._refresh_all()
 
@@ -1865,7 +1922,8 @@ class EloCalculatorApp:
     def _reset_league(self) -> None:
         if not self._ask_yes_no(
             "Reset league",
-            "Reset all ratings to 1500.00 and permanently clear every match "
+            f"Reset all ratings to {self._format_elo(INITIAL_RATING)} and "
+            "permanently clear every match "
             "result?\n\nPlayer names and the selected theme will be preserved.",
             parent=self.root,
         ):
@@ -1879,7 +1937,8 @@ class EloCalculatorApp:
             self._commit_edit(
                 previous_state,
                 "league_reset",
-                f"Reset all ratings to 1500.00 and cleared {cleared_matches} matches.",
+                f"Reset all ratings to {self._format_elo(INITIAL_RATING)} and "
+                f"cleared {cleared_matches} matches.",
                 current.id,
                 current.name,
             )
@@ -1890,7 +1949,8 @@ class EloCalculatorApp:
             return
 
         self.status_var.set(
-            "League reset: all ratings are 1500.00 and match history is empty."
+            "League reset: all ratings are "
+            f"{self._format_elo(INITIAL_RATING)} and match history is empty."
         )
         self._refresh_all()
 
@@ -1931,7 +1991,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-08-26 17:00 America/New_York.
-# Changes: Preserve hidden custom-mode settings, use pointer-safe Windows handles,
-# and restore complete refresh behavior with the SB standings column.
-
+# Generated: 2026-08-30 21:06 America/New_York.
+# Changes: Added per-league K-factor and Elo decimal-place controls; rating text
+# follows that precision while Settings naming and SB activity details are retained.
