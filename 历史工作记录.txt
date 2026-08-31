@@ -116,3 +116,19 @@
 - Modified files: `elo_model.py`; `elo_storage.py`; `elo_calculator.py`; `test_elo_model.py`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; append-only update to this file.
 - Tests and verification: All 46 unittest cases passed; direct UTF-8 source compilation passed; `git diff --check` passed; PyInstaller 6.22.0 included 918 GUI runtime entries and `pyi_rth__tkinter.py`; the rebuilt executable remained running during a five-second isolated `%LOCALAPPDATA%` launch test; executable SHA-256 is `14F7913CCD793F23E05A71ED3FD86060D7B27889F5EAEECD7325AC80273913B4`.
 - GitHub Timeline: Not committed at the time of this entry. The user authorized a local commit but did not request a push; a focused commit will follow and remain unpushed. Temporary PyInstaller inputs and generated pycache will not be committed. The official `C:\Users\danie\OneDrive\Documents\ChatGPT\elo` checkout remains corrupted and unreadable.
+
+## 2026-08-31 19:45:00 -04:00
+
+- User Prompt summary: Add a league simulator for First to N.
+- Actions: Added a read-only Monte Carlo single round-robin engine in `elo_simulator.py`; every player meets once per simulated season; game probabilities use current Elo; match order is randomized; simulated rating changes use the active league's K-factor, decimal rounding, First-to-N score multipliers, and auto-Elo setting; aggregate output includes title probability, average rank, average match W-L, and average game W-L. Added a themed Simulator dialog with run-count limits, optional reproducible random seed, scrollable results, custom-score rejection, and no persistence changes. Workload limits account for roster size and First-to-N target. Updated documentation and rebuilt the tracked executable.
+- Modified files: `elo_simulator.py`; `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; append-only update to `历史工作记录.txt`.
+- Tests and verification: 44/44 unittest cases passed before integration with the concurrent validation fixes; seeded results are reproducible; the simulator leaves league serialization unchanged; Tkinter smoke test ran 25 seasons and displayed all 12 players; packaged executable passed an isolated three-second launch test. The executable will be rebuilt again after integration.
+- GitHub Timeline: Simulator commit `461a053` was local and unpushed when the user requested GitHub publication. Rebase onto `origin/main` validation commits is in progress; no force push will be used.
+
+## 2026-08-31 20:02:00 -04:00
+
+- User Prompt summary: Publish the First-to-N league simulator to GitHub.
+- Actions: Fetched three concurrent validation/replay commits; rebased the simulator onto `origin/main`; preserved nonfinite Elo validation, transactional roster replay, collection-shape validation, live Settings bounds, and the cleaned single `_build_ui`; reapplied only the simulator integration; rebuilt the executable from the combined source.
+- Modified files: `elo_simulator.py`; `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; append-only update to `历史工作记录.txt`.
+- Tests and verification: Combined suite passed 48/48 tests; PyInstaller build succeeded; the merged executable passed an isolated three-second launch test and all temporary executable processes were stopped by verified path. Executable SHA-256 is `C74EE2F3F87811C3D3C507A83596521558AD0EDEC0161AFE8D36F3CF2EC495C0`.
+- GitHub Timeline: Rebased simulator commit exists locally and is not yet pushed. The user explicitly requested GitHub publication; the final binary/checksum will be amended into the commit and pushed without force.

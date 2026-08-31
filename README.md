@@ -10,7 +10,7 @@ with adjustable rosters.
 - Reducing a roster removes players from its end, drops their matches, and
   recalculates retained results. A confirmation and automatic backup protect
   the change.
-- Edit Rules sets a separate K-factor and Elo rounding precision for each
+- League Settings sets a separate K-factor and Elo rounding precision for each
   league. New leagues default to K `32` and two decimal places; K can be
   `0.01` through `1000`, and precision can be zero through six places.
 - Each match stores the K-factor and rounding used for its Elo transfer, so
@@ -20,10 +20,16 @@ with adjustable rosters.
   remains the primary ranking key; equal Elo ratings are ordered by SB score.
 - New leagues use first-to-three rules: 3-2 applies 50%, 3-1 applies 75%, and
   3-0 applies 100% of the normal Elo change.
-- The league Settings button selects a separate match format for each league. First-to-N mode
-  sets the games needed to win and the Elo multiplier for every possible losing
-  score. Custom-score mode accepts any whole-number result where the winner's
-  score is higher.
+- The Simulator button runs a read-only Monte Carlo single round-robin for the
+  active First-to-N league. Every player meets once per simulated season;
+  current Elo supplies game probabilities, while simulated rating changes use
+  the league's K-factor, rounding, and score multipliers. Results show title
+  probability, average rank, and average match and game records. An optional
+  random seed makes a run reproducible.
+- The league Settings button selects a separate match format for each league.
+  First-to-N mode sets the games needed to win and the Elo multiplier for every
+  possible losing score. Custom-score mode accepts any whole-number result
+  where the winner's score is higher.
 - In custom-score mode, a shutout applies 100% of the normal Elo change and the
   closest possible win applies 50%; intermediate margins scale proportionally.
   Either format can disable automatic Elo calculation while continuing to
