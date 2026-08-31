@@ -1,4 +1,4 @@
-﻿"""Tkinter desktop interface for the twelve-player Elo calculator."""
+"""Tkinter desktop interface for the twelve-player Elo calculator."""
 
 from __future__ import annotations
 
@@ -493,79 +493,6 @@ class EloCalculatorApp:
             confirmation=True,
             parent=parent,
         )
-
-    def _build_ui(self) -> None:
-        outer = ttk.Frame(self.root, padding=16)
-        outer.pack(fill="both", expand=True)
-        outer.columnconfigure(0, weight=3)
-        outer.columnconfigure(1, weight=2)
-        # Let the match-entry panel keep the height requested by its controls.
-        # Giving this row flexible weight can shrink its bottom buttons under
-        # Windows display scaling when the history panel also requests space.
-        outer.rowconfigure(1, weight=0)
-        outer.rowconfigure(2, weight=1)
-
-        header = ttk.Frame(outer)
-        header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 12))
-        header.columnconfigure(0, weight=1)
-        ttk.Label(
-            header, textvariable=self.heading_var, style="Heading.TLabel"
-        ).grid(row=0, column=0, sticky="w")
-        ttk.Button(header, text="Backups", command=self._open_backups).grid(
-            row=0, column=1, padx=(12, 3), sticky="e"
-        )
-        self.settings_button = ttk.Menubutton(header, text="Settings")
-        self.settings_menu = tk.Menu(self.settings_button, tearoff=False)
-        self.settings_menu.add_radiobutton(
-            label="Light theme",
-            value="light",
-            variable=self.theme_var,
-            command=self._select_theme,
-        )
-        self.settings_menu.add_radiobutton(
-            label="Dark theme",
-            value="dark",
-            variable=self.theme_var,
-            command=self._select_theme,
-        )
-        self.settings_button.configure(menu=self.settings_menu)
-        self.settings_button.grid(row=0, column=2, padx=(3, 0), sticky="e")
-        self._style_settings_menu()
-
-        league_tools = ttk.Frame(header)
-        league_tools.grid(
-            row=1, column=0, columnspan=3, sticky="w", pady=(8, 0)
-        )
-        ttk.Label(league_tools, text="League:").grid(
-            row=0, column=0, padx=(0, 5)
-        )
-        self.league_combo = ttk.Combobox(
-            league_tools,
-            textvariable=self.league_var,
-            state="readonly",
-            width=20,
-        )
-        self.league_combo.grid(row=0, column=1, padx=(0, 5))
-        self.league_combo.bind("<<ComboboxSelected>>", self._switch_league)
-        ttk.Button(league_tools, text="New", command=self._create_league).grid(
-            row=0, column=2, padx=3
-        )
-        ttk.Button(league_tools, text="Rename", command=self._rename_league).grid(
-            row=0, column=3, padx=3
-        )
-        ttk.Button(
-            league_tools, text="Players", command=self._change_player_count
-        ).grid(
-            row=0, column=4, padx=3
-        )
-        ttk.Button(league_tools, text="Delete", command=self._delete_league).grid(
-            row=0, column=5, padx=3
-        )
-        ttk.Button(league_tools, text="Settings", command=self._edit_rules).grid(
-            row=0, column=6, padx=3
-        )
-
-        standings_frame = ttk.LabelFrame(outer, text="Standings", padding=10)
 
     def _build_ui(self) -> None:
         outer = ttk.Frame(self.root, padding=16)
@@ -1991,6 +1918,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-08-30 21:06 America/New_York.
-# Changes: Added per-league K-factor and Elo decimal-place controls; rating text
-# follows that precision while Settings naming and SB activity details are retained.
+# Generated: 2026-08-30 21:29 America/New_York.
+# Changes: Removed a shadowed duplicate UI builder; retained per-league K-factor,
+# rounding precision, Settings naming, and SB activity details.

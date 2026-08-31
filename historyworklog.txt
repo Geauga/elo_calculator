@@ -58,3 +58,9 @@
 
 ## 2026-08-30 21:14
 - Updated `README.md` to clarify the global Settings menu vs. the league Settings button, and documented the activity log enhancements (horizontal scrolling, SB scores).
+
+## 2026-08-30 21:32
+- Preserved customizable K-factor and Elo rounding while rejecting nonfinite transfers before mutation.
+- Removed the duplicate `_build_ui` method and hidden UTF-8 BOM; added overflow regression coverage.
+- Rebuilt and smoke-tested the current Windows executable, then packaged version 15.
+- Worked from a temporary clone because Windows reported the OneDrive checkout as corrupted and unreadable.
