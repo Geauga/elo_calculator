@@ -52,3 +52,6 @@
 
 ## 2026-08-30 21:09
 - Renamed the "Edit Rules" button to "Settings" in the main UI and updated the dialog title from "Edit League Rules" to "League Settings" for clarity.
+
+## 2026-08-30 21:11
+- Built and packaged version 14 executable to `release/EloLeagueCalculator-v14-Windows-x64.zip`.
