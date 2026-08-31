@@ -55,3 +55,6 @@
 
 ## 2026-08-30 21:11
 - Built and packaged version 14 executable to `release/EloLeagueCalculator-v14-Windows-x64.zip`.
+
+## 2026-08-30 21:14
+- Updated `README.md` to clarify the global Settings menu vs. the league Settings button, and documented the activity log enhancements (horizontal scrolling, SB scores).

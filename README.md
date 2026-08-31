@@ -17,7 +17,7 @@ with adjustable rosters.
   remains the primary ranking key; equal Elo ratings are ordered by SB score.
 - New leagues use first-to-three rules: 3-2 applies 50%, 3-1 applies 75%, and
   3-0 applies 100% of the normal Elo change.
-- Edit Rules selects a separate match format for each league. First-to-N mode
+- The league Settings button selects a separate match format for each league. First-to-N mode
   sets the games needed to win and the Elo multiplier for every possible losing
   score. Custom-score mode accepts any whole-number result where the winner's
   score is higher.
@@ -25,7 +25,7 @@ with adjustable rosters.
   closest possible win applies 50%; intermediate margins scale proportionally.
   Either format can disable automatic Elo calculation while continuing to
   record match and game results.
-- The Settings button switches between persistent Windows-style light and dark
+- The global Settings menu switches between persistent Windows-style light and dark
   themes.
 - All app-owned prompts, confirmations, warnings, and management windows use
   the same theme, Segoe UI typography, spacing, control styles, centering, and
@@ -37,8 +37,8 @@ with adjustable rosters.
   toolbar. Each league has its own players, ratings, standings, and history.
 - An automatic backup is created before every saved edit. The Backups window
   also supports manual snapshots and restoring any of the newest 50 backups.
-- The Activity log tab keeps an append-only record of match entries, undo,
-  renames, resets, league management, theme changes, and backup actions.
+- The Activity log tab keeps an append-only record of match entries (including SB scores), undo,
+  renames, resets, league management, theme changes, and backup actions. It features a horizontal scrollbar to prevent truncation.
 
 ## Run
 
