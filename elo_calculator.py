@@ -1764,12 +1764,16 @@ class EloCalculatorApp:
             )
             winner = self.league.player(match.winner_id).name
             loser = self.league.player(match.loser_id).name
+            stats = self.league.statistics()
+            winner_sb = stats[match.winner_id].sb_score
+            loser_sb = stats[match.loser_id].sb_score
             self._commit_edit(
                 previous_state,
                 "match_recorded",
                 f"{winner} defeated {loser} "
                 f"{match.winner_games}-{loser_games}; transferred "
-                f"{match.rating_change:.4f} Elo.",
+                f"{match.rating_change:.4f} Elo "
+                f"(SB: {winner} {winner_sb:.1f}, {loser} {loser_sb:.1f}).",
                 current.id,
                 current.name,
             )
@@ -1802,11 +1806,15 @@ class EloCalculatorApp:
         current = self.collection.active
         try:
             self.league.undo_last_match()
+            stats = self.league.statistics()
+            winner_sb = stats[match.winner_id].sb_score
+            loser_sb = stats[match.loser_id].sb_score
             self._commit_edit(
                 previous_state,
                 "match_undone",
                 f"Undid {winner} {match.winner_games}-{match.loser_games} "
-                f"{loser}; restored the prior ratings.",
+                f"{loser}; restored the prior ratings "
+                f"(SB: {winner} {winner_sb:.1f}, {loser} {loser_sb:.1f}).",
                 current.id,
                 current.name,
             )
@@ -1814,7 +1822,6 @@ class EloCalculatorApp:
             self._restore_collection(previous_state)
             self._refresh_all()
             self._show_error("Match not undone", str(error), parent=self.root)
-            return
         self.status_var.set("The last match was undone and the ratings were restored.")
         self._refresh_all()
 
