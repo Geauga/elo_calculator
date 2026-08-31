@@ -1,4 +1,4 @@
-﻿"""Tkinter desktop interface for the twelve-player Elo calculator."""
+"""Tkinter desktop interface for the twelve-player Elo calculator."""
 
 from __future__ import annotations
 
@@ -659,7 +659,7 @@ class EloCalculatorApp:
             "player": ("Player", 150, "w"),
             "rating": ("Rating", 85, "e"),
             "sb_score": ("SB", 50, "e"),
-            "match_record": ("Match W-L", 80, "center"),
+            "match_record": ("Match W-D-L", 90, "center"),
             "match_pct": ("Match %", 70, "e"),
             "game_record": ("Game W-L", 80, "center"),
             "game_pct": ("Game %", 70, "e"),
@@ -698,7 +698,7 @@ class EloCalculatorApp:
         match_frame.grid(row=1, column=1, sticky="new")
         match_frame.columnconfigure(1, weight=1)
 
-        ttk.Label(match_frame, text="Winner").grid(
+        ttk.Label(match_frame, text="Player 1 (winner for a win)").grid(
             row=0, column=0, sticky="w", padx=(0, 8), pady=5
         )
         self.winner_combo = ttk.Combobox(
@@ -706,7 +706,7 @@ class EloCalculatorApp:
         )
         self.winner_combo.grid(row=0, column=1, sticky="ew", pady=5)
 
-        ttk.Label(match_frame, text="Loser").grid(
+        ttk.Label(match_frame, text="Player 2").grid(
             row=1, column=0, sticky="w", padx=(0, 8), pady=5
         )
         self.loser_combo = ttk.Combobox(
@@ -758,14 +758,19 @@ class EloCalculatorApp:
             row=3, column=0, columnspan=2, sticky="ew", pady=(10, 4)
         )
         actions.columnconfigure(0, weight=1)
+        actions.columnconfigure(1, weight=1)
         self.record_button = ttk.Button(
-            actions, text="Record match", command=self._record_match
+            actions, text="Record win", command=self._record_match
         )
         self.record_button.grid(row=0, column=0, sticky="ew", padx=(0, 6))
+        self.draw_button = ttk.Button(
+            actions, text="Record draw", command=self._record_draw
+        )
+        self.draw_button.grid(row=0, column=1, sticky="ew", padx=6)
         self.undo_button = ttk.Button(
             actions, text="Undo last", command=self._undo_last_match
         )
-        self.undo_button.grid(row=0, column=1, padx=(6, 0))
+        self.undo_button.grid(row=0, column=2, padx=(6, 0))
 
         ttk.Separator(match_frame).grid(
             row=4, column=0, columnspan=2, sticky="ew", pady=10
@@ -787,7 +792,9 @@ class EloCalculatorApp:
         activity_notebook.grid(row=2, column=1, sticky="nsew", pady=(12, 0))
         history_frame = ttk.Frame(activity_notebook, padding=8)
         log_frame = ttk.Frame(activity_notebook, padding=8)
+        graphs_frame = ttk.Frame(activity_notebook, padding=8)
         activity_notebook.add(history_frame, text="Match history")
+        activity_notebook.add(graphs_frame, text="Graphs")
         activity_notebook.add(log_frame, text="Activity log")
         history_frame.rowconfigure(0, weight=1)
         history_frame.columnconfigure(0, weight=1)
@@ -839,9 +846,116 @@ class EloCalculatorApp:
             xscrollcommand=log_scroll_x.set
         )
 
+        self._build_graphs_tab(graphs_frame)
+
         ttk.Label(outer, textvariable=self.status_var, anchor="w").grid(
             row=3, column=0, columnspan=2, sticky="ew", pady=(12, 0)
         )
+
+    def _build_graphs_tab(self, parent) -> None:
+        parent.rowconfigure(1, weight=1)
+        parent.columnconfigure(0, weight=1)
+        controls = ttk.Frame(parent)
+        controls.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        ttk.Label(controls, text="Player:").pack(side="left")
+        self.graph_player_combo = ttk.Combobox(
+            controls, state="readonly", width=15
+        )
+        self.graph_player_combo.pack(side="left", padx=(4, 16))
+        self.graph_player_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_graph())
+        self.graph_metric_var = tk.StringVar(value="elo")
+        for metric, label in (("elo", "Elo"), ("pct", "Win %"), ("sb", "SB Score")):
+            rb = ttk.Radiobutton(
+                controls,
+                text=label,
+                value=metric,
+                variable=self.graph_metric_var,
+                command=self._refresh_graph,
+            )
+            rb.pack(side="left", padx=4)
+        self.graph_canvas = tk.Canvas(parent, bg="white", highlightthickness=1, highlightbackground="#cccccc")
+        self.graph_canvas.grid(row=1, column=0, sticky="nsew")
+        self.graph_canvas.bind("<Configure>", lambda e: self._refresh_graph())
+
+    def _refresh_graph(self) -> None:
+        if not hasattr(self, "graph_canvas"): return
+        self.graph_canvas.delete("all")
+        width = self.graph_canvas.winfo_width()
+        height = self.graph_canvas.winfo_height()
+        if width < 50 or height < 50: return
+
+        player_name = self.graph_player_combo.get()
+        player_id = self.player_name_to_id.get(player_name)
+        if player_id is None: return
+
+        metric = self.graph_metric_var.get()
+        matches = self.league.matches
+        
+        y_values = []
+        if metric == "elo":
+            current_elo = 1500.0
+            y_values.append(current_elo)
+            for m in matches:
+                if m.winner_id == player_id:
+                    current_elo += m.rating_change
+                    y_values.append(current_elo)
+                elif m.loser_id == player_id:
+                    current_elo -= m.rating_change
+                    y_values.append(current_elo)
+        elif metric == "pct":
+            wins = 0
+            total = 0
+            y_values.append(0.0)
+            for m in matches:
+                if m.winner_id == player_id or m.loser_id == player_id:
+                    total += 1
+                    if m.winner_id == player_id:
+                        wins += 1
+                    y_values.append((wins / total) * 100)
+        elif metric == "sb":
+            mw = {p.id: 0 for p in self.league.players}
+            defeated = []
+            y_values.append(0.0)
+            for m in matches:
+                mw[m.winner_id] += 1
+                if m.winner_id == player_id:
+                    defeated.append(m.loser_id)
+                if m.winner_id == player_id or m.loser_id == player_id:
+                    sb = sum(mw[opp_id] for opp_id in defeated)
+                    y_values.append(sb)
+
+        if not y_values:
+            return
+
+        min_y = min(y_values)
+        max_y = max(y_values)
+        if min_y == max_y:
+            min_y -= 1
+            max_y += 1
+            
+        margin_x = 45
+        margin_y = 20
+        
+        self.graph_canvas.create_line(margin_x, height - margin_y, width, height - margin_y, fill="#cccccc")
+        self.graph_canvas.create_line(margin_x, 0, margin_x, height - margin_y, fill="#cccccc")
+        
+        for i in range(5):
+            y_pos = margin_y + i * (height - 2 * margin_y) / 4
+            val = max_y - i * (max_y - min_y) / 4
+            self.graph_canvas.create_line(margin_x, y_pos, width, y_pos, fill="#eeeeee", dash=(4, 4))
+            self.graph_canvas.create_text(margin_x - 5, y_pos, text=f"{val:.1f}", anchor="e", font=("Segoe UI", 8), fill="#666666")
+            
+        if len(y_values) == 1:
+            x = margin_x + (width - margin_x) / 2
+            y = margin_y + (max_y - y_values[0]) / (max_y - min_y) * (height - 2 * margin_y)
+            self.graph_canvas.create_oval(x-3, y-3, x+3, y+3, fill="#0078D7", outline="#0078D7")
+        else:
+            points = []
+            for i, val in enumerate(y_values):
+                x = margin_x + (i / (len(y_values) - 1)) * (width - margin_x - 10)
+                y = margin_y + (max_y - val) / (max_y - min_y) * (height - 2 * margin_y)
+                points.extend([x, y])
+            self.graph_canvas.create_line(points, fill="#0078D7", width=2)
 
     def _apply_theme(self, theme: str, save: bool = True) -> None:
         if theme not in THEME_PALETTES:
@@ -1661,6 +1775,12 @@ class EloCalculatorApp:
         self._refresh_standings()
         self._refresh_history()
         self._refresh_activity_log()
+        if hasattr(self, "graph_player_combo"):
+            self.graph_player_combo["values"] = names
+            if self.graph_player_combo.get() not in names and names:
+                self.graph_player_combo.set(names[0])
+            self._refresh_graph()
+
         self._update_preview()
         self.undo_button.configure(
             state="normal" if self.league.matches else "disabled"
@@ -1690,7 +1810,7 @@ class EloCalculatorApp:
                     player.name,
                     f"{player.rating:.2f}",
                     f"{stats.sb_score:.1f}",
-                    f"{stats.matches_won}-{stats.matches_lost}",
+                    f"{stats.matches_won}-{stats.matches_drawn}-{stats.matches_lost}",
                     f"{stats.match_win_percentage:.1f}%",
                     f"{stats.games_won}-{stats.games_lost}",
                     f"{stats.game_win_percentage:.1f}%",
@@ -1708,13 +1828,23 @@ class EloCalculatorApp:
                 timestamp = datetime.fromisoformat(match.timestamp).strftime("%b %d %H:%M")
             except ValueError:
                 timestamp = match.timestamp
+            result = (
+                f"{winner} drew with {loser}"
+                if match.is_draw
+                else f"{winner} {match.winner_games}â€“{match.loser_games} {loser}"
+            )
+            elo_change = (
+                f"{winner} {match.rating_change:+.2f}"
+                if match.is_draw
+                else f"Â±{match.rating_change:.2f}"
+            )
             self.history.insert(
                 "",
                 "end",
                 values=(
                     timestamp,
-                    f"{winner} {match.winner_games}â€“{match.loser_games} {loser}",
-                    f"Â±{match.rating_change:.2f}",
+                    result,
+                    elo_change,
                 ),
             )
 
@@ -1731,6 +1861,15 @@ class EloCalculatorApp:
         self.league.win_condition.get_multiplier(loser_games, winner_games)
         return winner_id, loser_id, winner_games, loser_games
 
+    def _selected_players(self) -> tuple[int, int]:
+        player_one_id = self.player_name_to_id.get(self.winner_var.get())
+        player_two_id = self.player_name_to_id.get(self.loser_var.get())
+        if player_one_id is None or player_two_id is None:
+            raise ValueError("Select both players.")
+        if player_one_id == player_two_id:
+            raise ValueError("The two players must be different.")
+        return player_one_id, player_two_id
+
     def _update_preview(self) -> None:
         try:
             winner_id, loser_id, winner_games, loser_games = self._selected_match()
@@ -1742,6 +1881,12 @@ class EloCalculatorApp:
         except ValueError as error:
             self.preview_var.set(str(error))
             self.record_button.configure(state="disabled")
+            try:
+                self._selected_players()
+            except ValueError:
+                self.draw_button.configure(state="disabled")
+            else:
+                self.draw_button.configure(state="normal")
             return
 
         self.preview_var.set(
@@ -1753,6 +1898,7 @@ class EloCalculatorApp:
             f"{loser.name} {preview['loser_after']:.2f}"
         )
         self.record_button.configure(state="normal")
+        self.draw_button.configure(state="normal")
 
     def _record_match(self) -> None:
         previous_state = self.collection.to_dict()
@@ -1790,15 +1936,52 @@ class EloCalculatorApp:
         )
         self._refresh_all()
 
+    def _record_draw(self) -> None:
+        previous_state = self.collection.to_dict()
+        current = self.collection.active
+        try:
+            player_one_id, player_two_id = self._selected_players()
+            match = self.league.record_draw(player_one_id, player_two_id)
+            player_one = self.league.player(match.winner_id).name
+            player_two = self.league.player(match.loser_id).name
+            stats = self.league.statistics()
+            self._commit_edit(
+                previous_state,
+                "draw_recorded",
+                f"{player_one} drew with {player_two}; "
+                f"Elo changes: {player_one} {match.rating_change:+.4f}, "
+                f"{player_two} {-match.rating_change:+.4f} "
+                f"(SB: {player_one} {stats[match.winner_id].sb_score:.1f}, "
+                f"{player_two} {stats[match.loser_id].sb_score:.1f}).",
+                current.id,
+                current.name,
+            )
+        except (OSError, ValueError) as error:
+            self._restore_collection(previous_state)
+            self._refresh_all()
+            self._show_error("Draw not recorded", str(error), parent=self.root)
+            return
+
+        self.status_var.set(
+            f"Saved: {player_one} drew with {player_two}; "
+            f"Elo {match.rating_change:+.2f} / {-match.rating_change:+.2f}"
+        )
+        self._refresh_all()
+
     def _undo_last_match(self) -> None:
         if not self.league.matches:
             return
         match = self.league.matches[-1]
         winner = self.league.player(match.winner_id).name
         loser = self.league.player(match.loser_id).name
+        result = (
+            f"{winner} drew with {loser}"
+            if match.is_draw
+            else f"{winner} {match.winner_games}â€“{match.loser_games} {loser}"
+        )
         if not self._ask_yes_no(
             "Undo last match",
-            f"Undo {winner} {match.winner_games}â€“{match.loser_games} {loser}?",
+            f"Undo {result}?",
             parent=self.root,
         ):
             return
@@ -1812,8 +1995,7 @@ class EloCalculatorApp:
             self._commit_edit(
                 previous_state,
                 "match_undone",
-                f"Undid {winner} {match.winner_games}-{match.loser_games} "
-                f"{loser}; restored the prior ratings "
+                f"Undid {result}; restored the prior ratings "
                 f"(SB: {winner} {winner_sb:.1f}, {loser} {loser_sb:.1f}).",
                 current.id,
                 current.name,
@@ -1931,7 +2113,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-08-26 17:00 America/New_York.
-# Changes: Preserve hidden custom-mode settings, use pointer-safe Windows handles,
-# and restore complete refresh behavior with the SB standings column.
+# Generated: 2026-08-31 19:47 America/New_York.
+# Changes: Lines 662-773 and 1813-2008 add W-D-L display, a Record draw action,
+# draw history/activity details, validation, status text, and draw-aware undo.
 
