@@ -49,3 +49,6 @@
 ## 2026-08-30 21:02
 - Updated `elo_calculator.py` to append SB scores to the details of "match_recorded" and "match_undone" activity log events.
 - Built and packaged version 13 executable (due to v12 being in use) to `release/EloLeagueCalculator-v13-Windows-x64.zip`.
+
+## 2026-08-30 21:09
+- Renamed the "Edit Rules" button to "Settings" in the main UI and updated the dialog title from "Edit League Rules" to "League Settings" for clarity.
