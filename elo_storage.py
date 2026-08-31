@@ -144,6 +144,8 @@ class LeagueCollection:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "LeagueCollection":
+        if not isinstance(data, dict):
+            raise ValueError("The league database must contain a JSON object.")
         schema_version = data.get("schema_version")
         if schema_version == 1:
             # Upgrade the original single-league file without losing any data.
@@ -336,3 +338,11 @@ class AuditLog:
             if isinstance(entry, dict):
                 entries.append(entry)
         return entries
+
+
+# Purpose: Multiple-league persistence, backups, and append-only audit logging.
+# Upstream: elo_model.py supplies validated league state and serialization.
+# Upstream purpose: Model league rules, matches, ratings, and migrations.
+# Environment: Python 3.10+ on Windows with platform-independent storage tests.
+# Generated: 2026-08-31 19:44 America/New_York.
+# Changes: Reject non-object collection input with the public ValueError contract.

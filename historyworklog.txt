@@ -64,3 +64,8 @@
 - Removed the duplicate `_build_ui` method and hidden UTF-8 BOM; added overflow regression coverage.
 - Rebuilt and smoke-tested the current Windows executable, then packaged version 15.
 - Worked from a temporary clone because Windows reported the OneDrive checkout as corrupted and unreadable.
+
+## 2026-08-31 19:50
+- Made failed roster replay atomic and rejected invalid expected-score ratings and collection shapes.
+- Guarded out-of-range match targets during live League Settings updates.
+- Added three regression tests, rebuilt the tracked executable, and verified its isolated launch.

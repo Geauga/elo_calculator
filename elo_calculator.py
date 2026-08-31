@@ -14,6 +14,7 @@ from elo_model import (
     INITIAL_RATING,
     MAX_CUSTOM_SCORE,
     MAX_ELO_DECIMAL_PLACES,
+    MAX_GAMES_TO_WIN,
     MAX_K_FACTOR,
     MAX_PLAYER_COUNT,
     MIN_K_FACTOR,
@@ -1190,7 +1191,11 @@ class EloCalculatorApp:
         )
         games_var = tk.IntVar(value=self.league.win_condition.games_to_win)
         ttk.Spinbox(
-            fixed_frame, from_=1, to=100, textvariable=games_var, width=6
+            fixed_frame,
+            from_=1,
+            to=MAX_GAMES_TO_WIN,
+            textvariable=games_var,
+            width=6,
         ).grid(row=0, column=1, pady=(0, 5), sticky="w")
 
         elo_frame = ttk.LabelFrame(dialog, text="Elo settings", padding=10)
@@ -1252,7 +1257,7 @@ class EloCalculatorApp:
         scrollbar.grid(row=0, column=1, sticky="ns")
 
         mult_vars = {}
-        for i in range(100):
+        for i in range(MAX_GAMES_TO_WIN):
             mult_vars[i] = tk.StringVar(value=str(self.league.win_condition.score_multipliers.get(i, 1.0)))
 
         def update_mults(*_args):
@@ -1261,6 +1266,8 @@ class EloCalculatorApp:
             try:
                 g = games_var.get()
             except tk.TclError:
+                return
+            if not 1 <= g <= MAX_GAMES_TO_WIN:
                 return
             for i in range(g):
                 ttk.Label(scrollable_frame, text=f"Loser scores {i}:").grid(row=i, column=0, sticky="w", pady=2)
@@ -1302,9 +1309,9 @@ class EloCalculatorApp:
                     )
                 else:
                     games_to_win = games_var.get()
-                    if not 1 <= games_to_win <= 100:
+                    if not 1 <= games_to_win <= MAX_GAMES_TO_WIN:
                         raise ValueError(
-                            "Games to win must be between 1 and 100."
+                            f"Games to win must be between 1 and {MAX_GAMES_TO_WIN}."
                         )
                     new_mults = {
                         score: float(mult_vars[score].get())
@@ -1918,6 +1925,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-08-30 21:29 America/New_York.
-# Changes: Removed a shadowed duplicate UI builder; retained per-league K-factor,
-# rounding precision, Settings naming, and SB activity details.
+# Generated: 2026-08-31 19:44 America/New_York.
+# Changes: Guard out-of-range match targets during live Settings updates; retain
+# K-factor, rounding precision, Settings naming, and SB activity details.

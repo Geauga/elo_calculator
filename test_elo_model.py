@@ -35,6 +35,21 @@ class EloModelTests(unittest.TestCase):
     def test_equal_players_have_even_expectation(self) -> None:
         self.assertAlmostEqual(expected_score(1500.0, 1500.0), 0.5)
 
+    def test_expected_score_rejects_nonfinite_and_non_numeric_ratings(self) -> None:
+        invalid_ratings = (
+            float("nan"),
+            float("inf"),
+            float("-inf"),
+            True,
+            "1500",
+        )
+        for invalid_rating in invalid_ratings:
+            with self.subTest(invalid_rating=invalid_rating):
+                with self.assertRaisesRegex(ValueError, "Ratings must be finite"):
+                    expected_score(invalid_rating, 1500.0)
+                with self.assertRaisesRegex(ValueError, "Ratings must be finite"):
+                    expected_score(1500.0, invalid_rating)
+
     def test_score_margins_scale_equal_rating_change(self) -> None:
         self.assertAlmostEqual(rating_change(1500.0, 1500.0, 0.50), 8.0)
         self.assertAlmostEqual(rating_change(1500.0, 1500.0, 0.75), 12.0)
@@ -478,6 +493,12 @@ class EloModelTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             LeagueCollection.from_dict(data)
 
+    def test_non_object_collection_is_rejected_with_value_error(self) -> None:
+        for malformed in (None, [], "not a database"):
+            with self.subTest(malformed=malformed):
+                with self.assertRaisesRegex(ValueError, "JSON object"):
+                    LeagueCollection.from_dict(malformed)
+
     def test_navigation_commit_does_not_create_recovery_backup(self) -> None:
         app = object.__new__(EloCalculatorApp)
         app.collection = LeagueCollection.new()
@@ -607,6 +628,17 @@ class EloModelTests(unittest.TestCase):
         self.assertEqual(league.player(0).rating, expected_ratings[0])
         self.assertEqual(league.player(1).rating, expected_ratings[1])
 
+    def test_failed_roster_replay_does_not_partially_mutate_league(self) -> None:
+        league = League.new(3)
+        league.record_match(0, 1, 0)
+        league.matches[0].multiplier = 1e308
+        state_before = league.to_dict()
+
+        with self.assertRaisesRegex(ValueError, "Rating change must be finite"):
+            league.resize_players(2)
+
+        self.assertEqual(league.to_dict(), state_before)
+
     def test_adjustable_player_count_persists_per_league(self) -> None:
         collection = LeagueCollection.new()
         collection.active.league.resize_players(8)
@@ -636,5 +668,5 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-08-30 21:29 America/New_York.
-# Changes: Added overflow regression coverage to the K-factor and replay suite.
+# Generated: 2026-08-31 19:44 America/New_York.
+# Changes: Added invalid-rating, collection-shape, and replay-atomicity coverage.
