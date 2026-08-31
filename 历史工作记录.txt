@@ -62,3 +62,10 @@
 - 具体动作：为了提高应用清晰度，将 `elo_calculator.py` 中的主界面 "Edit Rules" 按钮文本修改为 "Settings"，并将其对应的对话框标题由 "Edit League Rules" 修改为 "League Settings"。
 - 修改文件：`elo_calculator.py`；`historyworklog.txt`；本文件。
 - 测试或验证结果：通过 Python 编译检查，重命名生效。
+
+## 2026-08-30 21:11:00 -04:00
+
+- 用户 Prompt 摘要：build。
+- 具体动作：通过 PyInstaller 重新构建了可执行程序以包含 Settings 命名的更改，并将新生成的可执行文件打包至 `release/EloLeagueCalculator-v14-Windows-x64.zip`。
+- 修改文件：`historyworklog.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v14-Windows-x64/README.txt`；`release/EloLeagueCalculator-v14-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v14-Windows-x64.zip`；本文件。
+- 测试或验证结果：PyInstaller 构建并打包 v14 成功。
