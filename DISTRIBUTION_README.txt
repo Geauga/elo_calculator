@@ -19,6 +19,11 @@ Rules
   0.01 through 1000 and zero through six decimal places.
 - New leagues use first-to-three rules: 3-2 applies 50%, 3-1 applies 75%, and
   3-0 applies 100% of the normal Elo change.
+- The Simulator button runs read-only Monte Carlo single round-robin seasons
+  for the active First-to-N league. It uses current Elo for game probabilities
+  and the league's Elo settings for simulated rating changes, then reports
+  title probability, average rank, and average match and game records. An
+  optional random seed makes results reproducible.
 - The league Settings button selects first-to-N or custom scores separately for every league.
   First-to-N lets you set the target and each losing-score multiplier. Custom
   scores accepts any whole-number result where the winner's score is higher.
@@ -49,4 +54,4 @@ players at 1500.00 without changing earlier ratings or match history.
 Existing single-league data is migrated to League 1 automatically.
 
 SHA-256 for EloLeagueCalculator.exe:
-14F7913CCD793F23E05A71ED3FD86060D7B27889F5EAEECD7325AC80273913B4
+C74EE2F3F87811C3D3C507A83596521558AD0EDEC0161AFE8D36F3CF2EC495C0

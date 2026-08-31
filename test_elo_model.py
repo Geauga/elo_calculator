@@ -28,6 +28,11 @@ from elo_model import (
     expected_score,
     rating_change,
 )
+from elo_simulator import (
+    MAX_SIMULATIONS,
+    simulate_first_to_n_league,
+    simulation_limit,
+)
 from elo_storage import AuditLog, BackupManager, LeagueCollection
 
 
@@ -54,6 +59,50 @@ class EloModelTests(unittest.TestCase):
         self.assertAlmostEqual(rating_change(1500.0, 1500.0, 0.50), 8.0)
         self.assertAlmostEqual(rating_change(1500.0, 1500.0, 0.75), 12.0)
         self.assertAlmostEqual(rating_change(1500.0, 1500.0, 1.0), 16.0)
+
+    def test_first_to_n_simulator_is_seeded_and_read_only(self) -> None:
+        league = League.new(4)
+        for player, rating in zip(
+            league.players, (2000.0, 1600.0, 1400.0, 1000.0)
+        ):
+            player.rating = rating
+        original = league.to_dict()
+
+        first = simulate_first_to_n_league(league, 500, seed=6166)
+        second = simulate_first_to_n_league(league, 500, seed=6166)
+
+        self.assertEqual(first, second)
+        self.assertEqual(league.to_dict(), original)
+        self.assertEqual(first.games_to_win, 3)
+        self.assertEqual(first.matches_per_simulation, 6)
+        self.assertAlmostEqual(
+            sum(player.title_probability for player in first.players), 100.0
+        )
+        self.assertAlmostEqual(
+            sum(player.average_matches_won for player in first.players), 6.0
+        )
+        for player in first.players:
+            self.assertAlmostEqual(
+                player.average_matches_won + player.average_matches_lost,
+                3.0,
+            )
+        by_id = {player.player_id: player for player in first.players}
+        self.assertGreater(
+            by_id[0].title_probability, by_id[3].title_probability
+        )
+
+    def test_first_to_n_simulator_validates_format_and_workload(self) -> None:
+        league = League.new(2)
+        self.assertEqual(simulation_limit(2), MAX_SIMULATIONS)
+        self.assertLess(simulation_limit(64, 100), 100)
+        for simulations in (0, MAX_SIMULATIONS + 1, True):
+            with self.subTest(simulations=simulations):
+                with self.assertRaises(ValueError):
+                    simulate_first_to_n_league(league, simulations)
+
+        league.win_condition = WinCondition(score_mode=SCORE_MODE_CUSTOM)
+        with self.assertRaises(ValueError):
+            simulate_first_to_n_league(league, 10)
 
     def test_custom_k_factor_and_rounding_control_transfer(self) -> None:
         self.assertEqual(
@@ -668,5 +717,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-08-31 19:44 America/New_York.
-# Changes: Added invalid-rating, collection-shape, and replay-atomicity coverage.
+# Generated: 2026-08-31 19:48 America/New_York.
+# Changes: Added First-to-N simulation tests while retaining invalid-rating,
+# collection-shape, overflow, and replay-atomicity coverage.

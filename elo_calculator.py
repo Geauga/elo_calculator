@@ -25,6 +25,7 @@ from elo_model import (
     validate_elo_decimal_places,
     validate_k_factor,
 )
+from elo_simulator import simulate_first_to_n_league, simulation_limit
 from elo_storage import AuditLog, BackupManager, LeagueCollection
 
 
@@ -565,6 +566,9 @@ class EloCalculatorApp:
         ttk.Button(league_tools, text="Settings", command=self._edit_rules).grid(
             row=0, column=6, padx=3
         )
+        ttk.Button(
+            league_tools, text="Simulator", command=self._open_simulator
+        ).grid(row=0, column=7, padx=3)
 
         standings_frame = ttk.LabelFrame(outer, text="Standings", padding=10)
         standings_frame.grid(
@@ -1140,6 +1144,180 @@ class EloCalculatorApp:
             return
         self.status_var.set(f"Renamed league to {new_name}.")
         self._refresh_all()
+
+    def _open_simulator(self) -> None:
+        if self.league.win_condition.score_mode != SCORE_MODE_FIXED:
+            self._show_info(
+                "League simulator",
+                "The simulator supports First to N leagues only. Change this "
+                "league's match format in League Settings before simulating.",
+                parent=self.root,
+            )
+            return
+
+        maximum = simulation_limit(
+            len(self.league.players), self.league.win_condition.games_to_win
+        )
+        dialog = tk.Toplevel(self.root)
+        dialog.title("First-to-N League Simulator")
+        dialog.geometry("850x610")
+        dialog.minsize(700, 500)
+        self._configure_dialog(dialog, self.root, resizable=(True, True))
+        dialog.columnconfigure(0, weight=1)
+        dialog.rowconfigure(2, weight=1)
+
+        ttk.Label(
+            dialog,
+            text=(
+                f"Simulate a single round-robin where every player meets once "
+                f"in First to {self.league.win_condition.games_to_win}. Game "
+                "probabilities use current Elo. Simulated Elo changes use this "
+                "league's K-factor, rounding, and score multipliers. Saved "
+                "ratings and results are never changed."
+            ),
+            wraplength=790,
+            justify="left",
+        ).grid(row=0, column=0, padx=14, pady=(14, 8), sticky="ew")
+
+        controls = ttk.Frame(dialog)
+        controls.grid(row=1, column=0, padx=14, pady=(0, 10), sticky="ew")
+        controls.columnconfigure(5, weight=1)
+        ttk.Label(controls, text="Simulations:").grid(
+            row=0, column=0, padx=(0, 5)
+        )
+        simulations_var = tk.IntVar(value=min(2_000, maximum))
+        ttk.Spinbox(
+            controls,
+            from_=1,
+            to=maximum,
+            textvariable=simulations_var,
+            width=9,
+        ).grid(row=0, column=1, padx=(0, 12))
+        ttk.Label(controls, text=f"Maximum: {maximum:,}").grid(
+            row=0, column=2, padx=(0, 16)
+        )
+        ttk.Label(controls, text="Random seed (optional):").grid(
+            row=0, column=3, padx=(0, 5)
+        )
+        seed_var = tk.StringVar()
+        ttk.Entry(controls, textvariable=seed_var, width=12).grid(
+            row=0, column=4, padx=(0, 12)
+        )
+        status_var = tk.StringVar(value="Choose the run size, then select Simulate.")
+        ttk.Label(controls, textvariable=status_var).grid(
+            row=1, column=0, columnspan=6, pady=(8, 0), sticky="w"
+        )
+
+        results_frame = ttk.Frame(dialog)
+        results_frame.grid(row=2, column=0, padx=14, sticky="nsew")
+        results_frame.rowconfigure(0, weight=1)
+        results_frame.columnconfigure(0, weight=1)
+        results_tree = ttk.Treeview(
+            results_frame,
+            columns=(
+                "rank",
+                "player",
+                "title_probability",
+                "average_rank",
+                "average_match_record",
+                "average_game_record",
+            ),
+            show="headings",
+        )
+        for column, label, width, anchor in (
+            ("rank", "#", 45, "center"),
+            ("player", "Player", 180, "w"),
+            ("title_probability", "Title %", 85, "e"),
+            ("average_rank", "Avg Rank", 85, "e"),
+            ("average_match_record", "Avg Match W-L", 130, "center"),
+            ("average_game_record", "Avg Game W-L", 130, "center"),
+        ):
+            results_tree.heading(column, text=label)
+            results_tree.column(column, width=width, anchor=anchor)
+        results_tree.grid(row=0, column=0, sticky="nsew")
+        vertical_scroll = ttk.Scrollbar(
+            results_frame, orient="vertical", command=results_tree.yview
+        )
+        vertical_scroll.grid(row=0, column=1, sticky="ns")
+        horizontal_scroll = ttk.Scrollbar(
+            results_frame, orient="horizontal", command=results_tree.xview
+        )
+        horizontal_scroll.grid(row=1, column=0, sticky="ew")
+        results_tree.configure(
+            yscrollcommand=vertical_scroll.set,
+            xscrollcommand=horizontal_scroll.set,
+        )
+
+        buttons = ttk.Frame(dialog)
+        buttons.grid(row=3, column=0, padx=14, pady=14, sticky="e")
+
+        def run_simulation() -> None:
+            try:
+                simulations = simulations_var.get()
+                seed_text = seed_var.get().strip()
+                seed = int(seed_text) if seed_text else None
+            except (ValueError, tk.TclError):
+                self._show_error(
+                    "Invalid simulator input",
+                    "Simulations and random seed must be whole numbers.",
+                    parent=dialog,
+                )
+                return
+
+            run_button.configure(state="disabled")
+            dialog.configure(cursor="wait")
+            status_var.set(
+                f"Running {simulations:,} simulated round-robin seasons..."
+            )
+            dialog.update_idletasks()
+            try:
+                result = simulate_first_to_n_league(
+                    self.league, simulations, seed
+                )
+            except ValueError as error:
+                self._show_error(
+                    "Simulation not run", str(error), parent=dialog
+                )
+                return
+            finally:
+                dialog.configure(cursor="")
+                run_button.configure(state="normal")
+
+            results_tree.delete(*results_tree.get_children())
+            for rank, player_result in enumerate(result.players, start=1):
+                results_tree.insert(
+                    "",
+                    "end",
+                    values=(
+                        rank,
+                        player_result.name,
+                        f"{player_result.title_probability:.1f}%",
+                        f"{player_result.average_rank:.2f}",
+                        f"{player_result.average_matches_won:.1f}-"
+                        f"{player_result.average_matches_lost:.1f}",
+                        f"{player_result.average_games_won:.1f}-"
+                        f"{player_result.average_games_lost:.1f}",
+                    ),
+                )
+            status_var.set(
+                f"Completed {result.simulations:,} seasons; "
+                f"{result.matches_per_simulation} matches per season."
+            )
+            self.status_var.set(
+                f"Completed a {result.simulations:,}-season simulation for "
+                f"{self.collection.active.name}."
+            )
+
+        run_button = ttk.Button(
+            buttons, text="Simulate", command=run_simulation
+        )
+        run_button.pack(side="left", padx=(0, 8))
+        ttk.Button(buttons, text="Close", command=dialog.destroy).pack(
+            side="left"
+        )
+        dialog.bind("<Return>", lambda _event: run_simulation())
+        dialog.bind("<Escape>", lambda _event: dialog.destroy())
+        self._center_dialog(dialog, self.root)
 
     def _edit_rules(self) -> None:
         dialog = tk.Toplevel(self.root)
@@ -1925,6 +2103,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-08-31 19:44 America/New_York.
-# Changes: Guard out-of-range match targets during live Settings updates; retain
-# K-factor, rounding precision, Settings naming, and SB activity details.
+# Generated: 2026-08-31 19:48 America/New_York.
+# Changes: Added the First-to-N simulator while retaining range validation,
+# transactional replay, customizable Elo settings, and SB activity details.
