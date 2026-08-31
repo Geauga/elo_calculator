@@ -84,3 +84,11 @@
 - Modified files: `elo_model.py`; `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; append-only update to `历史工作记录.txt`.
 - Tests and verification: All 42 unittest cases passed before and after rebasing onto the newer remote Settings/SB commits; the League Settings GUI smoke check found K-factor, Elo decimal-place, and Save controls; the final merged executable remained running during a three-second isolated launch test; executable SHA-256 is `8AE5DDD03B3ABA2401A08176D124550FAAEF5D7147F7F247E51DA03E80039836`. The first PyInstaller attempt encountered a locked stale `build/EloLeagueCalculator/localpycs` directory, so successful builds used fresh isolated directories; temporary build directories were removed, and only intended generated artifacts remain modified.
 - GitHub Timeline: Not committed or pushed yet. A focused feature/build commit and push to `origin/main` will follow this record.
+
+## 2026-08-30 21:26:00 -04:00
+
+- User Prompt summary: Confirm completion of the customizable K-factor and Elo-rounding GitHub update.
+- Actions: Rebased the feature onto concurrent remote commits for SB activity details, Settings naming, v14 packaging, and README improvements; resolved conflicts by preserving all concurrent features; repaired corrupted dash and plus/minus characters from the concurrent source; rebuilt and launch-tested the merged executable; pushed the feature commit.
+- Modified files: Append-only update to `历史工作记录.txt`; feature commit `a29d403` contains the seven implementation, test, documentation, executable, and work-log files recorded above.
+- Tests and verification: 42/42 unittest cases passed after integration; the final merged executable passed the isolated launch test; `git push origin main` advanced the remote from `c5b89db` to `a29d403`.
+- GitHub Timeline: Feature commit `a29d403` has been pushed to `origin/main`. This final confirmation record will be committed and pushed as a focused log-only follow-up.
