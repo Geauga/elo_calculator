@@ -148,6 +148,13 @@ def validate_elo_decimal_places(decimal_places: int | None) -> int | None:
 
 def expected_score(rating: float, opponent_rating: float) -> float:
     """Return the standard Elo expected score for one player."""
+    if any(
+        not isinstance(value, (int, float))
+        or isinstance(value, bool)
+        or not math.isfinite(value)
+        for value in (rating, opponent_rating)
+    ):
+        raise ValueError("Ratings must be finite numbers.")
     exponent = max(-10.0, min(10.0, (opponent_rating - rating) / 400.0))
     return 1.0 / (1.0 + (10.0**exponent))
 
@@ -373,21 +380,23 @@ class League:
             if match.winner_id not in removed_ids and match.loser_id not in removed_ids
         ]
         removed_match_count = len(self.matches) - len(retained_matches)
-        self.players = self.players[:player_count]
-
         # Dropping a match changes the inputs to later Elo calculations. Replay
         # retained results in their original order so the remaining standings
-        # are mathematically consistent rather than carrying ghost Elo.
-        for player in self.players:
-            player.rating = INITIAL_RATING
+        # are mathematically consistent rather than carrying ghost Elo. Keep
+        # replay state local so a validation failure cannot partially mutate
+        # the roster, ratings, or history.
+        retained_players = self.players[:player_count]
+        replayed_ratings = {
+            player.id: INITIAL_RATING for player in retained_players
+        }
         rebuilt_matches: list[Match] = []
         for old_match in retained_matches:
-            winner = self.player(old_match.winner_id)
-            loser = self.player(old_match.loser_id)
+            winner_rating = replayed_ratings[old_match.winner_id]
+            loser_rating = replayed_ratings[old_match.loser_id]
             change = (
                 rating_change(
-                    winner.rating,
-                    loser.rating,
+                    winner_rating,
+                    loser_rating,
                     old_match.multiplier,
                     old_match.k_factor,
                     old_match.elo_decimal_places,
@@ -395,6 +404,10 @@ class League:
                 if old_match.rated
                 else 0.0
             )
+            winner_after = winner_rating + change
+            loser_after = loser_rating - change
+            if not math.isfinite(winner_after) or not math.isfinite(loser_after):
+                raise ValueError("Resulting ratings must be finite.")
             rebuilt_matches.append(
                 Match(
                     timestamp=old_match.timestamp,
@@ -402,8 +415,8 @@ class League:
                     loser_id=old_match.loser_id,
                     loser_games=old_match.loser_games,
                     rating_change=change,
-                    winner_rating_before=winner.rating,
-                    loser_rating_before=loser.rating,
+                    winner_rating_before=winner_rating,
+                    loser_rating_before=loser_rating,
                     multiplier=old_match.multiplier,
                     winner_games=old_match.winner_games,
                     rated=old_match.rated,
@@ -411,8 +424,11 @@ class League:
                     elo_decimal_places=old_match.elo_decimal_places,
                 )
             )
-            winner.rating += change
-            loser.rating -= change
+            replayed_ratings[old_match.winner_id] = winner_after
+            replayed_ratings[old_match.loser_id] = loser_after
+        self.players = retained_players
+        for player in self.players:
+            player.rating = replayed_ratings[player.id]
         self.matches = rebuilt_matches
         return {
             "added": [],
@@ -660,7 +676,7 @@ class League:
 # Upstream: UI and storage layers provide league configuration and saved JSON data.
 # Upstream purpose: Collect user-entered results and restore persistent league state.
 # Environment: Python 3.10+ on Windows, with platform-independent model tests.
-# Generated: 2026-08-30 21:29 America/New_York.
+# Generated: 2026-08-31 19:44 America/New_York.
 # Changes: Match validation rejects persisted scores above MAX_CUSTOM_SCORE; SB
 # statistics are retained; per-league K-factor and Elo rounding are persisted,
-# validated, and recorded per match; nonfinite transfers are rejected safely.
+# validated and recorded per match; invalid ratings and failed replay are safe.

@@ -108,3 +108,11 @@
 - Modified files: Append-only update to this file; implementation and release files are contained in commit `5d22cea`.
 - Tests and verification: GitHub push advanced remote main from `c15a3d1` to `5d22cea`; no force push or history rewrite was used. All validation and hashes remain those recorded in the preceding 21:32 entry.
 - GitHub Timeline: Commit `5d22cea` is pushed to `origin/main`. This post-push confirmation entry will be committed and pushed immediately as a focused log-only follow-up. The official OneDrive checkout remains corrupted and unreadable.
+
+## 2026-08-31 19:50:00 -04:00
+
+- User Prompt summary: Review the code and commit the fixes.
+- Actions: Reviewed the latest synchronized `origin/main` from temporary local commit `8a51d06` because the official OneDrive checkout remains corrupted; made roster reduction replay transactional so an invalid retained match cannot partially shrink or reset the league; rejected nonfinite and nonnumeric inputs in `expected_score`; made `LeagueCollection.from_dict` return its documented `ValueError` for non-object input; guarded the live League Settings multiplier editor against typed match targets outside 1–100; added regression tests; rebuilt the tracked Windows executable and updated its distribution checksum.
+- Modified files: `elo_model.py`; `elo_storage.py`; `elo_calculator.py`; `test_elo_model.py`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; append-only update to this file.
+- Tests and verification: All 46 unittest cases passed; direct UTF-8 source compilation passed; `git diff --check` passed; PyInstaller 6.22.0 included 918 GUI runtime entries and `pyi_rth__tkinter.py`; the rebuilt executable remained running during a five-second isolated `%LOCALAPPDATA%` launch test; executable SHA-256 is `14F7913CCD793F23E05A71ED3FD86060D7B27889F5EAEECD7325AC80273913B4`.
+- GitHub Timeline: Not committed at the time of this entry. The user authorized a local commit but did not request a push; a focused commit will follow and remain unpushed. Temporary PyInstaller inputs and generated pycache will not be committed. The official `C:\Users\danie\OneDrive\Documents\ChatGPT\elo` checkout remains corrupted and unreadable.
