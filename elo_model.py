@@ -16,7 +16,7 @@ PLAYER_COUNT = DEFAULT_PLAYER_COUNT
 LEGACY_PLAYER_COUNT = 8
 MIN_PLAYER_COUNT = 2
 MAX_PLAYER_COUNT = 64
-LEAGUE_SCHEMA_VERSION = 5
+LEAGUE_SCHEMA_VERSION = 6
 INITIAL_RATING = 1500.0
 K_FACTOR = 32.0
 SCORE_MULTIPLIERS = {0: 1.0, 1: 0.75, 2: 0.50}
@@ -157,11 +157,13 @@ class Match:
     multiplier: float = 0.0
     winner_games: int = 3
     rated: bool = True
+    is_draw: bool = False
 
 
 @dataclass
 class PlayerStatistics:
     matches_won: int = 0
+    matches_drawn: int = 0
     matches_lost: int = 0
     games_won: int = 0
     games_lost: int = 0
@@ -169,8 +171,9 @@ class PlayerStatistics:
 
     @property
     def match_win_percentage(self) -> float:
-        total = self.matches_won + self.matches_lost
-        return 100.0 * self.matches_won / total if total else 0.0
+        total = self.matches_won + self.matches_drawn + self.matches_lost
+        points = self.matches_won + 0.5 * self.matches_drawn
+        return 100.0 * points / total if total else 0.0
 
     @property
     def game_win_percentage(self) -> float:
@@ -258,6 +261,45 @@ class League:
         self.matches.append(match)
         return match
 
+    def preview_draw(self, player_one_id: int, player_two_id: int) -> dict[str, float]:
+        if player_one_id == player_two_id:
+            raise ValueError("The two players must be different.")
+        player_one = self.player(player_one_id)
+        player_two = self.player(player_two_id)
+        player_one_expected = expected_score(player_one.rating, player_two.rating)
+        change = (
+            K_FACTOR * (0.5 - player_one_expected) if self.calculate_elo else 0.0
+        )
+        return {
+            "player_one_expected": player_one_expected,
+            "player_two_expected": 1.0 - player_one_expected,
+            "change": change,
+            "player_one_after": player_one.rating + change,
+            "player_two_after": player_two.rating - change,
+        }
+
+    def record_draw(self, player_one_id: int, player_two_id: int) -> Match:
+        preview = self.preview_draw(player_one_id, player_two_id)
+        player_one = self.player(player_one_id)
+        player_two = self.player(player_two_id)
+        match = Match(
+            timestamp=datetime.now().astimezone().isoformat(timespec="seconds"),
+            winner_id=player_one_id,
+            loser_id=player_two_id,
+            loser_games=0,
+            rating_change=preview["change"],
+            winner_rating_before=player_one.rating,
+            loser_rating_before=player_two.rating,
+            multiplier=1.0,
+            winner_games=0,
+            rated=self.calculate_elo,
+            is_draw=True,
+        )
+        player_one.rating = preview["player_one_after"]
+        player_two.rating = preview["player_two_after"]
+        self.matches.append(match)
+        return match
+
     def undo_last_match(self) -> Match:
         if not self.matches:
             raise ValueError("There is no match to undo.")
@@ -313,11 +355,18 @@ class League:
         for old_match in retained_matches:
             winner = self.player(old_match.winner_id)
             loser = self.player(old_match.loser_id)
-            change = (
-                rating_change(winner.rating, loser.rating, old_match.multiplier)
-                if old_match.rated
-                else 0.0
-            )
+            if old_match.is_draw:
+                change = (
+                    K_FACTOR * (0.5 - expected_score(winner.rating, loser.rating))
+                    if old_match.rated
+                    else 0.0
+                )
+            else:
+                change = (
+                    rating_change(winner.rating, loser.rating, old_match.multiplier)
+                    if old_match.rated
+                    else 0.0
+                )
             rebuilt_matches.append(
                 Match(
                     timestamp=old_match.timestamp,
@@ -330,6 +379,7 @@ class League:
                     multiplier=old_match.multiplier,
                     winner_games=old_match.winner_games,
                     rated=old_match.rated,
+                    is_draw=old_match.is_draw,
                 )
             )
             winner.rating += change
@@ -369,6 +419,10 @@ class League:
         for match in self.matches:
             winner = statistics[match.winner_id]
             loser = statistics[match.loser_id]
+            if match.is_draw:
+                winner.matches_drawn += 1
+                loser.matches_drawn += 1
+                continue
             winner.matches_won += 1
             loser.matches_lost += 1
             winner.games_won += match.winner_games
@@ -379,7 +433,15 @@ class League:
         for match in self.matches:
             winner = statistics[match.winner_id]
             loser = statistics[match.loser_id]
-            winner.sb_score += loser.matches_won
+            if match.is_draw:
+                winner.sb_score += 0.5 * (
+                    loser.matches_won + 0.5 * loser.matches_drawn
+                )
+                loser.sb_score += 0.5 * (
+                    winner.matches_won + 0.5 * winner.matches_drawn
+                )
+            else:
+                winner.sb_score += loser.matches_won + 0.5 * loser.matches_drawn
 
         return statistics
 
@@ -397,7 +459,7 @@ class League:
         if not isinstance(data, dict):
             raise ValueError("The save file must contain a JSON object.")
         schema_version = data.get("schema_version")
-        if schema_version not in (1, 2, 3, 4, LEAGUE_SCHEMA_VERSION):
+        if schema_version not in (1, 2, 3, 4, 5, LEAGUE_SCHEMA_VERSION):
             raise ValueError("Unsupported save-file version.")
 
         try:
@@ -432,6 +494,8 @@ class League:
                     m_data["winner_games"] = 3
                 if "rated" not in m_data:
                     m_data["rated"] = m_data.get("rating_change", 0.0) != 0.0
+                if "is_draw" not in m_data:
+                    m_data["is_draw"] = False
                 matches.append(Match(**m_data))
         except (KeyError, TypeError, ValueError, OverflowError) as error:
             raise ValueError("The save file is malformed.") from error
@@ -501,7 +565,7 @@ class League:
                 or not isinstance(match.rating_change, (int, float))
                 or isinstance(match.rating_change, bool)
                 or not math.isfinite(match.rating_change)
-                or match.rating_change < 0
+                or (match.rating_change < 0 and not match.is_draw)
                 or not isinstance(match.winner_rating_before, (int, float))
                 or isinstance(match.winner_rating_before, bool)
                 or not math.isfinite(match.winner_rating_before)
@@ -517,10 +581,15 @@ class League:
                 or match.multiplier < 0
                 or not isinstance(match.winner_games, int)
                 or isinstance(match.winner_games, bool)
-                or match.winner_games <= 0
+                or match.winner_games < 0
                 or match.winner_games > MAX_CUSTOM_SCORE
-                or match.loser_games >= match.winner_games
+                or (
+                    (match.winner_games != 0 or match.loser_games != 0)
+                    if match.is_draw
+                    else (match.winner_games <= 0 or match.loser_games >= match.winner_games)
+                )
                 or not isinstance(match.rated, bool)
+                or not isinstance(match.is_draw, bool)
             ):
                 raise ValueError("The save file contains an invalid match.")
             try:
@@ -556,6 +625,7 @@ class League:
 # Upstream: UI and storage layers provide league configuration and saved JSON data.
 # Upstream purpose: Collect user-entered results and restore persistent league state.
 # Environment: Python 3.10+ on Windows, with platform-independent model tests.
-# Generated: 2026-08-26 17:00 America/New_York.
-# Changes: Match validation rejects persisted scores above MAX_CUSTOM_SCORE; SB
-# statistics from the concurrent standings update are retained.
+# Generated: 2026-08-31 19:44 America/New_York.
+# Changes: Lines 19, 149-177, 261-306, 355-445, and 459-594 add persisted
+# draw results, standard 0.5-score Elo updates, W-D-L statistics, SB scoring,
+# replay support, and backward-compatible schema migration.

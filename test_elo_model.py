@@ -109,6 +109,83 @@ class EloModelTests(unittest.TestCase):
         self.assertAlmostEqual(league.player(1).rating, 1492.0)
         self.assertEqual(len(league.matches), 1)
 
+    def test_draw_between_equal_players_keeps_ratings_and_updates_statistics(self) -> None:
+        league = League.new(2)
+
+        match = league.record_draw(0, 1)
+        stats = league.statistics()
+
+        self.assertTrue(match.is_draw)
+        self.assertEqual(match.rating_change, 0.0)
+        self.assertEqual(league.player(0).rating, INITIAL_RATING)
+        self.assertEqual(league.player(1).rating, INITIAL_RATING)
+        self.assertEqual(stats[0].matches_drawn, 1)
+        self.assertEqual(stats[1].matches_drawn, 1)
+        self.assertEqual(stats[0].match_win_percentage, 50.0)
+        self.assertEqual((stats[0].games_won, stats[0].games_lost), (0, 0))
+
+    def test_draw_moves_unequal_ratings_toward_each_other_and_is_zero_sum(self) -> None:
+        league = League.new(2)
+        league.player(0).rating = 1700.0
+        league.player(1).rating = 1500.0
+
+        match = league.record_draw(0, 1)
+
+        self.assertLess(match.rating_change, 0.0)
+        self.assertLess(league.player(0).rating, 1700.0)
+        self.assertGreater(league.player(1).rating, 1500.0)
+        self.assertAlmostEqual(
+            league.player(0).rating + league.player(1).rating, 3200.0
+        )
+
+    def test_draw_persists_and_undo_restores_exact_ratings(self) -> None:
+        league = League.new(2)
+        league.player(0).rating = 1600.0
+        league.player(1).rating = 1400.0
+        before = (league.player(0).rating, league.player(1).rating)
+        league.record_draw(0, 1)
+
+        restored = League.from_dict(league.to_dict())
+        self.assertTrue(restored.matches[0].is_draw)
+        restored.undo_last_match()
+
+        self.assertEqual(
+            (restored.player(0).rating, restored.player(1).rating), before
+        )
+
+    def test_schema_five_match_defaults_to_non_draw(self) -> None:
+        league = League.new(2)
+        league.record_match(0, 1, 0)
+        data = league.to_dict()
+        data["schema_version"] = 5
+        data["matches"][0].pop("is_draw")
+
+        restored = League.from_dict(data)
+
+        self.assertFalse(restored.matches[0].is_draw)
+
+    def test_draw_contributes_half_opponent_match_score_to_sb(self) -> None:
+        league = League.new(3)
+        league.record_draw(0, 1)
+        league.record_match(1, 2, 0)
+
+        stats = league.statistics()
+
+        self.assertEqual(stats[0].sb_score, 0.75)
+        self.assertEqual(stats[1].sb_score, 0.25)
+
+    def test_draw_is_replayed_when_roster_is_reduced(self) -> None:
+        league = League.new(3)
+        league.record_match(0, 1, 0)
+        league.record_draw(0, 1)
+        expected_ratings = (league.player(0).rating, league.player(1).rating)
+
+        league.resize_players(2)
+
+        self.assertTrue(league.matches[1].is_draw)
+        self.assertAlmostEqual(league.player(0).rating, expected_ratings[0])
+        self.assertAlmostEqual(league.player(1).rating, expected_ratings[1])
+
     def test_reset_restores_ratings_and_records_but_keeps_names(self) -> None:
         league = League.new()
         league.rename_player(0, "Alice")
@@ -505,7 +582,7 @@ class EloModelTests(unittest.TestCase):
         upgraded = LeagueCollection.from_dict(previous_data)
 
         self.assertEqual(len(upgraded.active.league.players), 12)
-        self.assertEqual(upgraded.active.league.to_dict()["schema_version"], 5)
+        self.assertEqual(upgraded.active.league.to_dict()["schema_version"], 6)
 
 
 if __name__ == "__main__":
@@ -516,5 +593,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-08-26 17:00 America/New_York.
-# Changes: Added coverage for custom-score bounds and Sonneborn-Berger scoring.
+# Generated: 2026-08-31 19:44 America/New_York.
+# Changes: Lines 112-186 and 584 cover draw Elo, W-D-L statistics, SB scoring,
+# persistence, undo, roster replay, schema-5 compatibility, and schema migration.
