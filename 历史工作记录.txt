@@ -55,3 +55,10 @@
 - 具体动作：更新了 `elo_calculator.py`，在记录和撤销比赛的活动日志字符串中追加了相关玩家的 SB 分数。由于 v12 正在使用中，为了避免文件冲突，直接发布了 `release/EloLeagueCalculator-v13-Windows-x64.zip`。
 - 修改文件：`elo_calculator.py`；`historyworklog.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v13-Windows-x64/README.txt`；`release/EloLeagueCalculator-v13-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v13-Windows-x64.zip`；本文件。
 - 测试或验证结果：更新后的 `elo_calculator.py` 编译通过，PyInstaller 构建并打包成功。
+
+## 2026-08-30 21:09:00 -04:00
+
+- 用户 Prompt 摘要：将按钮重命名为 settings。
+- 具体动作：为了提高应用清晰度，将 `elo_calculator.py` 中的主界面 "Edit Rules" 按钮文本修改为 "Settings"，并将其对应的对话框标题由 "Edit League Rules" 修改为 "League Settings"。
+- 修改文件：`elo_calculator.py`；`historyworklog.txt`；本文件。
+- 测试或验证结果：通过 Python 编译检查，重命名生效。

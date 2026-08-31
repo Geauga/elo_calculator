@@ -1,4 +1,4 @@
-"""Tkinter desktop interface for the twelve-player Elo calculator."""
+﻿"""Tkinter desktop interface for the twelve-player Elo calculator."""
 
 from __future__ import annotations
 
@@ -172,7 +172,7 @@ class EloCalculatorApp:
         self.loser_var = tk.StringVar()
         self.loser_games_var = tk.StringVar(value="0")
         self.winner_games_var = tk.StringVar(value="3")
-        self.winner_score_var = tk.StringVar(value="3 –")
+        self.winner_score_var = tk.StringVar(value="3 â€“")
         self.theme_var = tk.StringVar(value=load_theme(SETTINGS_FILE))
         self.preview_var = tk.StringVar(
             value="Select two different players to preview the Elo change."
@@ -555,7 +555,7 @@ class EloCalculatorApp:
         ttk.Button(league_tools, text="Delete", command=self._delete_league).grid(
             row=0, column=5, padx=3
         )
-        ttk.Button(league_tools, text="Edit Rules", command=self._edit_rules).grid(
+        ttk.Button(league_tools, text="Settings", command=self._edit_rules).grid(
             row=0, column=6, padx=3
         )
 
@@ -628,7 +628,7 @@ class EloCalculatorApp:
         ttk.Button(league_tools, text="Delete", command=self._delete_league).grid(
             row=0, column=5, padx=3
         )
-        ttk.Button(league_tools, text="Edit Rules", command=self._edit_rules).grid(
+        ttk.Button(league_tools, text="Settings", command=self._edit_rules).grid(
             row=0, column=6, padx=3
         )
 
@@ -742,7 +742,7 @@ class EloCalculatorApp:
             command=self._update_preview,
         )
         self.winner_score_spin.pack(side="left")
-        ttk.Label(self.custom_score_frame, text=" – ").pack(side="left")
+        ttk.Label(self.custom_score_frame, text=" â€“ ").pack(side="left")
         self.loser_score_spin = ttk.Spinbox(
             self.custom_score_frame,
             from_=0,
@@ -1093,9 +1093,9 @@ class EloCalculatorApp:
             if win_condition.score_mode == SCORE_MODE_CUSTOM
             else f"First to {win_condition.games_to_win}"
         )
-        self.heading_var.set(f"{player_count}-Player Elo League — {format_name}")
+        self.heading_var.set(f"{player_count}-Player Elo League â€” {format_name}")
         self.root.title(
-            f"{self.collection.active.name} — {player_count}-Player Elo League — "
+            f"{self.collection.active.name} â€” {player_count}-Player Elo League â€” "
             f"{format_name}"
         )
 
@@ -1209,7 +1209,7 @@ class EloCalculatorApp:
 
     def _edit_rules(self) -> None:
         dialog = tk.Toplevel(self.root)
-        dialog.title("Edit League Rules")
+        dialog.title("League Settings")
         dialog.geometry("440x590")
         dialog.minsize(400, 470)
         self._configure_dialog(
@@ -1641,7 +1641,7 @@ class EloCalculatorApp:
             self.custom_score_frame.grid_remove()
             self.fixed_score_frame.grid()
             self.winner_games_var.set(str(win_condition.games_to_win))
-            self.winner_score_var.set(f"{win_condition.games_to_win} –")
+            self.winner_score_var.set(f"{win_condition.games_to_win} â€“")
             valid_scores = tuple(
                 str(i) for i in sorted(win_condition.score_multipliers.keys())
             )
@@ -1713,8 +1713,8 @@ class EloCalculatorApp:
                 "end",
                 values=(
                     timestamp,
-                    f"{winner} {match.winner_games}–{match.loser_games} {loser}",
-                    f"±{match.rating_change:.2f}",
+                    f"{winner} {match.winner_games}â€“{match.loser_games} {loser}",
+                    f"Â±{match.rating_change:.2f}",
                 ),
             )
 
@@ -1748,7 +1748,7 @@ class EloCalculatorApp:
             f"Margin multiplier: {preview['multiplier']:.0%}\n"
             f"Expected chance: {winner.name} {preview['winner_expected']:.1%}, "
             f"{loser.name} {preview['loser_expected']:.1%}\n"
-            f"Change: ±{preview['change']:.2f} Elo\n"
+            f"Change: Â±{preview['change']:.2f} Elo\n"
             f"New ratings: {winner.name} {preview['winner_after']:.2f}, "
             f"{loser.name} {preview['loser_after']:.2f}"
         )
@@ -1785,8 +1785,8 @@ class EloCalculatorApp:
 
         self.status_var.set(
             f"Saved: {winner} defeated {loser} "
-            f"{match.winner_games}–{loser_games}; "
-            f"±{match.rating_change:.2f} Elo"
+            f"{match.winner_games}â€“{loser_games}; "
+            f"Â±{match.rating_change:.2f} Elo"
         )
         self._refresh_all()
 
@@ -1798,7 +1798,7 @@ class EloCalculatorApp:
         loser = self.league.player(match.loser_id).name
         if not self._ask_yes_no(
             "Undo last match",
-            f"Undo {winner} {match.winner_games}–{match.loser_games} {loser}?",
+            f"Undo {winner} {match.winner_games}â€“{match.loser_games} {loser}?",
             parent=self.root,
         ):
             return
@@ -1934,3 +1934,4 @@ if __name__ == "__main__":
 # Generated: 2026-08-26 17:00 America/New_York.
 # Changes: Preserve hidden custom-mode settings, use pointer-safe Windows handles,
 # and restore complete refresh behavior with the SB standings column.
+
