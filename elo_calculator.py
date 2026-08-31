@@ -1834,7 +1834,7 @@ class EloCalculatorApp:
                 else f"{winner} {match.winner_games}â€“{match.loser_games} {loser}"
             )
             elo_change = (
-                f"{winner} {match.rating_change:+.2f}"
+                f"{match.rating_change:+.2f}/{-match.rating_change:+.2f}"
                 if match.is_draw
                 else f"Â±{match.rating_change:.2f}"
             )
@@ -1876,6 +1876,7 @@ class EloCalculatorApp:
             preview = self.league.preview_match(
                 winner_id, loser_id, loser_games, winner_games
             )
+            draw_preview = self.league.preview_draw(winner_id, loser_id)
             winner = self.league.player(winner_id)
             loser = self.league.player(loser_id)
         except ValueError as error:
@@ -1895,7 +1896,9 @@ class EloCalculatorApp:
             f"{loser.name} {preview['loser_expected']:.1%}\n"
             f"Change: Â±{preview['change']:.2f} Elo\n"
             f"New ratings: {winner.name} {preview['winner_after']:.2f}, "
-            f"{loser.name} {preview['loser_after']:.2f}"
+            f"{loser.name} {preview['loser_after']:.2f}\n"
+            f"Draw Elo: {winner.name} {draw_preview['change']:+.2f}, "
+            f"{loser.name} {-draw_preview['change']:+.2f}"
         )
         self.record_button.configure(state="normal")
         self.draw_button.configure(state="normal")
@@ -2113,7 +2116,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-08-31 19:47 America/New_York.
+# Generated: 2026-08-31 19:44 America/New_York.
 # Changes: Lines 662-773 and 1813-2008 add W-D-L display, a Record draw action,
 # draw history/activity details, validation, status text, and draw-aware undo.
 

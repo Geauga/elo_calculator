@@ -11,8 +11,10 @@ with adjustable rosters.
   recalculates retained results. A confirmation and automatic backup protect
   the change.
 - The K-factor is `32`.
+- A draw gives each player a 0.5 Elo result, updates both ratings, and contributes
+  half of the opponent's match score to each player's SB score.
 - Ratings retain full decimal precision and display two decimal places.
-- Standings show match wins and losses, match win percentage, individual game
+- Standings show match wins, draws, and losses; match score percentage; individual game
   wins and losses, game win percentage, and a Sonneborn-Berger (SB) score. Elo
   remains the primary ranking key; equal Elo ratings are ordered by SB score.
 - New leagues use first-to-three rules: 3-2 applies 50%, 3-1 applies 75%, and

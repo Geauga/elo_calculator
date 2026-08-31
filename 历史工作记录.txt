@@ -76,3 +76,19 @@
 - 具体动作：更新了 `README.md`，区分了全局主题 Settings 菜单与具体的联赛 Settings 按钮（原 Edit Rules）；并补充说明了活动日志现在支持横向滚动条并包含 SB 分数记录。
 - 修改文件：`README.md`；`historyworklog.txt`；本文件。
 - 测试或验证结果：文档更新完成。
+
+## 2026-08-31 19:44:00 -04:00
+
+- 用户 Prompt 摘要：Add a draw option，并要求使用 English。
+- 具体动作：在数据模型中加入正式的 draw result、标准 Elo 0.5 实际得分计算、W-D-L 统计、draw-aware match percentage、Sonneborn-Berger 平局计分、撤销、roster replay 和 schema 5 向后兼容；在桌面界面加入 `Record draw` 按钮、draw Elo preview、W-D-L standings、history/activity/status 和 undo 文案；更新 README；增加 draw regression tests。
+- 修改文件：`elo_model.py`；`elo_calculator.py`；`test_elo_model.py`；`README.md`；`historyworklog.txt`；本文件。
+- 测试或验证结果：Python compile 检查通过；43 项 unittest 全部通过。尝试使用 bundled workspace Python 做 Tk GUI smoke test，但该 runtime 缺少可用的 `tcl8.6/init.tcl`，Tk root 无法启动，因此没有完成 live GUI rendering 验证；静态 UI integration 和 model-backed action 已检查。
+- GitHub Timeline：未 commit，未 push；用户本次没有要求 commit 或 push。工作区已有与本任务无关的 graph UI、build/release、`.build_tools` 和 cache 改动，均未清理或提交。
+
+## 2026-08-31 20:00:00 -04:00
+
+- 用户 Prompt 摘要：GitHub。
+- 具体动作：验证 43 项 unittest 和 Python compile；仅暂存 draw feature 的 6 个 source/documentation/history 文件，排除 build、release、cache、helper scripts 和 `.build_tools` 删除；创建 commit `13e1526`。确认此前未 push 的 Graphs commit 为 `de142aa`。
+- 修改文件：仅 append 更新 `historyworklog.txt` 和本文件；draw feature 文件已包含于 `13e1526`。
+- 测试或验证结果：43 项 unittest 全部通过，Python compile 通过；focused staged diff 无 whitespace error。
+- GitHub Timeline：已 commit 未 push。向 `https://github.com/Geauga/elo_calculator.git` 的 `origin/main` push 被安全审核拒绝，因为用户的“github”未明确授权该 payload 和 destination；等待用户明确授权。未尝试任何 workaround。
