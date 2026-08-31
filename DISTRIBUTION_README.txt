@@ -14,7 +14,9 @@ Rules
   independently from 2 to 64 players; added players begin at 1500.00 Elo.
 - Reducing a roster removes players from its end and their related matches,
   then recalculates retained results after confirmation and an automatic backup.
-- K-factor: 32.
+- Edit Rules sets a separate K-factor and Elo rounding precision for each
+  league. Defaults are K 32 and two decimal places; supported values are K
+  0.01 through 1000 and zero through six decimal places.
 - New leagues use first-to-three rules: 3-2 applies 50%, 3-1 applies 75%, and
   3-0 applies 100% of the normal Elo change.
 - Edit Rules selects first-to-N or custom scores separately for every league.
@@ -24,7 +26,8 @@ Rules
   closest possible win applies 50%, and intermediate margins scale
   proportionally. Either format can disable automatic Elo calculation while
   continuing to record results.
-- Ratings retain full decimal precision.
+- Each match stores the K-factor and rounding used for its Elo transfer, so
+  later rule changes do not alter historical calculations during roster replay.
 - Standings include match W-L, match win percentage, individual game W-L, and
   game win percentage. For example, a 3-2 result records five individual games.
 - The Settings button switches between light and dark themes and remembers the
@@ -46,4 +49,4 @@ players at 1500.00 without changing earlier ratings or match history.
 Existing single-league data is migrated to League 1 automatically.
 
 SHA-256 for EloLeagueCalculator.exe:
-64437C8036D6FCFCB342A613FB4AD2A6F931984BF7719622EC3E457EA4FBC506
+8AE5DDD03B3ABA2401A08176D124550FAAEF5D7147F7F247E51DA03E80039836

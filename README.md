@@ -10,8 +10,11 @@ with adjustable rosters.
 - Reducing a roster removes players from its end, drops their matches, and
   recalculates retained results. A confirmation and automatic backup protect
   the change.
-- The K-factor is `32`.
-- Ratings retain full decimal precision and display two decimal places.
+- Edit Rules sets a separate K-factor and Elo rounding precision for each
+  league. New leagues default to K `32` and two decimal places; K can be
+  `0.01` through `1000`, and precision can be zero through six places.
+- Each match stores the K-factor and rounding used for its Elo transfer, so
+  later rule changes do not alter its calculation during roster replay.
 - Standings show match wins and losses, match win percentage, individual game
   wins and losses, game win percentage, and a Sonneborn-Berger (SB) score. Elo
   remains the primary ranking key; equal Elo ratings are ordered by SB score.

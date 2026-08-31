@@ -12,9 +12,14 @@ from elo_calculator import (
     save_theme,
 )
 from elo_model import (
+    DEFAULT_ELO_DECIMAL_PLACES,
     INITIAL_RATING,
+    K_FACTOR,
     MAX_CUSTOM_SCORE,
+    MAX_ELO_DECIMAL_PLACES,
+    MAX_K_FACTOR,
     MAX_PLAYER_COUNT,
+    MIN_K_FACTOR,
     MIN_PLAYER_COUNT,
     SCORE_MODE_CUSTOM,
     SCORE_MODE_FIXED,
@@ -34,6 +39,48 @@ class EloModelTests(unittest.TestCase):
         self.assertAlmostEqual(rating_change(1500.0, 1500.0, 0.50), 8.0)
         self.assertAlmostEqual(rating_change(1500.0, 1500.0, 0.75), 12.0)
         self.assertAlmostEqual(rating_change(1500.0, 1500.0, 1.0), 16.0)
+
+    def test_custom_k_factor_and_rounding_control_transfer(self) -> None:
+        self.assertEqual(
+            rating_change(
+                1500.0, 1500.0, k_factor=20.0, decimal_places=0
+            ),
+            10.0,
+        )
+        full_precision = rating_change(
+            1432.25, 1617.75, 0.75, k_factor=40.0
+        )
+        rounded = rating_change(
+            1432.25,
+            1617.75,
+            0.75,
+            k_factor=40.0,
+            decimal_places=1,
+        )
+        self.assertEqual(rounded, round(full_precision, 1))
+
+    def test_invalid_elo_settings_are_rejected(self) -> None:
+        for k_factor in (
+            0,
+            -1,
+            MIN_K_FACTOR / 2,
+            MAX_K_FACTOR + 1,
+            float("nan"),
+            float("inf"),
+            True,
+        ):
+            with self.subTest(k_factor=k_factor):
+                with self.assertRaises(ValueError):
+                    rating_change(1500.0, 1500.0, k_factor=k_factor)
+
+        for decimal_places in (-1, MAX_ELO_DECIMAL_PLACES + 1, True):
+            with self.subTest(decimal_places=decimal_places):
+                with self.assertRaises(ValueError):
+                    rating_change(
+                        1500.0,
+                        1500.0,
+                        decimal_places=decimal_places,
+                    )
 
     def test_match_is_zero_sum_and_keeps_decimal_precision(self) -> None:
         league = League.new()
@@ -138,6 +185,39 @@ class EloModelTests(unittest.TestCase):
         self.assertAlmostEqual(restored.player(0).rating, 1512.0)
         self.assertAlmostEqual(restored.player(1).rating, 1488.0)
         self.assertEqual(len(restored.matches), 1)
+
+    def test_league_elo_settings_persist_and_are_stored_per_match(self) -> None:
+        league = League.new(2)
+        league.k_factor = 24.0
+        league.elo_decimal_places = 1
+
+        match = league.record_match(0, 1, 1)
+        restored = League.from_dict(league.to_dict())
+
+        self.assertEqual(match.rating_change, round(match.rating_change, 1))
+        self.assertEqual(restored.k_factor, 24.0)
+        self.assertEqual(restored.elo_decimal_places, 1)
+        self.assertEqual(restored.matches[0].k_factor, 24.0)
+        self.assertEqual(restored.matches[0].elo_decimal_places, 1)
+
+    def test_schema_five_migrates_default_elo_settings(self) -> None:
+        league = League.new(2)
+        league.record_match(0, 1, 0)
+        data = league.to_dict()
+        data["schema_version"] = 5
+        data.pop("k_factor")
+        data.pop("elo_decimal_places")
+        data["matches"][0].pop("k_factor")
+        data["matches"][0].pop("elo_decimal_places")
+
+        restored = League.from_dict(data)
+
+        self.assertEqual(restored.k_factor, K_FACTOR)
+        self.assertEqual(
+            restored.elo_decimal_places, DEFAULT_ELO_DECIMAL_PLACES
+        )
+        self.assertEqual(restored.matches[0].k_factor, K_FACTOR)
+        self.assertIsNone(restored.matches[0].elo_decimal_places)
 
     def test_new_league_has_twelve_players_at_1500(self) -> None:
         league = League.new()
@@ -487,6 +567,29 @@ class EloModelTests(unittest.TestCase):
         for player in league.players:
             self.assertAlmostEqual(player.rating, expected.player(player.id).rating)
 
+    def test_roster_replay_uses_historical_match_elo_settings(self) -> None:
+        league = League.new(4)
+        league.k_factor = 16.0
+        league.elo_decimal_places = 0
+        retained = league.record_match(0, 1, 0)
+        expected_ratings = (
+            league.player(0).rating,
+            league.player(1).rating,
+        )
+
+        league.k_factor = 64.0
+        league.elo_decimal_places = 2
+        league.record_match(3, 0, 0)
+        league.resize_players(3)
+
+        replayed = league.matches[0]
+        self.assertEqual(replayed.k_factor, retained.k_factor)
+        self.assertEqual(
+            replayed.elo_decimal_places, retained.elo_decimal_places
+        )
+        self.assertEqual(league.player(0).rating, expected_ratings[0])
+        self.assertEqual(league.player(1).rating, expected_ratings[1])
+
     def test_adjustable_player_count_persists_per_league(self) -> None:
         collection = LeagueCollection.new()
         collection.active.league.resize_players(8)
@@ -505,7 +608,7 @@ class EloModelTests(unittest.TestCase):
         upgraded = LeagueCollection.from_dict(previous_data)
 
         self.assertEqual(len(upgraded.active.league.players), 12)
-        self.assertEqual(upgraded.active.league.to_dict()["schema_version"], 5)
+        self.assertEqual(upgraded.active.league.to_dict()["schema_version"], 6)
 
 
 if __name__ == "__main__":
@@ -516,5 +619,5 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-08-26 17:00 America/New_York.
-# Changes: Added coverage for custom-score bounds and Sonneborn-Berger scoring.
+# Generated: 2026-08-30 21:06 America/New_York.
+# Changes: Added K-factor, Elo-rounding, schema migration, and replay coverage.
