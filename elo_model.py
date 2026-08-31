@@ -173,6 +173,8 @@ def rating_change(
     change = validated_k_factor * multiplier * (
         1.0 - expected_score(winner_rating, loser_rating)
     )
+    if not math.isfinite(change):
+        raise ValueError("Rating change must be finite.")
     return (
         round(change, validated_decimal_places)
         if validated_decimal_places is not None
@@ -280,13 +282,17 @@ class League:
             if self.calculate_elo
             else 0.0
         )
+        winner_after = winner.rating + change
+        loser_after = loser.rating - change
+        if not math.isfinite(winner_after) or not math.isfinite(loser_after):
+            raise ValueError("Resulting ratings must be finite.")
         return {
             "winner_expected": expected_score(winner.rating, loser.rating),
             "loser_expected": expected_score(loser.rating, winner.rating),
             "multiplier": multiplier,
             "change": change,
-            "winner_after": winner.rating + change,
-            "loser_after": loser.rating - change,
+            "winner_after": winner_after,
+            "loser_after": loser_after,
         }
 
     def record_match(
@@ -654,7 +660,7 @@ class League:
 # Upstream: UI and storage layers provide league configuration and saved JSON data.
 # Upstream purpose: Collect user-entered results and restore persistent league state.
 # Environment: Python 3.10+ on Windows, with platform-independent model tests.
-# Generated: 2026-08-30 21:06 America/New_York.
+# Generated: 2026-08-30 21:29 America/New_York.
 # Changes: Match validation rejects persisted scores above MAX_CUSTOM_SCORE; SB
 # statistics are retained; per-league K-factor and Elo rounding are persisted,
-# validated, and recorded per match for historically stable roster replay.
+# validated, and recorded per match; nonfinite transfers are rejected safely.

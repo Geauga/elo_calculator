@@ -82,6 +82,23 @@ class EloModelTests(unittest.TestCase):
                         decimal_places=decimal_places,
                     )
 
+    def test_rating_overflow_is_rejected_without_mutating_league(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Rating change must be finite"):
+            rating_change(1500.0, 1500.0, 1e308)
+
+        league = League.new(2)
+        league.win_condition = WinCondition(
+            games_to_win=1,
+            score_multipliers={0: 1e308},
+        )
+        ratings_before = [player.rating for player in league.players]
+
+        with self.assertRaisesRegex(ValueError, "Rating change must be finite"):
+            league.record_match(0, 1, 0)
+
+        self.assertEqual([player.rating for player in league.players], ratings_before)
+        self.assertEqual(league.matches, [])
+
     def test_match_is_zero_sum_and_keeps_decimal_precision(self) -> None:
         league = League.new()
         league.player(0).rating = 1432.25
@@ -619,5 +636,5 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-08-30 21:06 America/New_York.
-# Changes: Added K-factor, Elo-rounding, schema migration, and replay coverage.
+# Generated: 2026-08-30 21:29 America/New_York.
+# Changes: Added overflow regression coverage to the K-factor and replay suite.
