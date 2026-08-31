@@ -69,3 +69,10 @@
 - 具体动作：通过 PyInstaller 重新构建了可执行程序以包含 Settings 命名的更改，并将新生成的可执行文件打包至 `release/EloLeagueCalculator-v14-Windows-x64.zip`。
 - 修改文件：`historyworklog.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v14-Windows-x64/README.txt`；`release/EloLeagueCalculator-v14-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v14-Windows-x64.zip`；本文件。
 - 测试或验证结果：PyInstaller 构建并打包 v14 成功。
+
+## 2026-08-30 21:14:00 -04:00
+
+- 用户 Prompt 摘要：update readme。
+- 具体动作：更新了 `README.md`，区分了全局主题 Settings 菜单与具体的联赛 Settings 按钮（原 Edit Rules）；并补充说明了活动日志现在支持横向滚动条并包含 SB 分数记录。
+- 修改文件：`README.md`；`historyworklog.txt`；本文件。
+- 测试或验证结果：文档更新完成。
