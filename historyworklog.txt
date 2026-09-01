@@ -73,3 +73,6 @@
 ## 2026-08-31 19:58
 - Added a "Graphs" tab to the main UI to display historical tracking charts for Elo, Win %, and SB Scores using a native `tk.Canvas` implementation without external dependencies.
 - Pushed changes to GitHub.
+
+## 2026-08-31 20:04
+- Rebuilt and packaged version 15 executable to `release/EloLeagueCalculator-v15-Windows-x64.zip`.
