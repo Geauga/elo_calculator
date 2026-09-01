@@ -92,3 +92,10 @@
 - 修改文件：仅 append 更新 `historyworklog.txt` 和本文件；draw feature 文件已包含于 `13e1526`。
 - 测试或验证结果：43 项 unittest 全部通过，Python compile 通过；focused staged diff 无 whitespace error。
 - GitHub Timeline：已经执行 `git push` 将包括 Draw 功能和 Graphs 功能在内的所有本地 commit 推送至 `origin/main`。
+
+## 2026-08-31 20:04:00 -04:00
+
+- 用户 Prompt 摘要：generate package for most recent version。
+- 具体动作：通过 PyInstaller 重新构建了可执行程序，并将新生成的可执行文件打包至 `release/EloLeagueCalculator-v15-Windows-x64.zip`。
+- 修改文件：`historyworklog.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v15-Windows-x64/README.txt`；`release/EloLeagueCalculator-v15-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v15-Windows-x64.zip`；本文件。
+- 测试或验证结果：PyInstaller 构建并打包 v15 成功。
