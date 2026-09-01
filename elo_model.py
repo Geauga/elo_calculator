@@ -7,6 +7,7 @@ from datetime import datetime
 import json
 import math
 from pathlib import Path
+import random
 from typing import Any
 
 
@@ -621,6 +622,104 @@ class League:
         return cls.from_dict(data)
 
 
+@dataclass
+class SimulationResult:
+    player_id: int
+    title_probability: float
+    average_rank: float
+    match_win_percentage: float
+    game_win_percentage: float
+
+
+class LeagueSimulator:
+    def __init__(self, league: League) -> None:
+        self.league = league
+        self.win_condition = league.win_condition
+
+    def run(
+        self, iterations: int = 1000, seed: int | str | float | bytes | bytearray | None = None
+    ) -> list[SimulationResult]:
+        if seed is not None:
+            random.seed(seed)
+
+        n_games = self.win_condition.games_to_win
+        player_ids = [p.id for p in self.league.players]
+        initial_ratings = {p.id: p.rating for p in self.league.players}
+
+        titles = {pid: 0 for pid in player_ids}
+        rank_sum = {pid: 0 for pid in player_ids}
+        matches_won = {pid: 0 for pid in player_ids}
+        matches_lost = {pid: 0 for pid in player_ids}
+        games_won = {pid: 0 for pid in player_ids}
+        games_lost = {pid: 0 for pid in player_ids}
+
+        for _ in range(iterations):
+            ratings = initial_ratings.copy()
+            points = {pid: 0.0 for pid in player_ids}
+            sb_scores = {pid: 0.0 for pid in player_ids}
+
+            tourney_matches = []
+
+            for i in range(len(player_ids)):
+                for j in range(i + 1, len(player_ids)):
+                    p1 = player_ids[i]
+                    p2 = player_ids[j]
+
+                    e1 = expected_score(ratings[p1], ratings[p2])
+
+                    if random.random() < e1:
+                        winner, loser = p1, p2
+                    else:
+                        winner, loser = p2, p1
+
+                    loser_g = random.randint(0, max(0, n_games - 1))
+                    winner_g = n_games
+
+                    matches_won[winner] += 1
+                    matches_lost[loser] += 1
+                    games_won[winner] += winner_g
+                    games_lost[winner] += loser_g
+                    games_won[loser] += loser_g
+                    games_lost[loser] += winner_g
+
+                    points[winner] += 1.0
+                    tourney_matches.append((winner, loser))
+
+            for w, l in tourney_matches:
+                sb_scores[w] += points[l]
+
+            ranked_players = sorted(
+                player_ids, key=lambda pid: (points[pid], sb_scores[pid]), reverse=True
+            )
+
+            if ranked_players:
+                titles[ranked_players[0]] += 1
+            for rank, pid in enumerate(ranked_players, start=1):
+                rank_sum[pid] += rank
+
+        results = []
+        for pid in player_ids:
+            mw = matches_won[pid]
+            ml = matches_lost[pid]
+            gw = games_won[pid]
+            gl = games_lost[pid]
+
+            m_pct = (100.0 * mw / (mw + ml)) if (mw + ml) > 0 else 0.0
+            g_pct = (100.0 * gw / (gw + gl)) if (gw + gl) > 0 else 0.0
+
+            results.append(
+                SimulationResult(
+                    player_id=pid,
+                    title_probability=(titles[pid] / iterations) * 100.0 if iterations > 0 else 0.0,
+                    average_rank=rank_sum[pid] / iterations if iterations > 0 else 0.0,
+                    match_win_percentage=m_pct,
+                    game_win_percentage=g_pct,
+                )
+            )
+
+        return results
+
+
 # Purpose: Core Elo rules, match validation, and league persistence.
 # Upstream: UI and storage layers provide league configuration and saved JSON data.
 # Upstream purpose: Collect user-entered results and restore persistent league state.
@@ -628,4 +727,4 @@ class League:
 # Generated: 2026-08-31 19:44 America/New_York.
 # Changes: Lines 19, 149-177, 261-306, 355-445, and 459-594 add persisted
 # draw results, standard 0.5-score Elo updates, W-D-L statistics, SB scoring,
-# replay support, and backward-compatible schema migration.
+# replay support, and backward-compatible schema migration. Added LeagueSimulator.

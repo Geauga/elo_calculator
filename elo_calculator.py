@@ -631,6 +631,9 @@ class EloCalculatorApp:
         ttk.Button(league_tools, text="Settings", command=self._edit_rules).grid(
             row=0, column=6, padx=3
         )
+        ttk.Button(league_tools, text="Simulator", command=self._open_simulator).grid(
+            row=0, column=7, padx=3
+        )
 
         standings_frame = ttk.LabelFrame(outer, text="Standings", padding=10)
         standings_frame.grid(
@@ -1847,6 +1850,89 @@ class EloCalculatorApp:
                     elo_change,
                 ),
             )
+
+    def _open_simulator(self) -> None:
+        from elo_model import LeagueSimulator
+
+        simulator_window = tk.Toplevel(self.root)
+        simulator_window.title("League Simulator")
+        simulator_window.geometry("800x400")
+        simulator_window.transient(self.root)
+        simulator_window.grab_set()
+
+        input_frame = ttk.Frame(simulator_window, padding=10)
+        input_frame.pack(fill="x")
+
+        ttk.Label(input_frame, text="Iterations:").pack(side="left", padx=5)
+        iterations_var = tk.StringVar(value="1000")
+        ttk.Entry(input_frame, textvariable=iterations_var, width=10).pack(side="left", padx=5)
+
+        ttk.Label(input_frame, text="Seed (optional):").pack(side="left", padx=5)
+        seed_var = tk.StringVar()
+        ttk.Entry(input_frame, textvariable=seed_var, width=15).pack(side="left", padx=5)
+
+        run_btn = ttk.Button(input_frame, text="Run Simulation")
+        run_btn.pack(side="left", padx=15)
+
+        output_frame = ttk.Frame(simulator_window, padding=10)
+        output_frame.pack(fill="both", expand=True)
+
+        results_tree = ttk.Treeview(
+            output_frame,
+            columns=("player", "title", "avg_rank", "match_wl", "game_wl"),
+            show="headings",
+            selectmode="none",
+        )
+        results_tree.heading("player", text="Player")
+        results_tree.heading("title", text="Title Probability")
+        results_tree.heading("avg_rank", text="Average Rank")
+        results_tree.heading("match_wl", text="Match W-L %")
+        results_tree.heading("game_wl", text="Game W-L %")
+
+        results_tree.column("player", width=150, anchor="w")
+        results_tree.column("title", width=120, anchor="e")
+        results_tree.column("avg_rank", width=100, anchor="e")
+        results_tree.column("match_wl", width=100, anchor="e")
+        results_tree.column("game_wl", width=100, anchor="e")
+
+        results_tree.pack(side="left", fill="both", expand=True)
+
+        scroll = ttk.Scrollbar(output_frame, orient="vertical", command=results_tree.yview)
+        scroll.pack(side="right", fill="y")
+        results_tree.configure(yscrollcommand=scroll.set)
+
+        def _run() -> None:
+            for item in results_tree.get_children():
+                results_tree.delete(item)
+
+            try:
+                iters = int(iterations_var.get())
+            except ValueError:
+                return
+
+            seed = seed_var.get()
+            if not seed:
+                seed = None
+
+            simulator = LeagueSimulator(self.league)
+            results = simulator.run(iterations=iters, seed=seed)
+
+            for res in sorted(results, key=lambda x: x.average_rank):
+                player = self.league.player(res.player_id)
+                results_tree.insert(
+                    "",
+                    "end",
+                    values=(
+                        player.name,
+                        f"{res.title_probability:.1f}%",
+                        f"{res.average_rank:.1f}",
+                        f"{res.match_win_percentage:.1f}%",
+                        f"{res.game_win_percentage:.1f}%",
+                    ),
+                )
+
+        run_btn.configure(command=_run)
+        _run()
 
     def _selected_match(self) -> tuple[int, int, int, int]:
         winner_id = self.player_name_to_id.get(self.winner_var.get())

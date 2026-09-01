@@ -22,6 +22,7 @@ from elo_model import (
     WinCondition,
     expected_score,
     rating_change,
+    LeagueSimulator,
 )
 from elo_storage import AuditLog, BackupManager, LeagueCollection
 
@@ -583,6 +584,28 @@ class EloModelTests(unittest.TestCase):
 
         self.assertEqual(len(upgraded.active.league.players), 12)
         self.assertEqual(upgraded.active.league.to_dict()["schema_version"], 6)
+
+
+class TestSimulator(unittest.TestCase):
+    def test_simulator_reproducibility(self) -> None:
+        league = League.new(4)
+        league.player(0).rating = 1600.0
+        league.player(1).rating = 1500.0
+        league.player(2).rating = 1400.0
+        league.player(3).rating = 1300.0
+
+        simulator = LeagueSimulator(league)
+        results1 = simulator.run(iterations=100, seed=42)
+        results2 = simulator.run(iterations=100, seed=42)
+
+        for r1, r2 in zip(results1, results2):
+            self.assertEqual(r1.player_id, r2.player_id)
+            self.assertEqual(r1.title_probability, r2.title_probability)
+            self.assertEqual(r1.average_rank, r2.average_rank)
+            self.assertEqual(r1.match_win_percentage, r2.match_win_percentage)
+            self.assertEqual(r1.game_win_percentage, r2.game_win_percentage)
+
+        self.assertGreater(results1[0].title_probability, results1[-1].title_probability)
 
 
 if __name__ == "__main__":
