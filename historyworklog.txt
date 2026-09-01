@@ -76,3 +76,8 @@
 
 ## 2026-08-31 20:04
 - Rebuilt and packaged version 15 executable to `release/EloLeagueCalculator-v15-Windows-x64.zip`.
+
+## 2026-08-31 20:16
+- Rebuilt the First-to-N League Simulator using Monte Carlo simulations and integrated the Simulator dialog into the main UI.
+- All 44 unit tests are passing.
+- Committed the changes locally.

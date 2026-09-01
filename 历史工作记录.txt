@@ -99,3 +99,11 @@
 - 具体动作：通过 PyInstaller 重新构建了可执行程序，并将新生成的可执行文件打包至 `release/EloLeagueCalculator-v15-Windows-x64.zip`。
 - 修改文件：`historyworklog.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v15-Windows-x64/README.txt`；`release/EloLeagueCalculator-v15-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v15-Windows-x64.zip`；本文件。
 - 测试或验证结果：PyInstaller 构建并打包 v15 成功。
+
+## 2026-08-31 20:16:00 -04:00
+
+- 用户 Prompt 摘要：simulator button not showing up (并在随后的截图中提示重建 First-to-N league simulator)。
+- 具体动作：由于原 simulator 代码在服务器重启中丢失，重新编写了基于 Monte Carlo 的 `LeagueSimulator`，实现了全量循环赛的模拟和结果追踪（Title probability, Avg Rank, Match W-L, Game W-L），在 UI 中添加了 Simulator 按钮和弹窗。增加了对应的 `TestSimulator`。
+- 修改文件：`elo_model.py`；`elo_calculator.py`；`test_elo_model.py`；`historyworklog.txt`；本文件。
+- 测试或验证结果：包含新测试在内的 44 项 unittest 全部通过。
+- GitHub Timeline：仅在本地提交 (commit)，未推送 (push)。
