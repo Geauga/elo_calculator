@@ -241,3 +241,11 @@
 - 修改文件：`elo_simulator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`historyworklog.txt`；本文件。
 - 测试或验证结果：最新架构全部 60 项 unittest 通过；三人完全并列回归由 `[(100%, 1), (0%, 2), (0%, 3)]` 修复为每人 `33.333...%`、平均 rank `2.0`；`git diff --check` 通过；PyInstaller 6.22.0 收集 1,003 项 runtime entries 并包含 Tk runtime hook；新 EXE 在隔离 `LOCALAPPDATA` 中运行 5 秒未退出，所有精确路径匹配的 smoke-test 进程均已停止。EXE SHA-256 为 `891F00637A324891BAE5B47030AC1E0D7ABC2494ECEB9DC666A725609E75EFC9`。
 - GitHub Timeline：最新 `origin/main` 为 `8c870bb`；当前修复尚未 commit 或 push，用户已授权，最终远端检查后将执行 normal fast-forward push。
+
+## 2026-09-02 17:27:25 -04:00
+
+- 用户 Prompt 摘要：完成 review and push。
+- 具体动作：创建 focused commit `805bb0f`，包含 Simulator 完全并列公平性修复、回归测试、文档、重建 executable 和前一条审查记录；push 前 fetch 确认相对 `origin/main` 为 ahead 1 / behind 0，随后执行 normal fast-forward push。
+- 修改文件：仅 append 更新 `historyworklog.txt` 和本文件；实现与 executable 文件包含在 `805bb0f`。
+- 测试或验证结果：发布验证保持为 60/60 tests passed；EXE isolated smoke test 通过；SHA-256 为 `891F00637A324891BAE5B47030AC1E0D7ABC2494ECEB9DC666A725609E75EFC9`；`git ls-remote` 返回 `805bb0fd1af9ddf2bde0d4ddde93446b1f71c731`。
+- GitHub Timeline：commit `805bb0f` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 推送。
