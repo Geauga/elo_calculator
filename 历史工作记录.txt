@@ -123,3 +123,11 @@
 - 修改文件：`elo_model.py`；`elo_calculator.py`；`test_elo_model.py`；`README.md`；`historyworklog.txt`；本文件。
 - 测试或验证结果：Python compile 通过；48 项 unittest 全部通过，包括 model enforcement、历史 draw 保留、schema-6 migration、strict boolean validation 和 UI button-state regression。
 - GitHub Timeline：未 commit，未 push；用户本次未要求 GitHub 更新。既有 build、release、cache 和 helper-script 工作区状态未纳入本次修改。
+
+## 2026-09-01 20:06:00 -04:00
+
+- 用户 Prompt 摘要：Push。
+- 具体动作：仅暂存 `allow_draws` 功能对应的 source、test、README 和两个 append-only work log 文件；排除 build、dist、release、cache 和 helper scripts；创建 commit `a0200d6` 并推送至 `origin/main`。
+- 修改文件：`README.md`；`elo_calculator.py`；`elo_model.py`；`test_elo_model.py`；`historyworklog.txt`；本文件。
+- 测试或验证结果：push 前 Python compile 通过，48 项 unittest 全部通过；focused diff 无 whitespace error；GitHub 接受 fast-forward push `16668cf..a0200d6`。
+- GitHub Timeline：`a0200d6` 已 push 至 `origin/main`。本条 publication record 将作为 focused log commit 推送。
