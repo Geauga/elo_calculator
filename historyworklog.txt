@@ -92,3 +92,8 @@
 - Save schema 7 persists the setting, while schemas 1-6 default to draws enabled.
 - Python compilation and all 48 unit tests passed.
 - GitHub Timeline: not committed and not pushed.
+
+## 2026-09-01 20:06
+- Committed the per-league draw-policy update as `a0200d6` and pushed it to `origin/main`.
+- The push was a fast-forward from `16668cf` to `a0200d6`; generated files and helper scripts were excluded.
+- GitHub Timeline: pushed successfully.
