@@ -139,3 +139,11 @@
 - 修改文件：`elo_model.py`；`elo_calculator.py`；`historyworklog.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v17-Windows-x64/README.txt`；`release/EloLeagueCalculator-v17-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v17-Windows-x64.zip`；本文件。
 - 测试或验证结果：PyInstaller 构建并打包 v17 成功，48 项单元测试通过。
 - GitHub Timeline：推送（push）成功，并在之后将日志更改也推送到 `origin/main`。
+
+## 2026-09-01 20:15:00 -04:00
+
+- 用户 Prompt 摘要：fix the weird characters and commit。
+- 具体动作：修复了 UI 中乱码的编码问题（如标题和预览文本中的 `â€“` 和 `Â±` 替换为了正常字符 `-` 和 `+/-`）。
+- 修改文件：`elo_calculator.py`；`historyworklog.txt`；本文件。
+- 测试或验证结果：乱码字符已被成功替换。
+- GitHub Timeline：仅在本地提交 (commit)，未推送 (push)。

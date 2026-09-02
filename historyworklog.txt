@@ -102,3 +102,7 @@
 - Updated Simulator UI and logic to output absolute average Match and Game W-L counts instead of percentages.
 - Pushed changes to GitHub.
 - Rebuilt and packaged version 17 executable to `release/EloLeagueCalculator-v17-Windows-x64.zip`.
+
+## 2026-09-01 20:15
+- Fixed mojibake encoding issues in the UI where characters like `–` and `±` were incorrectly rendered as `â€“` and `Â±` respectively.
+- Committed the changes locally.
