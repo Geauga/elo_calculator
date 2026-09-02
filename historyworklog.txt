@@ -147,3 +147,10 @@
 - Modified files: `elo_simulator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
 - Tests and verification: All 60 tests passed. The exact three-player tie changed from title/ranks `(100%, 1), (0%, 2), (0%, 3)` to `33.333...%` and rank `2.0` for every player. `git diff --check` passed. PyInstaller 6.22.0 collected 1,003 runtime entries and the Tk runtime hook; the executable passed an isolated five-second launch check and all matching smoke-test processes were stopped. EXE SHA-256: `891F00637A324891BAE5B47030AC1E0D7ABC2494ECEB9DC666A725609E75EFC9`.
 - GitHub Timeline: latest `origin/main` is `8c870bb`; these changes are not committed or pushed yet. The user authorized a normal fast-forward push after the final remote check.
+
+## 2026-09-02 17:27
+- User Prompt summary: Complete review and push.
+- Actions: Created focused commit `805bb0f` containing the fully tied simulator fairness fix, regression test, documentation, rebuilt executable, and review record. The pre-push fetch confirmed ahead 1 / behind 0, then a normal fast-forward push completed.
+- Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and executable changes are in `805bb0f`.
+- Tests and verification: Publication validation remains 60/60 tests passing; isolated EXE smoke test passed; SHA-256 is `891F00637A324891BAE5B47030AC1E0D7ABC2494ECEB9DC666A725609E75EFC9`; `git ls-remote` returned `805bb0fd1af9ddf2bde0d4ddde93446b1f71c731`.
+- GitHub Timeline: commit `805bb0f` was pushed successfully to `origin/main`; this publication record will be pushed as a log-only follow-up commit.
