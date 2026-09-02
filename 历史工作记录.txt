@@ -233,3 +233,11 @@
 - 修改文件：append-only 更新 `historyworklog.txt` 和本文件；implementation 和 executable changes 位于 merge commits `b27b5ef` 和 `8ec116a`。
 - 测试或验证结果：GitHub 接受 normal push `0000725..8ec116a`；push 后本地 `HEAD` 与 `origin/main` 均为 `8ec116aa3ca3635bb3fd991aa31f40664ddc5b03`。最终验证仍为 59/59 tests passed，executable SHA-256 为 `07F0D5A6206E3A016534870CAC6ECE4FDBA0C981F06AE136C0A8364BABE1978E`。
 - GitHub Timeline：merge commit `8ec116a` 已 push 至 `origin/main`；本条 final publication record 将作为 log-only follow-up commit 并 push。
+
+## 2026-09-02 17:25:47 -04:00
+
+- 用户 Prompt 摘要：review and push；continue。
+- 具体动作：由于 GitHub 在两次最终 push 检查前分别新增 4、3 和 9 个并发 commit，未覆盖远端历史；改为从最新远端 `8c870bb` 创建新的临时 clone 并重新审查。确认最新分支已合并此前发现的 rating validation、atomic replay、malformed storage、duplicate UI、draw policy、configurable Elo 和 standalone simulator 修复。进一步复现并修复剩余 Simulator 公平性问题：当所有 standings tiebreaker 完全相同时，原实现按 player ID 将 100% title probability 给第一个 player 并分配不同名次；现在并列者平均分享 title probability 和 rank credit。更新 README、分发说明、回归测试和 Windows executable。
+- 修改文件：`elo_simulator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`historyworklog.txt`；本文件。
+- 测试或验证结果：最新架构全部 60 项 unittest 通过；三人完全并列回归由 `[(100%, 1), (0%, 2), (0%, 3)]` 修复为每人 `33.333...%`、平均 rank `2.0`；`git diff --check` 通过；PyInstaller 6.22.0 收集 1,003 项 runtime entries 并包含 Tk runtime hook；新 EXE 在隔离 `LOCALAPPDATA` 中运行 5 秒未退出，所有精确路径匹配的 smoke-test 进程均已停止。EXE SHA-256 为 `891F00637A324891BAE5B47030AC1E0D7ABC2494ECEB9DC666A725609E75EFC9`。
+- GitHub Timeline：最新 `origin/main` 为 `8c870bb`；当前修复尚未 commit 或 push，用户已授权，最终远端检查后将执行 normal fast-forward push。
