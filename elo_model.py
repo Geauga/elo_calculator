@@ -16,7 +16,7 @@ PLAYER_COUNT = DEFAULT_PLAYER_COUNT
 LEGACY_PLAYER_COUNT = 8
 MIN_PLAYER_COUNT = 2
 MAX_PLAYER_COUNT = 64
-LEAGUE_SCHEMA_VERSION = 6
+LEAGUE_SCHEMA_VERSION = 7
 INITIAL_RATING = 1500.0
 K_FACTOR = 32.0
 MIN_K_FACTOR = 0.01
@@ -263,6 +263,7 @@ class League:
     calculate_elo: bool = True
     k_factor: float = K_FACTOR
     elo_decimal_places: int = DEFAULT_ELO_DECIMAL_PLACES
+    allow_draws: bool = True
 
     def __post_init__(self) -> None:
         self.k_factor = validate_k_factor(self.k_factor)
@@ -270,6 +271,8 @@ class League:
         if validated_places is None:
             raise ValueError("League Elo decimal places cannot be unlimited.")
         self.elo_decimal_places = validated_places
+        if not isinstance(self.allow_draws, bool):
+            raise ValueError("The allow-draws setting must be true or false.")
 
     @classmethod
     def new(cls, player_count: int = DEFAULT_PLAYER_COUNT) -> "League":
@@ -361,6 +364,8 @@ class League:
         return match
 
     def preview_draw(self, player_one_id: int, player_two_id: int) -> dict[str, float]:
+        if not self.allow_draws:
+            raise ValueError("Draws are disabled for this league.")
         if player_one_id == player_two_id:
             raise ValueError("The two players must be different.")
         player_one = self.player(player_one_id)
@@ -588,6 +593,7 @@ class League:
             "calculate_elo": self.calculate_elo,
             "k_factor": self.k_factor,
             "elo_decimal_places": self.elo_decimal_places,
+            "allow_draws": self.allow_draws,
         }
 
     @classmethod
@@ -595,7 +601,7 @@ class League:
         if not isinstance(data, dict):
             raise ValueError("The save file must contain a JSON object.")
         schema_version = data.get("schema_version")
-        if schema_version not in (1, 2, 3, 4, 5, LEAGUE_SCHEMA_VERSION):
+        if schema_version not in (1, 2, 3, 4, 5, 6, LEAGUE_SCHEMA_VERSION):
             raise ValueError("Unsupported save-file version.")
 
         try:
@@ -696,6 +702,9 @@ class League:
             raise ValueError("The save file has invalid Elo settings.") from error
         if elo_decimal_places is None:
             raise ValueError("The save file has invalid Elo settings.")
+        allow_draws = data.get("allow_draws", True)
+        if not isinstance(allow_draws, bool):
+            raise ValueError("The allow-draws setting must be true or false.")
         league = cls(
             players=players, 
             matches=matches, 
@@ -703,6 +712,7 @@ class League:
             calculate_elo=calculate_elo,
             k_factor=k_factor,
             elo_decimal_places=elo_decimal_places,
+            allow_draws=allow_draws,
         )
         valid_ids = {player.id for player in players}
         for match in matches:
@@ -784,7 +794,7 @@ class League:
 # Upstream: UI and storage layers provide league configuration and saved JSON data.
 # Upstream purpose: Collect user-entered results and restore persistent league state.
 # Environment: Python 3.10+ on Windows, with platform-independent model tests.
-# Generated: 2026-09-01 20:11 America/New_York.
-# Changes: Integrated draw results with customizable per-league K-factor and Elo
-# rounding, historical match settings, transactional roster replay, W-D-L/SB
-# statistics, validation, persistence, and backward-compatible schema migration.
+# Generated: 2026-09-02 17:15 America/New_York.
+# Changes: Integrated configurable Elo and draw policies with historical match
+# settings, transactional replay, W-D-L/SB statistics, validation, persistence,
+# and backward-compatible schema migration. Simulation remains in elo_simulator.py.

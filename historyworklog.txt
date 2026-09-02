@@ -93,3 +93,43 @@
 - Modified files: `elo_model.py`; `elo_calculator.py`; `elo_simulator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `EloLeagueCalculator.spec`; `packaging_hooks/hook-_tkinter.py`; `packaging_hooks/pre_find_module_path/hook-tkinter.py`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
 - Tests and verification: All 55 unittest cases passed; conflict-marker and whitespace checks passed; the final PyInstaller build classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the executable remained running during an isolated five-second launch test; SHA-256 is `EAF19DF9FC2C9EC945C5F8A19C62FA6D4677D061E7A971210CEE92D91C665D82`.
 - GitHub Timeline: Merge is resolved locally but not yet committed or pushed. The user explicitly requested GitHub publication; a normal merge commit and push to `origin/main` will follow, without force push.
+## 2026-08-31 20:16
+- Rebuilt the First-to-N League Simulator using Monte Carlo simulations and integrated the Simulator dialog into the main UI.
+- All 44 unit tests are passing.
+- Committed the changes locally.
+
+## 2026-09-01 20:00
+- Pushed the Simulator commit to GitHub.
+- Rebuilt and packaged version 16 executable to `release/EloLeagueCalculator-v16-Windows-x64.zip`.
+
+## 2026-09-01 20:04
+- Added a per-league `Allow draws` setting in League Settings.
+- Disabling draws now disables only the draw action and preview; model-level validation rejects new draws while preserving historical draw results and statistics.
+- Save schema 7 persists the setting, while schemas 1-6 default to draws enabled.
+- Python compilation and all 48 unit tests passed.
+- GitHub Timeline: not committed and not pushed.
+
+## 2026-09-01 20:06
+- Committed the per-league draw-policy update as `a0200d6` and pushed it to `origin/main`.
+- The push was a fast-forward from `16668cf` to `a0200d6`; generated files and helper scripts were excluded.
+- GitHub Timeline: pushed successfully.
+
+## 2026-09-01 20:11
+- Updated Simulator UI and logic to output absolute average Match and Game W-L counts instead of percentages.
+- Pushed changes to GitHub.
+- Rebuilt and packaged version 17 executable to `release/EloLeagueCalculator-v17-Windows-x64.zip`.
+
+## 2026-09-01 20:15
+- Fixed mojibake encoding issues in the UI where characters like `–` and `±` were incorrectly rendered as `â€“` and `Â±` respectively.
+- Committed the changes locally.
+
+## 2026-09-01 20:17
+- Pushed the encoding fix commit to GitHub.
+- Rebuilt and packaged version 18 executable to `release/EloLeagueCalculator-v18-Windows-x64.zip`.
+
+## 2026-09-02 17:18
+- User Prompt summary: Continue publishing the combined First-to-N simulator update to GitHub.
+- Actions: After the first push was rejected because `origin/main` advanced, fetched and normally merged nine remote commits; integrated the per-league Allow draws policy and ASCII-safe UI text with customizable K-factor/rounding; retained the validated standalone simulator with absolute average match/game W-L output; removed the remotely reintroduced duplicate simulator class and duplicate shadowing UI method; corrected the League Settings options row so it does not overlap the Elo settings; rebuilt the executable with the project Tcl/Tk hooks.
+- Modified files: `elo_model.py`; `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 59 unittest cases passed; conflict-marker, mojibake-source, and whitespace checks passed; PyInstaller classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the executable remained running during an isolated five-second launch test; the verified child process was stopped by exact executable path and temporary build directories were removed; SHA-256 is `07F0D5A6206E3A016534870CAC6ECE4FDBA0C981F06AE136C0A8364BABE1978E`.
+- GitHub Timeline: Local merge of latest `origin/main` is resolved but not yet committed or pushed. A normal merge commit and push will follow without rewriting remote history.

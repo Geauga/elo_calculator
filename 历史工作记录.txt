@@ -162,3 +162,66 @@
 - 修改文件：`elo_model.py`；`elo_calculator.py`；`elo_simulator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`EloLeagueCalculator.spec`；`packaging_hooks/hook-_tkinter.py`；`packaging_hooks/pre_find_module_path/hook-tkinter.py`；`dist/EloLeagueCalculator.exe`；`historyworklog.txt`；本文件。
 - 测试或验证结果：55 项 unittest 全部通过；conflict-marker 和 whitespace 检查通过；最终 PyInstaller build classified 1,003 runtime entries，并包含 `pyi_rth__tkinter.py`；executable 在 isolated five-second launch test 中持续运行；SHA-256 为 `EAF19DF9FC2C9EC945C5F8A19C62FA6D4677D061E7A971210CEE92D91C665D82`。
 - GitHub Timeline：merge 已在本地解决，尚未 commit 或 push。用户明确要求发布到 GitHub；后续将创建 normal merge commit 并 push 到 `origin/main`，不使用 force push。
+## 2026-08-31 20:16:00 -04:00
+
+- 用户 Prompt 摘要：simulator button not showing up (并在随后的截图中提示重建 First-to-N league simulator)。
+- 具体动作：由于原 simulator 代码在服务器重启中丢失，重新编写了基于 Monte Carlo 的 `LeagueSimulator`，实现了全量循环赛的模拟和结果追踪（Title probability, Avg Rank, Match W-L, Game W-L），在 UI 中添加了 Simulator 按钮和弹窗。增加了对应的 `TestSimulator`。
+- 修改文件：`elo_model.py`；`elo_calculator.py`；`test_elo_model.py`；`historyworklog.txt`；本文件。
+- 测试或验证结果：包含新测试在内的 44 项 unittest 全部通过。
+- GitHub Timeline：仅在本地提交 (commit)，未推送 (push)。
+
+## 2026-09-01 20:00:00 -04:00
+
+- 用户 Prompt 摘要：push and build package。
+- 具体动作：将 Simulator 功能推送到了 GitHub；使用 PyInstaller 重新构建可执行程序，并打包至 `release/EloLeagueCalculator-v16-Windows-x64.zip`。
+- 修改文件：`historyworklog.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v16-Windows-x64/README.txt`；`release/EloLeagueCalculator-v16-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v16-Windows-x64.zip`；本文件。
+- 测试或验证结果：PyInstaller 构建并打包 v16 成功。
+- GitHub Timeline：推送（push）成功，并在之后将日志更改也推送到 `origin/main`。
+
+## 2026-09-01 20:04:00 -04:00
+
+- 用户 Prompt 摘要：Add option to disable draws。
+- 具体动作：新增每个 league 独立的 `allow_draws` 设置；在 League Settings 增加 `Allow draws` checkbox；关闭时禁用 `Record draw` 和 draw preview，但保留 `Record win`；model 层拒绝新增 draw；历史 draw、W-D-L 和 SB 统计保持不变；保存 schema 升级至 7，schema 1-6 缺少此字段时默认允许 draw；README 增加说明。
+- 修改文件：`elo_model.py`；`elo_calculator.py`；`test_elo_model.py`；`README.md`；`historyworklog.txt`；本文件。
+- 测试或验证结果：Python compile 通过；48 项 unittest 全部通过，包括 model enforcement、历史 draw 保留、schema-6 migration、strict boolean validation 和 UI button-state regression。
+- GitHub Timeline：未 commit，未 push；用户本次未要求 GitHub 更新。既有 build、release、cache 和 helper-script 工作区状态未纳入本次修改。
+
+## 2026-09-01 20:06:00 -04:00
+
+- 用户 Prompt 摘要：Push。
+- 具体动作：仅暂存 `allow_draws` 功能对应的 source、test、README 和两个 append-only work log 文件；排除 build、dist、release、cache 和 helper scripts；创建 commit `a0200d6` 并推送至 `origin/main`。
+- 修改文件：`README.md`；`elo_calculator.py`；`elo_model.py`；`test_elo_model.py`；`historyworklog.txt`；本文件。
+- 测试或验证结果：push 前 Python compile 通过，48 项 unittest 全部通过；focused diff 无 whitespace error；GitHub 接受 fast-forward push `16668cf..a0200d6`。
+- GitHub Timeline：`a0200d6` 已 push 至 `origin/main`。本条 publication record 将作为 focused log commit 推送。
+
+## 2026-09-01 20:11:00 -04:00
+
+- 用户 Prompt 摘要：make simulator show w-l and game results -> rebuild and push。
+- 具体动作：将 Simulator UI 从显示百分比修改为显示具体的绝对平均 W-L 场次（例如 `2.1 - 0.9`）。修改并提交了该功能后，重新使用 PyInstaller 构建了可执行程序，并打包至 `release/EloLeagueCalculator-v17-Windows-x64.zip`。
+- 修改文件：`elo_model.py`；`elo_calculator.py`；`historyworklog.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v17-Windows-x64/README.txt`；`release/EloLeagueCalculator-v17-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v17-Windows-x64.zip`；本文件。
+- 测试或验证结果：PyInstaller 构建并打包 v17 成功，48 项单元测试通过。
+- GitHub Timeline：推送（push）成功，并在之后将日志更改也推送到 `origin/main`。
+
+## 2026-09-01 20:15:00 -04:00
+
+- 用户 Prompt 摘要：fix the weird characters and commit。
+- 具体动作：修复了 UI 中乱码的编码问题（如标题和预览文本中的 `â€“` 和 `Â±` 替换为了正常字符 `-` 和 `+/-`）。
+- 修改文件：`elo_calculator.py`；`historyworklog.txt`；本文件。
+- 测试或验证结果：乱码字符已被成功替换。
+- GitHub Timeline：仅在本地提交 (commit)，未推送 (push)。
+
+## 2026-09-01 20:17:00 -04:00
+
+- 用户 Prompt 摘要：yes (rebuild and push)。
+- 具体动作：将编码修复推送到 GitHub。重新使用 PyInstaller 构建了可执行程序，并打包至 `release/EloLeagueCalculator-v18-Windows-x64.zip`。
+- 修改文件：`historyworklog.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v18-Windows-x64/README.txt`；`release/EloLeagueCalculator-v18-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v18-Windows-x64.zip`；本文件。
+- 测试或验证结果：PyInstaller 构建并打包 v18 成功。
+- GitHub Timeline：推送（push）成功，并在之后将日志更改也推送到 `origin/main`。
+
+## 2026-09-02 17:18:00 -04:00
+
+- 用户 Prompt 摘要：继续将合并后的 First-to-N simulator 更新发布到 GitHub。
+- 具体动作：第一次 push 因 `origin/main` 新增 commits 被拒绝后，fetch 并以 normal merge 合并九个远端 commits；将 per-league Allow draws policy 和 ASCII-safe UI text 与 customizable K-factor/rounding 集成；保留经过验证、显示 absolute average match/game W-L 的 standalone simulator；删除远端重新引入的 duplicate simulator class 和 shadowing duplicate UI method；修复 League Settings options row 与 Elo settings 重叠；使用 project Tcl/Tk hooks 重新构建 executable。
+- 修改文件：`elo_model.py`；`elo_calculator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`historyworklog.txt`；本文件。
+- 测试或验证结果：59 项 unittest 全部通过；conflict-marker、mojibake-source 和 whitespace 检查通过；PyInstaller classified 1,003 runtime entries，并包含 `pyi_rth__tkinter.py`；executable 在 isolated five-second launch test 中持续运行；已按 exact executable path 停止验证产生的 child process，并删除 temporary build directories；SHA-256 为 `07F0D5A6206E3A016534870CAC6ECE4FDBA0C981F06AE136C0A8364BABE1978E`。
+- GitHub Timeline：latest `origin/main` 已在本地完成 conflict resolution，尚未 commit 或 push；后续将使用 normal merge commit 和 push，不重写 remote history。

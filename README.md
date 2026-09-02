@@ -16,7 +16,8 @@ with adjustable rosters.
 - Each match stores the K-factor and rounding used for its Elo transfer, so
   later rule changes do not alter its calculation during roster replay.
 - A draw gives each player a 0.5 Elo result, updates both ratings, and contributes
-  half of the opponent's match score to each player's SB score.
+  half of the opponent's match score to each player's SB score. Draws can be
+  enabled or disabled independently for each league in League Settings.
 - Standings show match wins, draws, and losses; match score percentage; individual game
   wins and losses, game win percentage, and a Sonneborn-Berger (SB) score. Elo
   remains the primary ranking key; equal Elo ratings are ordered by SB score.
