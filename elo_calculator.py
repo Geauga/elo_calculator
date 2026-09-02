@@ -172,7 +172,7 @@ class EloCalculatorApp:
         self.loser_var = tk.StringVar()
         self.loser_games_var = tk.StringVar(value="0")
         self.winner_games_var = tk.StringVar(value="3")
-        self.winner_score_var = tk.StringVar(value="3 â€“")
+        self.winner_score_var = tk.StringVar(value="3 -")
         self.theme_var = tk.StringVar(value=load_theme(SETTINGS_FILE))
         self.preview_var = tk.StringVar(
             value="Select two different players to preview the Elo change."
@@ -745,7 +745,7 @@ class EloCalculatorApp:
             command=self._update_preview,
         )
         self.winner_score_spin.pack(side="left")
-        ttk.Label(self.custom_score_frame, text=" â€“ ").pack(side="left")
+        ttk.Label(self.custom_score_frame, text=" - ").pack(side="left")
         self.loser_score_spin = ttk.Spinbox(
             self.custom_score_frame,
             from_=0,
@@ -1766,7 +1766,7 @@ class EloCalculatorApp:
             self.custom_score_frame.grid_remove()
             self.fixed_score_frame.grid()
             self.winner_games_var.set(str(win_condition.games_to_win))
-            self.winner_score_var.set(f"{win_condition.games_to_win} â€“")
+            self.winner_score_var.set(f"{win_condition.games_to_win} -")
             valid_scores = tuple(
                 str(i) for i in sorted(win_condition.score_multipliers.keys())
             )
@@ -1842,12 +1842,12 @@ class EloCalculatorApp:
             result = (
                 f"{winner} drew with {loser}"
                 if match.is_draw
-                else f"{winner} {match.winner_games}â€“{match.loser_games} {loser}"
+                else f"{winner} {match.winner_games}-{match.loser_games} {loser}"
             )
             elo_change = (
                 f"{match.rating_change:+.2f}/{-match.rating_change:+.2f}"
                 if match.is_draw
-                else f"Â±{match.rating_change:.2f}"
+                else f"+/-{match.rating_change:.2f}"
             )
             self.history.insert(
                 "",
@@ -1994,7 +1994,7 @@ class EloCalculatorApp:
             f"Margin multiplier: {preview['multiplier']:.0%}\n"
             f"Expected chance: {winner.name} {preview['winner_expected']:.1%}, "
             f"{loser.name} {preview['loser_expected']:.1%}\n"
-            f"Change: Â±{preview['change']:.2f} Elo\n"
+            f"Change: +/-{preview['change']:.2f} Elo\n"
             f"New ratings: {winner.name} {preview['winner_after']:.2f}, "
             f"{loser.name} {preview['loser_after']:.2f}"
         )
@@ -2042,8 +2042,8 @@ class EloCalculatorApp:
 
         self.status_var.set(
             f"Saved: {winner} defeated {loser} "
-            f"{match.winner_games}â€“{loser_games}; "
-            f"Â±{match.rating_change:.2f} Elo"
+            f"{match.winner_games}-{loser_games}; "
+            f"+/-{match.rating_change:.2f} Elo"
         )
         self._refresh_all()
 
@@ -2088,7 +2088,7 @@ class EloCalculatorApp:
         result = (
             f"{winner} drew with {loser}"
             if match.is_draw
-            else f"{winner} {match.winner_games}â€“{match.loser_games} {loser}"
+            else f"{winner} {match.winner_games}-{match.loser_games} {loser}"
         )
         if not self._ask_yes_no(
             "Undo last match",
