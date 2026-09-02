@@ -106,3 +106,7 @@
 ## 2026-09-01 20:15
 - Fixed mojibake encoding issues in the UI where characters like `–` and `±` were incorrectly rendered as `â€“` and `Â±` respectively.
 - Committed the changes locally.
+
+## 2026-09-01 20:17
+- Pushed the encoding fix commit to GitHub.
+- Rebuilt and packaged version 18 executable to `release/EloLeagueCalculator-v18-Windows-x64.zip`.
