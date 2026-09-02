@@ -81,3 +81,7 @@
 - Rebuilt the First-to-N League Simulator using Monte Carlo simulations and integrated the Simulator dialog into the main UI.
 - All 44 unit tests are passing.
 - Committed the changes locally.
+
+## 2026-09-01 20:00
+- Pushed the Simulator commit to GitHub.
+- Rebuilt and packaged version 16 executable to `release/EloLeagueCalculator-v16-Windows-x64.zip`.

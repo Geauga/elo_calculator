@@ -107,3 +107,11 @@
 - 修改文件：`elo_model.py`；`elo_calculator.py`；`test_elo_model.py`；`historyworklog.txt`；本文件。
 - 测试或验证结果：包含新测试在内的 44 项 unittest 全部通过。
 - GitHub Timeline：仅在本地提交 (commit)，未推送 (push)。
+
+## 2026-09-01 20:00:00 -04:00
+
+- 用户 Prompt 摘要：push and build package。
+- 具体动作：将 Simulator 功能推送到了 GitHub；使用 PyInstaller 重新构建可执行程序，并打包至 `release/EloLeagueCalculator-v16-Windows-x64.zip`。
+- 修改文件：`historyworklog.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v16-Windows-x64/README.txt`；`release/EloLeagueCalculator-v16-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v16-Windows-x64.zip`；本文件。
+- 测试或验证结果：PyInstaller 构建并打包 v16 成功。
+- GitHub Timeline：推送（push）成功，并在之后将日志更改也推送到 `origin/main`。
