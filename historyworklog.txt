@@ -140,3 +140,10 @@
 - Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and executable changes are contained in merge commits `b27b5ef` and `8ec116a`.
 - Tests and verification: GitHub accepted the normal push `0000725..8ec116a`; local `HEAD` and `origin/main` both resolved to `8ec116aa3ca3635bb3fd991aa31f40664ddc5b03` immediately after the push. The verified suite and executable results remain 59/59 passing and SHA-256 `07F0D5A6206E3A016534870CAC6ECE4FDBA0C981F06AE136C0A8364BABE1978E`.
 - GitHub Timeline: Merge commit `8ec116a` is pushed to `origin/main`. This final publication record will be committed and pushed as a log-only follow-up.
+
+## 2026-09-02 17:25
+- User Prompt summary: Review and push; continue.
+- Actions: GitHub advanced before three attempted final pushes, so no remote history was overwritten. Created a fresh clone at current head `8c870bb`, confirmed the current architecture already contained the earlier validation, atomic replay, malformed-storage, duplicate-UI, draw-policy, configurable-Elo, and standalone-simulator fixes, then fixed the remaining deterministic simulator tie bias. Players tied on every standings tiebreaker now share title probability and average-rank credit instead of being separated by player ID. Updated documentation, regression tests, and the Windows executable.
+- Modified files: `elo_simulator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 60 tests passed. The exact three-player tie changed from title/ranks `(100%, 1), (0%, 2), (0%, 3)` to `33.333...%` and rank `2.0` for every player. `git diff --check` passed. PyInstaller 6.22.0 collected 1,003 runtime entries and the Tk runtime hook; the executable passed an isolated five-second launch check and all matching smoke-test processes were stopped. EXE SHA-256: `891F00637A324891BAE5B47030AC1E0D7ABC2494ECEB9DC666A725609E75EFC9`.
+- GitHub Timeline: latest `origin/main` is `8c870bb`; these changes are not committed or pushed yet. The user authorized a normal fast-forward push after the final remote check.
