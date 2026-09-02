@@ -97,3 +97,8 @@
 - Committed the per-league draw-policy update as `a0200d6` and pushed it to `origin/main`.
 - The push was a fast-forward from `16668cf` to `a0200d6`; generated files and helper scripts were excluded.
 - GitHub Timeline: pushed successfully.
+
+## 2026-09-01 20:11
+- Updated Simulator UI and logic to output absolute average Match and Game W-L counts instead of percentages.
+- Pushed changes to GitHub.
+- Rebuilt and packaged version 17 executable to `release/EloLeagueCalculator-v17-Windows-x64.zip`.
