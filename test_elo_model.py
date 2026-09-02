@@ -125,6 +125,60 @@ class EloModelTests(unittest.TestCase):
         self.assertEqual(stats[0].match_win_percentage, 50.0)
         self.assertEqual((stats[0].games_won, stats[0].games_lost), (0, 0))
 
+    def test_draws_can_be_disabled_without_changing_existing_results(self) -> None:
+        league = League.new(2)
+        league.record_draw(0, 1)
+        league.allow_draws = False
+
+        with self.assertRaisesRegex(ValueError, "Draws are disabled"):
+            league.record_draw(0, 1)
+
+        self.assertEqual(len(league.matches), 1)
+        self.assertTrue(league.matches[0].is_draw)
+        self.assertEqual(league.statistics()[0].matches_drawn, 1)
+
+    def test_allow_draws_setting_persists_and_older_saves_default_to_enabled(self) -> None:
+        league = League.new(2)
+        league.allow_draws = False
+
+        restored = League.from_dict(league.to_dict())
+        self.assertFalse(restored.allow_draws)
+
+        legacy_data = league.to_dict()
+        legacy_data["schema_version"] = 6
+        legacy_data.pop("allow_draws")
+        legacy = League.from_dict(legacy_data)
+        self.assertTrue(legacy.allow_draws)
+
+    def test_allow_draws_setting_must_be_boolean(self) -> None:
+        data = League.new(2).to_dict()
+        data["allow_draws"] = "yes"
+
+        with self.assertRaisesRegex(ValueError, "allow-draws"):
+            League.from_dict(data)
+
+    def test_disabled_draws_disable_only_the_draw_ui_action(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.league = League.new(2)
+        app.league.allow_draws = False
+        app.player_name_to_id = {"Player 1": 0, "Player 2": 1}
+        app.winner_var = Mock(get=Mock(return_value="Player 1"))
+        app.loser_var = Mock(get=Mock(return_value="Player 2"))
+        app.winner_games_var = Mock(get=Mock(return_value="3"))
+        app.loser_games_var = Mock(get=Mock(return_value="0"))
+        app.preview_var = Mock()
+        app.record_button = Mock()
+        app.draw_button = Mock()
+
+        app._update_preview()
+
+        app.record_button.configure.assert_called_with(state="normal")
+        app.draw_button.configure.assert_called_with(state="disabled")
+        self.assertIn(
+            "Draws are disabled for this league.",
+            app.preview_var.set.call_args.args[0],
+        )
+
     def test_draw_moves_unequal_ratings_toward_each_other_and_is_zero_sum(self) -> None:
         league = League.new(2)
         league.player(0).rating = 1700.0
@@ -583,7 +637,7 @@ class EloModelTests(unittest.TestCase):
         upgraded = LeagueCollection.from_dict(previous_data)
 
         self.assertEqual(len(upgraded.active.league.players), 12)
-        self.assertEqual(upgraded.active.league.to_dict()["schema_version"], 6)
+        self.assertEqual(upgraded.active.league.to_dict()["schema_version"], 7)
 
 
 class TestSimulator(unittest.TestCase):
@@ -616,6 +670,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-08-31 19:44 America/New_York.
-# Changes: Lines 112-186 and 584 cover draw Elo, W-D-L statistics, SB scoring,
-# persistence, undo, roster replay, schema-5 compatibility, and schema migration.
+# Generated: 2026-09-01 20:04 America/New_York.
+# Changes: Lines 113-157 and 615 verify disabled-draw enforcement, preservation
+# of historical draws, persistence, schema-6 defaults, and strict boolean input.

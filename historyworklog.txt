@@ -85,3 +85,10 @@
 ## 2026-09-01 20:00
 - Pushed the Simulator commit to GitHub.
 - Rebuilt and packaged version 16 executable to `release/EloLeagueCalculator-v16-Windows-x64.zip`.
+
+## 2026-09-01 20:04
+- Added a per-league `Allow draws` setting in League Settings.
+- Disabling draws now disables only the draw action and preview; model-level validation rejects new draws while preserving historical draw results and statistics.
+- Save schema 7 persists the setting, while schemas 1-6 default to draws enabled.
+- Python compilation and all 48 unit tests passed.
+- GitHub Timeline: not committed and not pushed.

@@ -12,7 +12,8 @@ with adjustable rosters.
   the change.
 - The K-factor is `32`.
 - A draw gives each player a 0.5 Elo result, updates both ratings, and contributes
-  half of the opponent's match score to each player's SB score.
+  half of the opponent's match score to each player's SB score. Draws can be
+  enabled or disabled independently for each league in League Settings.
 - Ratings retain full decimal precision and display two decimal places.
 - Standings show match wins, draws, and losses; match score percentage; individual game
   wins and losses, game win percentage, and a Sonneborn-Berger (SB) score. Elo
