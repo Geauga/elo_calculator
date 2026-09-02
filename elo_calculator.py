@@ -180,7 +180,7 @@ class EloCalculatorApp:
         self.loser_var = tk.StringVar()
         self.loser_games_var = tk.StringVar(value="0")
         self.winner_games_var = tk.StringVar(value="3")
-        self.winner_score_var = tk.StringVar(value="3 –")
+        self.winner_score_var = tk.StringVar(value="3 -")
         self.theme_var = tk.StringVar(value=load_theme(SETTINGS_FILE))
         self.preview_var = tk.StringVar(
             value="Select two different players to preview the Elo change."
@@ -680,7 +680,7 @@ class EloCalculatorApp:
             command=self._update_preview,
         )
         self.winner_score_spin.pack(side="left")
-        ttk.Label(self.custom_score_frame, text=" – ").pack(side="left")
+        ttk.Label(self.custom_score_frame, text=" - ").pack(side="left")
         self.loser_score_spin = ttk.Spinbox(
             self.custom_score_frame,
             from_=0,
@@ -1538,9 +1538,15 @@ class EloCalculatorApp:
         ).grid(row=2, column=0, columnspan=2, sticky="ew", pady=(6, 0))
 
         calc_elo_var = tk.BooleanVar(value=self.league.calculate_elo)
+        allow_draws_var = tk.BooleanVar(value=self.league.allow_draws)
+        options_frame = ttk.Frame(dialog)
+        options_frame.grid(row=3, column=0, padx=12, pady=5, sticky="w")
         ttk.Checkbutton(
-            dialog, text="Auto-calculate Elo", variable=calc_elo_var
-        ).grid(row=3, column=0, padx=12, pady=5, sticky="w")
+            options_frame, text="Auto-calculate Elo", variable=calc_elo_var
+        ).pack(side="left")
+        ttk.Checkbutton(
+            options_frame, text="Allow draws", variable=allow_draws_var
+        ).pack(side="left", padx=(16, 0))
 
         mult_frame = ttk.LabelFrame(dialog, text="Score Multipliers", padding=10)
         mult_frame.grid(row=4, column=0, padx=10, pady=5, sticky="nsew")
@@ -1644,6 +1650,7 @@ class EloCalculatorApp:
             self.league.calculate_elo = calc_elo_var.get()
             self.league.k_factor = new_k_factor
             self.league.elo_decimal_places = new_decimal_places
+            self.league.allow_draws = allow_draws_var.get()
             try:
                 format_name = (
                     "custom scores"
@@ -1656,7 +1663,8 @@ class EloCalculatorApp:
                     f"Set {self.collection.active.name} to {format_name}; "
                     f"K={new_k_factor:g}; Elo rounding={new_decimal_places} "
                     f"decimal places; automatic Elo "
-                    f"{'on' if calc_elo_var.get() else 'off'}.",
+                    f"{'on' if calc_elo_var.get() else 'off'}; "
+                    f"draws {'allowed' if allow_draws_var.get() else 'disabled'}.",
                 )
             except (OSError, ValueError) as e:
                 self._restore_collection(previous_state)
@@ -1932,7 +1940,7 @@ class EloCalculatorApp:
             self.custom_score_frame.grid_remove()
             self.fixed_score_frame.grid()
             self.winner_games_var.set(str(win_condition.games_to_win))
-            self.winner_score_var.set(f"{win_condition.games_to_win} –")
+            self.winner_score_var.set(f"{win_condition.games_to_win} -")
             valid_scores = tuple(
                 str(i) for i in sorted(win_condition.score_multipliers.keys())
             )
@@ -2014,13 +2022,13 @@ class EloCalculatorApp:
             result = (
                 f"{winner} drew with {loser}"
                 if match.is_draw
-                else f"{winner} {match.winner_games}–{match.loser_games} {loser}"
+                else f"{winner} {match.winner_games}-{match.loser_games} {loser}"
             )
             elo_change = (
                 f"{self._format_signed_elo(match.rating_change)}/"
                 f"{self._format_signed_elo(-match.rating_change)}"
                 if match.is_draw
-                else f"±{self._format_elo(match.rating_change)}"
+                else f"+/-{self._format_elo(match.rating_change)}"
             )
             self.history.insert(
                 "",
@@ -2060,7 +2068,11 @@ class EloCalculatorApp:
             preview = self.league.preview_match(
                 winner_id, loser_id, loser_games, winner_games
             )
-            draw_preview = self.league.preview_draw(winner_id, loser_id)
+            draw_preview = (
+                self.league.preview_draw(winner_id, loser_id)
+                if self.league.allow_draws
+                else None
+            )
             winner = self.league.player(winner_id)
             loser = self.league.player(loser_id)
         except ValueError as error:
@@ -2071,24 +2083,34 @@ class EloCalculatorApp:
             except ValueError:
                 self.draw_button.configure(state="disabled")
             else:
-                self.draw_button.configure(state="normal")
+                self.draw_button.configure(
+                    state="normal" if self.league.allow_draws else "disabled"
+                )
             return
 
-        self.preview_var.set(
+        preview_text = (
             f"Margin multiplier: {preview['multiplier']:.0%}\n"
             f"Expected chance: {winner.name} {preview['winner_expected']:.1%}, "
             f"{loser.name} {preview['loser_expected']:.1%}\n"
-            f"Change: ±{self._format_elo(preview['change'])} Elo\n"
+            f"Change: +/-{self._format_elo(preview['change'])} Elo\n"
             f"New ratings: {winner.name} "
             f"{self._format_elo(preview['winner_after'])}, "
-            f"{loser.name} {self._format_elo(preview['loser_after'])}\n"
-            f"Draw Elo: {winner.name} "
-            f"{self._format_signed_elo(draw_preview['change'])}, "
-            f"{loser.name} "
-            f"{self._format_signed_elo(-draw_preview['change'])}"
+            f"{loser.name} {self._format_elo(preview['loser_after'])}"
         )
+        if draw_preview is not None:
+            preview_text += (
+                f"\nDraw Elo: {winner.name} "
+                f"{self._format_signed_elo(draw_preview['change'])}, "
+                f"{loser.name} "
+                f"{self._format_signed_elo(-draw_preview['change'])}"
+            )
+        else:
+            preview_text += "\nDraws are disabled for this league."
+        self.preview_var.set(preview_text)
         self.record_button.configure(state="normal")
-        self.draw_button.configure(state="normal")
+        self.draw_button.configure(
+            state="normal" if self.league.allow_draws else "disabled"
+        )
 
     def _record_match(self) -> None:
         previous_state = self.collection.to_dict()
@@ -2121,8 +2143,8 @@ class EloCalculatorApp:
 
         self.status_var.set(
             f"Saved: {winner} defeated {loser} "
-            f"{match.winner_games}–{loser_games}; "
-            f"±{self._format_elo(match.rating_change)} Elo"
+            f"{match.winner_games}-{loser_games}; "
+            f"+/-{self._format_elo(match.rating_change)} Elo"
         )
         self._refresh_all()
 
@@ -2170,7 +2192,7 @@ class EloCalculatorApp:
         result = (
             f"{winner} drew with {loser}"
             if match.is_draw
-            else f"{winner} {match.winner_games}–{match.loser_games} {loser}"
+            else f"{winner} {match.winner_games}-{match.loser_games} {loser}"
         )
         if not self._ask_yes_no(
             "Undo last match",
@@ -2310,7 +2332,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-09-01 20:11 America/New_York.
-# Changes: Integrated First-to-N simulation with graphs, draw recording,
-# customizable Elo settings, precision-aware display, W-D-L standings, history,
-# validation, transactional replay, and draw-aware undo.
+# Generated: 2026-09-02 17:15 America/New_York.
+# Changes: Integrated the standalone First-to-N simulator, graphs, configurable
+# Elo settings, per-league draw policy, precision-aware display, W-D-L/SB
+# standings, validation, transactional replay, and draw-aware undo.
