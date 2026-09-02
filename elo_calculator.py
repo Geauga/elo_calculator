@@ -1378,9 +1378,15 @@ class EloCalculatorApp:
         ).grid(row=0, column=1, pady=(0, 5), sticky="w")
 
         calc_elo_var = tk.BooleanVar(value=self.league.calculate_elo)
+        allow_draws_var = tk.BooleanVar(value=self.league.allow_draws)
+        options_frame = ttk.Frame(dialog)
+        options_frame.grid(row=2, column=0, padx=12, pady=5, sticky="w")
         ttk.Checkbutton(
-            dialog, text="Auto-calculate Elo", variable=calc_elo_var
-        ).grid(row=2, column=0, padx=12, pady=5, sticky="w")
+            options_frame, text="Auto-calculate Elo", variable=calc_elo_var
+        ).pack(side="left")
+        ttk.Checkbutton(
+            options_frame, text="Allow draws", variable=allow_draws_var
+        ).pack(side="left", padx=(16, 0))
 
         mult_frame = ttk.LabelFrame(dialog, text="Score Multipliers", padding=10)
         mult_frame.grid(row=3, column=0, padx=10, pady=5, sticky="nsew")
@@ -1472,6 +1478,7 @@ class EloCalculatorApp:
             previous_state = self.collection.to_dict()
             self.league.win_condition = new_rules
             self.league.calculate_elo = calc_elo_var.get()
+            self.league.allow_draws = allow_draws_var.get()
             try:
                 format_name = (
                     "custom scores"
@@ -1482,7 +1489,8 @@ class EloCalculatorApp:
                     previous_state,
                     "rules_edited",
                     f"Set {self.collection.active.name} to {format_name}; "
-                    f"automatic Elo {'on' if calc_elo_var.get() else 'off'}.",
+                    f"automatic Elo {'on' if calc_elo_var.get() else 'off'}; "
+                    f"draws {'allowed' if allow_draws_var.get() else 'disabled'}.",
                 )
             except (OSError, ValueError) as e:
                 self._restore_collection(previous_state)
@@ -1962,7 +1970,11 @@ class EloCalculatorApp:
             preview = self.league.preview_match(
                 winner_id, loser_id, loser_games, winner_games
             )
-            draw_preview = self.league.preview_draw(winner_id, loser_id)
+            draw_preview = (
+                self.league.preview_draw(winner_id, loser_id)
+                if self.league.allow_draws
+                else None
+            )
             winner = self.league.player(winner_id)
             loser = self.league.player(loser_id)
         except ValueError as error:
@@ -1973,21 +1985,31 @@ class EloCalculatorApp:
             except ValueError:
                 self.draw_button.configure(state="disabled")
             else:
-                self.draw_button.configure(state="normal")
+                self.draw_button.configure(
+                    state="normal" if self.league.allow_draws else "disabled"
+                )
             return
 
-        self.preview_var.set(
+        preview_text = (
             f"Margin multiplier: {preview['multiplier']:.0%}\n"
             f"Expected chance: {winner.name} {preview['winner_expected']:.1%}, "
             f"{loser.name} {preview['loser_expected']:.1%}\n"
             f"Change: Â±{preview['change']:.2f} Elo\n"
             f"New ratings: {winner.name} {preview['winner_after']:.2f}, "
-            f"{loser.name} {preview['loser_after']:.2f}\n"
-            f"Draw Elo: {winner.name} {draw_preview['change']:+.2f}, "
-            f"{loser.name} {-draw_preview['change']:+.2f}"
+            f"{loser.name} {preview['loser_after']:.2f}"
         )
+        if draw_preview is not None:
+            preview_text += (
+                f"\nDraw Elo: {winner.name} {draw_preview['change']:+.2f}, "
+                f"{loser.name} {-draw_preview['change']:+.2f}"
+            )
+        else:
+            preview_text += "\nDraws are disabled for this league."
+        self.preview_var.set(preview_text)
         self.record_button.configure(state="normal")
-        self.draw_button.configure(state="normal")
+        self.draw_button.configure(
+            state="normal" if self.league.allow_draws else "disabled"
+        )
 
     def _record_match(self) -> None:
         previous_state = self.collection.to_dict()
@@ -2202,7 +2224,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-08-31 19:44 America/New_York.
-# Changes: Lines 662-773 and 1813-2008 add W-D-L display, a Record draw action,
-# draw history/activity details, validation, status text, and draw-aware undo.
+# Generated: 2026-09-01 20:03 America/New_York.
+# Changes: Lines 1380-1492 and 1959-2010 add the Allow draws league setting,
+# disable draw entry and preview when off, and retain normal win entry.
 

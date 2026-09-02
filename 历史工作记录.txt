@@ -115,3 +115,11 @@
 - 修改文件：`historyworklog.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v16-Windows-x64/README.txt`；`release/EloLeagueCalculator-v16-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v16-Windows-x64.zip`；本文件。
 - 测试或验证结果：PyInstaller 构建并打包 v16 成功。
 - GitHub Timeline：推送（push）成功，并在之后将日志更改也推送到 `origin/main`。
+
+## 2026-09-01 20:04:00 -04:00
+
+- 用户 Prompt 摘要：Add option to disable draws。
+- 具体动作：新增每个 league 独立的 `allow_draws` 设置；在 League Settings 增加 `Allow draws` checkbox；关闭时禁用 `Record draw` 和 draw preview，但保留 `Record win`；model 层拒绝新增 draw；历史 draw、W-D-L 和 SB 统计保持不变；保存 schema 升级至 7，schema 1-6 缺少此字段时默认允许 draw；README 增加说明。
+- 修改文件：`elo_model.py`；`elo_calculator.py`；`test_elo_model.py`；`README.md`；`historyworklog.txt`；本文件。
+- 测试或验证结果：Python compile 通过；48 项 unittest 全部通过，包括 model enforcement、历史 draw 保留、schema-6 migration、strict boolean validation 和 UI button-state regression。
+- GitHub Timeline：未 commit，未 push；用户本次未要求 GitHub 更新。既有 build、release、cache 和 helper-script 工作区状态未纳入本次修改。
