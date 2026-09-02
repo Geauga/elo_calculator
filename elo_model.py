@@ -637,6 +637,10 @@ class SimulationResult:
     average_rank: float
     match_win_percentage: float
     game_win_percentage: float
+    average_match_wins: float
+    average_match_losses: float
+    average_game_wins: float
+    average_game_losses: float
 
 
 class LeagueSimulator:
@@ -722,6 +726,10 @@ class LeagueSimulator:
                     average_rank=rank_sum[pid] / iterations if iterations > 0 else 0.0,
                     match_win_percentage=m_pct,
                     game_win_percentage=g_pct,
+                    average_match_wins=mw / iterations if iterations > 0 else 0.0,
+                    average_match_losses=ml / iterations if iterations > 0 else 0.0,
+                    average_game_wins=gw / iterations if iterations > 0 else 0.0,
+                    average_game_losses=gl / iterations if iterations > 0 else 0.0,
                 )
             )
 

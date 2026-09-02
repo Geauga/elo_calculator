@@ -1894,14 +1894,14 @@ class EloCalculatorApp:
         results_tree.heading("player", text="Player")
         results_tree.heading("title", text="Title Probability")
         results_tree.heading("avg_rank", text="Average Rank")
-        results_tree.heading("match_wl", text="Match W-L %")
-        results_tree.heading("game_wl", text="Game W-L %")
+        results_tree.heading("match_wl", text="Avg Match W-L")
+        results_tree.heading("game_wl", text="Avg Game W-L")
 
         results_tree.column("player", width=150, anchor="w")
         results_tree.column("title", width=120, anchor="e")
         results_tree.column("avg_rank", width=100, anchor="e")
-        results_tree.column("match_wl", width=100, anchor="e")
-        results_tree.column("game_wl", width=100, anchor="e")
+        results_tree.column("match_wl", width=120, anchor="center")
+        results_tree.column("game_wl", width=120, anchor="center")
 
         results_tree.pack(side="left", fill="both", expand=True)
 
@@ -1934,8 +1934,8 @@ class EloCalculatorApp:
                         player.name,
                         f"{res.title_probability:.1f}%",
                         f"{res.average_rank:.1f}",
-                        f"{res.match_win_percentage:.1f}%",
-                        f"{res.game_win_percentage:.1f}%",
+                        f"{res.average_match_wins:.1f} - {res.average_match_losses:.1f}",
+                        f"{res.average_game_wins:.1f} - {res.average_game_losses:.1f}",
                     ),
                 )
 
