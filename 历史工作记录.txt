@@ -131,3 +131,11 @@
 - 修改文件：`README.md`；`elo_calculator.py`；`elo_model.py`；`test_elo_model.py`；`historyworklog.txt`；本文件。
 - 测试或验证结果：push 前 Python compile 通过，48 项 unittest 全部通过；focused diff 无 whitespace error；GitHub 接受 fast-forward push `16668cf..a0200d6`。
 - GitHub Timeline：`a0200d6` 已 push 至 `origin/main`。本条 publication record 将作为 focused log commit 推送。
+
+## 2026-09-01 20:11:00 -04:00
+
+- 用户 Prompt 摘要：make simulator show w-l and game results -> rebuild and push。
+- 具体动作：将 Simulator UI 从显示百分比修改为显示具体的绝对平均 W-L 场次（例如 `2.1 - 0.9`）。修改并提交了该功能后，重新使用 PyInstaller 构建了可执行程序，并打包至 `release/EloLeagueCalculator-v17-Windows-x64.zip`。
+- 修改文件：`elo_model.py`；`elo_calculator.py`；`historyworklog.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v17-Windows-x64/README.txt`；`release/EloLeagueCalculator-v17-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v17-Windows-x64.zip`；本文件。
+- 测试或验证结果：PyInstaller 构建并打包 v17 成功，48 项单元测试通过。
+- GitHub Timeline：推送（push）成功，并在之后将日志更改也推送到 `origin/main`。
