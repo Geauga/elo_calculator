@@ -1,3 +1,5 @@
+# EloLeagueCalculator.spec
+# Requirement: Build the complete Windows GUI executable with bundled Tcl/Tk.
 # -*- mode: python ; coding: utf-8 -*-
 
 
@@ -7,7 +9,7 @@ a = Analysis(
     binaries=[],
     datas=[],
     hiddenimports=[],
-    hookspath=[],
+    hookspath=['packaging_hooks'],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
@@ -36,3 +38,10 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 )
+
+# Purpose: Configure the one-file Windows executable build.
+# Upstream: elo_calculator.py and packaging_hooks.
+# Upstream purpose: Provide the GUI entry point and reliable Tcl/Tk collection.
+# Environment: PyInstaller 6.22+ with Python 3.12 on Windows.
+# Generated: 2026-09-01 20:11 America/New_York.
+# Changes: Use project hooks that bundle Tcl/Tk when runtime auto-detection fails.

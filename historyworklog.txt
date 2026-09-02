@@ -69,3 +69,27 @@
 - Made failed roster replay atomic and rejected invalid expected-score ratings and collection shapes.
 - Guarded out-of-range match targets during live League Settings updates.
 - Added three regression tests, rebuilt the tracked executable, and verified its isolated launch.
+## 2026-08-31 19:44
+- Added a persistent draw result with standard 0.5-score Elo calculation, W-D-L standings, match score percentage, draw-aware SB scoring, undo, roster replay, and schema-5 compatibility.
+- Added the `Record draw` UI action, draw Elo preview, draw-specific history/activity/status text, README documentation, and regression coverage.
+- Python compilation passed and all 43 unit tests passed. Live Tk rendering could not be tested because the bundled workspace Python has no usable Tcl `init.tcl`.
+- GitHub Timeline: not committed and not pushed; the user did not request GitHub publication.
+
+## 2026-08-31 20:00
+- Created draw-feature commit `13e1526` after Python compilation and all 43 tests passed.
+- Excluded generated builds, releases, caches, helper scripts, and `.build_tools` deletions from the commit.
+- GitHub Timeline: committed but not pushed. The push to `https://github.com/Geauga/elo_calculator.git` was rejected pending explicit user authorization for that destination and payload.
+
+## 2026-08-31 19:58
+- Added a "Graphs" tab to the main UI to display historical tracking charts for Elo, Win %, and SB Scores using a native `tk.Canvas` implementation without external dependencies.
+- Pushed changes to GitHub.
+
+## 2026-08-31 20:04
+- Rebuilt and packaged version 15 executable to `release/EloLeagueCalculator-v15-Windows-x64.zip`.
+
+## 2026-09-01 20:12
+- User Prompt summary: Add a First-to-N league simulator and publish the combined project to GitHub.
+- Actions: Merged the remotely published Graphs and draw-result branch with the local simulator, customizable K-factor/rounding, and validation work without force-pushing; resolved model, GUI, test, documentation, and append-only log conflicts; made draw Elo and its display honor each league's K-factor and decimal precision; made Graphs draw-aware; retained transactional historical replay; added a regression test; added reproducible PyInstaller Tcl/Tk hooks after the bundled runtime's automatic Tk detection failed; rebuilt the tracked executable.
+- Modified files: `elo_model.py`; `elo_calculator.py`; `elo_simulator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `EloLeagueCalculator.spec`; `packaging_hooks/hook-_tkinter.py`; `packaging_hooks/pre_find_module_path/hook-tkinter.py`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 55 unittest cases passed; conflict-marker and whitespace checks passed; the final PyInstaller build classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the executable remained running during an isolated five-second launch test; SHA-256 is `EAF19DF9FC2C9EC945C5F8A19C62FA6D4677D061E7A971210CEE92D91C665D82`.
+- GitHub Timeline: Merge is resolved locally but not yet committed or pushed. The user explicitly requested GitHub publication; a normal merge commit and push to `origin/main` will follow, without force push.
