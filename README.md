@@ -15,7 +15,9 @@ with adjustable rosters.
   `0.01` through `1000`, and precision can be zero through six places.
 - Each match stores the K-factor and rounding used for its Elo transfer, so
   later rule changes do not alter its calculation during roster replay.
-- Standings show match wins and losses, match win percentage, individual game
+- A draw gives each player a 0.5 Elo result, updates both ratings, and contributes
+  half of the opponent's match score to each player's SB score.
+- Standings show match wins, draws, and losses; match score percentage; individual game
   wins and losses, game win percentage, and a Sonneborn-Berger (SB) score. Elo
   remains the primary ranking key; equal Elo ratings are ordered by SB score.
 - New leagues use first-to-three rules: 3-2 applies 50%, 3-1 applies 75%, and
@@ -26,6 +28,8 @@ with adjustable rosters.
   the league's K-factor, rounding, and score multipliers. Results show title
   probability, average rank, and average match and game records. An optional
   random seed makes a run reproducible.
+- The Graphs tab plots Elo, match score percentage, and SB history for the
+  selected player, including draw-aware percentage and SB calculations.
 - The league Settings button selects a separate match format for each league.
   First-to-N mode sets the games needed to win and the Elo multiplier for every
   possible losing score. Custom-score mode accepts any whole-number result

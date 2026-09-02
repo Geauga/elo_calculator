@@ -33,8 +33,12 @@ Rules
   continuing to record results.
 - Each match stores the K-factor and rounding used for its Elo transfer, so
   later rule changes do not alter historical calculations during roster replay.
-- Standings include match W-L, match win percentage, individual game W-L, and
-  game win percentage. For example, a 3-2 result records five individual games.
+- A draw gives both players a 0.5 Elo result using the league's K-factor and
+  rounding, and contributes half the opponent's match score to SB.
+- Standings include match W-D-L, match score percentage, individual game W-L,
+  game win percentage, and SB. For example, a 3-2 result records five games.
+- The Graphs tab plots Elo, match score percentage, and SB history for the
+  selected player, including draw-aware percentage and SB calculations.
 - The global Settings menu switches between light and dark themes and remembers the
   selection between sessions.
 - Prompts, confirmations, warnings, and management windows consistently follow
@@ -54,4 +58,4 @@ players at 1500.00 without changing earlier ratings or match history.
 Existing single-league data is migrated to League 1 automatically.
 
 SHA-256 for EloLeagueCalculator.exe:
-C74EE2F3F87811C3D3C507A83596521558AD0EDEC0161AFE8D36F3CF2EC495C0
+EAF19DF9FC2C9EC945C5F8A19C62FA6D4677D061E7A971210CEE92D91C665D82
