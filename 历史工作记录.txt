@@ -225,3 +225,11 @@
 - 修改文件：`elo_model.py`；`elo_calculator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`historyworklog.txt`；本文件。
 - 测试或验证结果：59 项 unittest 全部通过；conflict-marker、mojibake-source 和 whitespace 检查通过；PyInstaller classified 1,003 runtime entries，并包含 `pyi_rth__tkinter.py`；executable 在 isolated five-second launch test 中持续运行；已按 exact executable path 停止验证产生的 child process，并删除 temporary build directories；SHA-256 为 `07F0D5A6206E3A016534870CAC6ECE4FDBA0C981F06AE136C0A8364BABE1978E`。
 - GitHub Timeline：latest `origin/main` 已在本地完成 conflict resolution，尚未 commit 或 push；后续将使用 normal merge commit 和 push，不重写 remote history。
+
+## 2026-09-02 17:20:00 -04:00
+
+- 用户 Prompt 摘要：确认继续执行的 GitHub publication。
+- 具体动作：整合全部 concurrent remote work 后创建 merge commit `8ec116a`，并推送包含 simulator、draw policy、configurable Elo、graphs、validation、packaging、documentation、tests 和 executable 的完整更新。
+- 修改文件：append-only 更新 `historyworklog.txt` 和本文件；implementation 和 executable changes 位于 merge commits `b27b5ef` 和 `8ec116a`。
+- 测试或验证结果：GitHub 接受 normal push `0000725..8ec116a`；push 后本地 `HEAD` 与 `origin/main` 均为 `8ec116aa3ca3635bb3fd991aa31f40664ddc5b03`。最终验证仍为 59/59 tests passed，executable SHA-256 为 `07F0D5A6206E3A016534870CAC6ECE4FDBA0C981F06AE136C0A8364BABE1978E`。
+- GitHub Timeline：merge commit `8ec116a` 已 push 至 `origin/main`；本条 final publication record 将作为 log-only follow-up commit 并 push。
