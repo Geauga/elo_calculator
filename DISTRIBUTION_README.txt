@@ -40,7 +40,8 @@ Rules
 - Standings include match W-D-L, match score percentage, individual game W-L,
   game win percentage, and SB. For example, a 3-2 result records five games.
 - The Graphs tab plots Elo, match score percentage, and SB history for the
-  selected player, including draw-aware percentage and SB calculations.
+  selected player, including draw-aware calculations and SB changes caused by
+  later results from prior opponents.
 - The global Settings menu switches between light and dark themes and remembers the
   selection between sessions.
 - Prompts, confirmations, warnings, and management windows consistently follow
@@ -60,4 +61,4 @@ players at 1500.00 without changing earlier ratings or match history.
 Existing single-league data is migrated to League 1 automatically.
 
 SHA-256 for EloLeagueCalculator.exe:
-981EABEBC09E5D7F76292E5C0ABE804790688A56E9CD2E1CBA6F10DC2C37942A
+12B8A351BCD324525C36D5EBFE07C38AC211DD169DC4862B3370526ACDDE5AB5

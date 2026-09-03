@@ -122,6 +122,33 @@ class EloModelTests(unittest.TestCase):
             "League 1 - 12-Player Elo League - First to 3"
         )
 
+    def test_sb_graph_updates_when_an_opponent_plays(self) -> None:
+        league = League.new(3)
+        league.record_match(0, 1, 0)
+        league.record_match(1, 2, 0)
+        self.assertEqual(league.statistics()[0].sb_score, 1.0)
+
+        app = object.__new__(EloCalculatorApp)
+        app.league = league
+        app.graph_canvas = Mock()
+        app.graph_canvas.winfo_width.return_value = 400
+        app.graph_canvas.winfo_height.return_value = 300
+        app.graph_player_combo = Mock(get=Mock(return_value="Player 1"))
+        app.player_name_to_id = {"Player 1": 0}
+        app.graph_metric_var = Mock(get=Mock(return_value="sb"))
+
+        app._refresh_graph()
+
+        graph_lines = [
+            call
+            for call in app.graph_canvas.create_line.call_args_list
+            if call.kwargs.get("width") == 2
+        ]
+        self.assertEqual(len(graph_lines), 1)
+        points = graph_lines[0].args[0]
+        self.assertEqual(len(points), 6)
+        self.assertLess(points[-1], points[-3])
+
     def test_first_to_n_simulator_shares_fully_tied_title_and_rank(self) -> None:
         league = League.new(3)
         league.calculate_elo = False
@@ -899,7 +926,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-03 08:19 America/New_York.
-# Changes: Covers ASCII-safe league headings, the standalone First-to-N
-# simulator including fair tied-title credit, configurable Elo, draw policy,
-# W-D-L/SB, persistence, validation, and transactional replay.
+# Generated: 2026-09-03 08:35 America/New_York.
+# Changes: Covers simulator tie handling, ASCII-safe headings, configurable Elo,
+# draw policy, persistence, validation, replay, and opponent-driven SB graphs.

@@ -31,7 +31,8 @@ with adjustable rosters.
   on every standings tiebreaker share title and rank credit. An optional
   random seed makes a run reproducible.
 - The Graphs tab plots Elo, match score percentage, and SB history for the
-  selected player, including draw-aware percentage and SB calculations.
+  selected player, including draw-aware calculations and SB changes caused by
+  later results from prior opponents.
 - The league Settings button selects a separate match format for each league.
   First-to-N mode sets the games needed to win and the Elo multiplier for every
   possible losing score. Custom-score mode accepts any whole-number result
