@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 from elo_calculator import (
     ApplicationInstanceLock,
     EloCalculatorApp,
+    THEME_PALETTES,
     load_theme,
     save_theme,
 )
@@ -31,6 +32,7 @@ from elo_model import (
 from elo_simulator import (
     MAX_SIMULATIONS,
     simulate_first_to_n_league,
+    simulate_first_to_n_season,
     simulation_limit,
 )
 from elo_storage import AuditLog, BackupManager, LeagueCollection
@@ -103,6 +105,74 @@ class EloModelTests(unittest.TestCase):
         league.win_condition = WinCondition(score_mode=SCORE_MODE_CUSTOM)
         with self.assertRaises(ValueError):
             simulate_first_to_n_league(league, 10)
+
+    def test_concrete_simulated_season_is_seeded_and_read_only(self) -> None:
+        league = League.new(4)
+        original = league.to_dict()
+
+        first = simulate_first_to_n_season(league, seed=6166)
+        second = simulate_first_to_n_season(league, seed=6166)
+
+        self.assertEqual(first, second)
+        self.assertEqual(len(first), 6)
+        self.assertEqual(
+            {frozenset((match.winner_id, match.loser_id)) for match in first},
+            {
+                frozenset((left, right))
+                for left in range(4)
+                for right in range(left + 1, 4)
+            },
+        )
+        self.assertTrue(
+            all(
+                match.winner_games == league.win_condition.games_to_win
+                and 0 <= match.loser_games < match.winner_games
+                for match in first
+            )
+        )
+        self.assertEqual(league.to_dict(), original)
+
+    def test_concrete_simulated_season_can_update_a_league(self) -> None:
+        league = League.new(4)
+        simulated_matches = simulate_first_to_n_season(league, seed=42)
+
+        for simulated in simulated_matches:
+            league.record_match(
+                simulated.winner_id,
+                simulated.loser_id,
+                simulated.loser_games,
+                simulated.winner_games,
+            )
+
+        self.assertEqual(len(league.matches), 6)
+        self.assertEqual(
+            [
+                (match.winner_id, match.loser_id, match.winner_games, match.loser_games)
+                for match in league.matches
+            ],
+            [
+                (match.winner_id, match.loser_id, match.winner_games, match.loser_games)
+                for match in simulated_matches
+            ],
+        )
+        self.assertTrue(
+            any(player.rating != INITIAL_RATING for player in league.players)
+        )
+
+    def test_graph_colors_follow_light_and_dark_theme_palettes(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.theme_var = Mock()
+
+        for theme in ("light", "dark"):
+            with self.subTest(theme=theme):
+                app.theme_var.get.return_value = theme
+                graph_colors = app._graph_colors()
+                palette = THEME_PALETTES[theme]
+                self.assertEqual(graph_colors["background"], palette["field"])
+                self.assertEqual(graph_colors["axis"], palette["border"])
+                self.assertEqual(graph_colors["grid"], palette["button_active"])
+                self.assertEqual(graph_colors["text"], palette["muted"])
+                self.assertEqual(graph_colors["plot"], palette["selection"])
 
     def test_league_heading_and_window_title_use_ascii_safe_separators(self) -> None:
         app = object.__new__(EloCalculatorApp)
@@ -899,7 +969,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-03 08:19 America/New_York.
-# Changes: Covers ASCII-safe league headings, the standalone First-to-N
-# simulator including fair tied-title credit, configurable Elo, draw policy,
-# W-D-L/SB, persistence, validation, and transactional replay.
+# Generated: 2026-09-03 08:31 America/New_York.
+# Changes: Covers concrete simulated-season recording and light/dark graph
+# palette selection alongside simulator, Elo, draw, persistence, and UI rules.

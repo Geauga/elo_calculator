@@ -272,3 +272,11 @@
 - 修改文件：append-only 更新 `historyworklog.txt` 和本文件；implementation 和 executable changes 位于 `2fbfb39`。
 - 测试或验证结果：GitHub 接受 push `a76a43f..2fbfb39`；本地 `HEAD` 与 `origin/main` 均为 `2fbfb39a3e0567c157f4a5e0bff4a63f5a5d0a27`；最终验证保持 61/61 tests passed，executable SHA-256 为 `981EABEBC09E5D7F76292E5C0ABE804790688A56E9CD2E1CBA6F10DC2C37942A`。
 - GitHub Timeline：merge commit `2fbfb39` 已 push 至 `origin/main`；本条 final record 将作为 log-only follow-up commit 并 push。
+
+## 2026-09-03 08:34:00 -04:00
+
+- 用户 Prompt 摘要：使 simulator results 可以更新 leagues、使 graphs 兼容 dark mode，并 push 完成的更新。
+- 具体动作：新增可复现的 First-to-N 单轮循环赛具体结果和 **Apply One Season** 操作，通过正常 league persistence、automatic backup 和 audit 流程记录全部模拟比赛；图表 canvas、axis、grid、label 和 plot 颜色全部改用当前主题调色板；在 concurrent simulator 和 heading updates 之后基于最新 `origin/main` 完成集成。
+- 修改文件：`elo_simulator.py`；`elo_calculator.py`；`test_elo_model.py`；`README.md`；`historyworklog.txt`；本文件。
+- 测试或验证结果：integrated branch 的最终 compile、unittest、conflict-marker 和 whitespace checks 待执行。
+- GitHub Timeline：changes 已集成至基于当前 `origin/main` 的本地 branch `codex/simulator-dark-mode`；尚未 commit 或 push；后续使用 normal fast-forward push，不使用 force。
