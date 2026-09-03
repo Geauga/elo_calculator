@@ -32,6 +32,11 @@ from elo_simulator import (
 )
 from elo_storage import AuditLog, BackupManager, LeagueCollection
 
+import re
+
+def _natural_sort_key(s: str) -> list:
+    return [int(t) if t.isdigit() else t.casefold() for t in re.split(r'(\\d+)', s)]
+
 
 THEME_PALETTES = {
     "light": {
@@ -2025,7 +2030,7 @@ class EloCalculatorApp:
         selected_winner_id = self.player_name_to_id.get(self.winner_var.get())
         selected_loser_id = self.player_name_to_id.get(self.loser_var.get())
 
-        names = [player.name for player in self.league.players]
+        names = sorted([player.name for player in self.league.players], key=_natural_sort_key)
         self.player_name_to_id = {
             player.name: player.id for player in self.league.players
         }
@@ -2093,8 +2098,10 @@ class EloCalculatorApp:
             self.league.players,
             key=lambda player: (
                 -player.rating,
+                -statistics[player.id].match_win_percentage,
                 -statistics[player.id].sb_score,
-                player.name.casefold(),
+                -statistics[player.id].game_win_percentage,
+                _natural_sort_key(player.name),
             ),
         )
         for rank, player in enumerate(ranked_players, start=1):
