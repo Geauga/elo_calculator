@@ -241,3 +241,26 @@
 - 修改文件：`elo_calculator.py`；`test_elo_model.py`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`historyworklog.txt`；本文件。
 - 测试或验证结果：60 项 unittest 全部通过；全部 Python source files 通过 ASCII-only scan；`git diff --check` 通过；PyInstaller classified 1,003 runtime entries，并包含 `pyi_rth__tkinter.py`；executable 在 isolated five-second launch test 中持续运行；SHA-256 为 `4E87C4614FFCE9B6799B5815E714538F6801CA980AC754566907D49A8CFF52C0`。Read-only process inspection 表明 screenshot 来自 `C:\Code\elo_calculator` 下的 older v18 executable；没有停止或覆盖这些 user-owned processes。
 - GitHub Timeline：尚未 commit 或 push。用户要求 fix，但没有要求 GitHub push；后续将创建 focused local commit。
+## 2026-09-02 17:25:47 -04:00
+
+- 用户 Prompt 摘要：review and push；continue。
+- 具体动作：由于 GitHub 在两次最终 push 检查前分别新增 4、3 和 9 个并发 commit，未覆盖远端历史；改为从最新远端 `8c870bb` 创建新的临时 clone 并重新审查。确认最新分支已合并此前发现的 rating validation、atomic replay、malformed storage、duplicate UI、draw policy、configurable Elo 和 standalone simulator 修复。进一步复现并修复剩余 Simulator 公平性问题：当所有 standings tiebreaker 完全相同时，原实现按 player ID 将 100% title probability 给第一个 player 并分配不同名次；现在并列者平均分享 title probability 和 rank credit。更新 README、分发说明、回归测试和 Windows executable。
+- 修改文件：`elo_simulator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`historyworklog.txt`；本文件。
+- 测试或验证结果：最新架构全部 60 项 unittest 通过；三人完全并列回归由 `[(100%, 1), (0%, 2), (0%, 3)]` 修复为每人 `33.333...%`、平均 rank `2.0`；`git diff --check` 通过；PyInstaller 6.22.0 收集 1,003 项 runtime entries 并包含 Tk runtime hook；新 EXE 在隔离 `LOCALAPPDATA` 中运行 5 秒未退出，所有精确路径匹配的 smoke-test 进程均已停止。EXE SHA-256 为 `891F00637A324891BAE5B47030AC1E0D7ABC2494ECEB9DC666A725609E75EFC9`。
+- GitHub Timeline：最新 `origin/main` 为 `8c870bb`；当前修复尚未 commit 或 push，用户已授权，最终远端检查后将执行 normal fast-forward push。
+
+## 2026-09-02 17:27:25 -04:00
+
+- 用户 Prompt 摘要：完成 review and push。
+- 具体动作：创建 focused commit `805bb0f`，包含 Simulator 完全并列公平性修复、回归测试、文档、重建 executable 和前一条审查记录；push 前 fetch 确认相对 `origin/main` 为 ahead 1 / behind 0，随后执行 normal fast-forward push。
+- 修改文件：仅 append 更新 `historyworklog.txt` 和本文件；实现与 executable 文件包含在 `805bb0f`。
+- 测试或验证结果：发布验证保持为 60/60 tests passed；EXE isolated smoke test 通过；SHA-256 为 `891F00637A324891BAE5B47030AC1E0D7ABC2494ECEB9DC666A725609E75EFC9`；`git ls-remote` 返回 `805bb0fd1af9ddf2bde0d4ddde93446b1f71c731`。
+- GitHub Timeline：commit `805bb0f` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 推送。
+
+## 2026-09-03 08:20:00 -04:00
+
+- 用户 Prompt 摘要：将 ASCII-safe league-heading fix push 到 GitHub。
+- 具体动作：initial push 因 `origin/main` 新增 simulator tied-standings fairness update 被拒绝；fetch 并以 normal merge 合并 commits `805bb0f` 和 `a76a43f`；同时保留 heading fix 和 shared title/rank credit；合并两个 regression tests；从 merged source 重新构建 tracked executable。
+- 修改文件：`elo_calculator.py`；`elo_simulator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`historyworklog.txt`；本文件。
+- 测试或验证结果：61 项 unittest 全部通过；Python source 保持 ASCII-only；conflict-marker 和 whitespace checks 通过；PyInstaller classified 1,003 runtime entries，并包含 `pyi_rth__tkinter.py`；executable 通过 isolated five-second launch test；temporary process 和 build directories 已按 verified path 清理；SHA-256 为 `981EABEBC09E5D7F76292E5C0ABE804790688A56E9CD2E1CBA6F10DC2C37942A`。
+- GitHub Timeline：latest remote work 已在本地完成 merge，尚未 commit 或 push；后续将使用 normal merge commit 和 push，不使用 force。

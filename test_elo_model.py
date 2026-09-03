@@ -122,6 +122,23 @@ class EloModelTests(unittest.TestCase):
             "League 1 - 12-Player Elo League - First to 3"
         )
 
+    def test_first_to_n_simulator_shares_fully_tied_title_and_rank(self) -> None:
+        league = League.new(3)
+        league.calculate_elo = False
+        league.win_condition = WinCondition(
+            games_to_win=1,
+            score_multipliers={0: 1.0},
+            score_mode=SCORE_MODE_FIXED,
+        )
+
+        result = simulate_first_to_n_league(league, simulations=1, seed=2)
+
+        for player in result.players:
+            self.assertAlmostEqual(player.title_probability, 100.0 / 3.0)
+            self.assertEqual(player.average_rank, 2.0)
+            self.assertEqual(player.average_matches_won, 1.0)
+            self.assertEqual(player.average_matches_lost, 1.0)
+
     def test_custom_k_factor_and_rounding_control_transfer(self) -> None:
         self.assertEqual(
             rating_change(
@@ -882,7 +899,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-03 08:14 America/New_York.
-# Changes: Added regression coverage for ASCII-safe league headings and window
-# titles while retaining simulator, configurable Elo, draw policy, W-D-L/SB,
-# persistence, validation, and transactional replay coverage.
+# Generated: 2026-09-03 08:19 America/New_York.
+# Changes: Covers ASCII-safe league headings, the standalone First-to-N
+# simulator including fair tied-title credit, configurable Elo, draw policy,
+# W-D-L/SB, persistence, validation, and transactional replay.

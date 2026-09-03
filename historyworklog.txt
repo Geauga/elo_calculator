@@ -147,3 +147,23 @@
 - Modified files: `elo_calculator.py`; `test_elo_model.py`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
 - Tests and verification: All 60 unittest cases passed; all Python source files passed the ASCII-only scan; `git diff --check` passed; PyInstaller classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the executable remained running during an isolated five-second launch test; SHA-256 is `4E87C4614FFCE9B6799B5815E714538F6801CA980AC754566907D49A8CFF52C0`. Read-only process inspection showed the screenshot was produced by the older v18 executable under `C:\Code\elo_calculator`; those user-owned processes were not stopped or overwritten.
 - GitHub Timeline: Not committed or pushed yet. The user requested the fix but did not request a GitHub push; a local focused commit will follow.
+## 2026-09-02 17:25
+- User Prompt summary: Review and push; continue.
+- Actions: GitHub advanced before three attempted final pushes, so no remote history was overwritten. Created a fresh clone at current head `8c870bb`, confirmed the current architecture already contained the earlier validation, atomic replay, malformed-storage, duplicate-UI, draw-policy, configurable-Elo, and standalone-simulator fixes, then fixed the remaining deterministic simulator tie bias. Players tied on every standings tiebreaker now share title probability and average-rank credit instead of being separated by player ID. Updated documentation, regression tests, and the Windows executable.
+- Modified files: `elo_simulator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 60 tests passed. The exact three-player tie changed from title/ranks `(100%, 1), (0%, 2), (0%, 3)` to `33.333...%` and rank `2.0` for every player. `git diff --check` passed. PyInstaller 6.22.0 collected 1,003 runtime entries and the Tk runtime hook; the executable passed an isolated five-second launch check and all matching smoke-test processes were stopped. EXE SHA-256: `891F00637A324891BAE5B47030AC1E0D7ABC2494ECEB9DC666A725609E75EFC9`.
+- GitHub Timeline: latest `origin/main` is `8c870bb`; these changes are not committed or pushed yet. The user authorized a normal fast-forward push after the final remote check.
+
+## 2026-09-02 17:27
+- User Prompt summary: Complete review and push.
+- Actions: Created focused commit `805bb0f` containing the fully tied simulator fairness fix, regression test, documentation, rebuilt executable, and review record. The pre-push fetch confirmed ahead 1 / behind 0, then a normal fast-forward push completed.
+- Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and executable changes are in `805bb0f`.
+- Tests and verification: Publication validation remains 60/60 tests passing; isolated EXE smoke test passed; SHA-256 is `891F00637A324891BAE5B47030AC1E0D7ABC2494ECEB9DC666A725609E75EFC9`; `git ls-remote` returned `805bb0fd1af9ddf2bde0d4ddde93446b1f71c731`.
+- GitHub Timeline: commit `805bb0f` was pushed successfully to `origin/main`; this publication record will be pushed as a log-only follow-up commit.
+
+## 2026-09-03 08:20
+- User Prompt summary: Push the ASCII-safe league-heading fix to GitHub.
+- Actions: The initial push was rejected because `origin/main` gained the simulator tied-standings fairness update; fetched and normally merged commits `805bb0f` and `a76a43f`; preserved both the heading fix and fair shared title/rank credit; combined both regression tests; rebuilt the tracked executable from the merged source.
+- Modified files: `elo_calculator.py`; `elo_simulator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 61 unittest cases passed; Python source remains ASCII-only; conflict-marker and whitespace checks passed; PyInstaller classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the executable passed an isolated five-second launch test; the temporary process and build directories were removed by verified path; SHA-256 is `981EABEBC09E5D7F76292E5C0ABE804790688A56E9CD2E1CBA6F10DC2C37942A`.
+- GitHub Timeline: The latest remote work is merged locally but not yet committed or pushed. A normal merge commit and push will follow without force.

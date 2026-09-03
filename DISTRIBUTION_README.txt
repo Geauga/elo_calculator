@@ -22,7 +22,8 @@ Rules
 - The Simulator button runs read-only Monte Carlo single round-robin seasons
   for the active First-to-N league. It uses current Elo for game probabilities
   and the league's Elo settings for simulated rating changes, then reports
-  title probability, average rank, and average match and game records. An
+  title probability, average rank, and average match and game records; players
+  tied on every standings tiebreaker share title and rank credit. An
   optional random seed makes results reproducible.
 - The league Settings button selects first-to-N or custom scores separately for every league.
   First-to-N lets you set the target and each losing-score multiplier. Custom
@@ -59,4 +60,4 @@ players at 1500.00 without changing earlier ratings or match history.
 Existing single-league data is migrated to League 1 automatically.
 
 SHA-256 for EloLeagueCalculator.exe:
-4E87C4614FFCE9B6799B5815E714538F6801CA980AC754566907D49A8CFF52C0
+981EABEBC09E5D7F76292E5C0ABE804790688A56E9CD2E1CBA6F10DC2C37942A
