@@ -27,7 +27,8 @@ with adjustable rosters.
   active First-to-N league. Every player meets once per simulated season;
   current Elo supplies game probabilities, while simulated rating changes use
   the league's K-factor, rounding, and score multipliers. Results show title
-  probability, average rank, and average match and game records. An optional
+  probability, average rank, and average match and game records; players tied
+  on every standings tiebreaker share title and rank credit. An optional
   random seed makes a run reproducible.
 - The Graphs tab plots Elo, match score percentage, and SB history for the
   selected player, including draw-aware percentage and SB calculations.

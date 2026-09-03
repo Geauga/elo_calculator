@@ -89,8 +89,8 @@ def simulate_first_to_n_league(
     ]
     rng = random.Random(seed)
 
-    title_counts = [0] * player_count
-    rank_totals = [0] * player_count
+    title_counts = [0.0] * player_count
+    rank_totals = [0.0] * player_count
     match_win_totals = [0] * player_count
     match_loss_totals = [0] * player_count
     game_win_totals = [0] * player_count
@@ -151,20 +151,39 @@ def simulate_first_to_n_league(
         for winner, loser in winners_and_losers:
             sb_scores[winner] += match_wins[loser]
 
-        order = sorted(
-            range(player_count),
-            key=lambda index: (
+        def standing_key(index: int) -> tuple[int, int, int, int, float]:
+            return (
                 -match_wins[index],
                 -sb_scores[index],
                 -(game_wins[index] - game_losses[index]),
                 -game_wins[index],
                 -ratings[index],
-                players[index].id,
-            ),
+            )
+
+        order = sorted(
+            range(player_count),
+            key=lambda index: (standing_key(index), players[index].id),
         )
-        title_counts[order[0]] += 1
-        for rank, index in enumerate(order, start=1):
-            rank_totals[index] += rank
+        group_start = 0
+        while group_start < player_count:
+            group_end = group_start + 1
+            while (
+                group_end < player_count
+                and standing_key(order[group_end])
+                == standing_key(order[group_start])
+            ):
+                group_end += 1
+            tied_players = order[group_start:group_end]
+            average_rank = (group_start + 1 + group_end) / 2.0
+            for index in tied_players:
+                rank_totals[index] += average_rank
+            if group_start == 0:
+                title_share = 1.0 / len(tied_players)
+                for index in tied_players:
+                    title_counts[index] += title_share
+            group_start = group_end
+
+        for index in order:
             match_win_totals[index] += match_wins[index]
             match_loss_totals[index] += match_losses[index]
             game_win_totals[index] += game_wins[index]
@@ -204,6 +223,6 @@ def simulate_first_to_n_league(
 # Upstream: elo_model.py supplies league rules, ratings, and Elo calculations.
 # Upstream purpose: Represent validated leagues and persistent match results.
 # Environment: Python 3.10+ on Windows or any platform supported by the model.
-# Generated: 2026-08-31 19:36 America/New_York.
-# Changes: Initial simulator with seeded runs, safe workload limits, dynamic Elo,
-# match/game averages, title probability, and average finishing rank.
+# Generated: 2026-09-02 17:27 America/New_York.
+# Changes: Preserve seeded workload-limited simulations while sharing title and
+# average-rank credit among players tied on every standings tiebreaker.
