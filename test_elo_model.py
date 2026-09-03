@@ -104,6 +104,24 @@ class EloModelTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             simulate_first_to_n_league(league, 10)
 
+    def test_league_heading_and_window_title_use_ascii_safe_separators(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.collection = LeagueCollection.new()
+        app.league_name_to_id = {}
+        app.league_combo = {}
+        app.league_var = Mock()
+        app.heading_var = Mock()
+        app.root = Mock()
+
+        app._refresh_league_selector()
+
+        app.heading_var.set.assert_called_once_with(
+            "12-Player Elo League - First to 3"
+        )
+        app.root.title.assert_called_once_with(
+            "League 1 - 12-Player Elo League - First to 3"
+        )
+
     def test_custom_k_factor_and_rounding_control_transfer(self) -> None:
         self.assertEqual(
             rating_change(
@@ -864,7 +882,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-02 17:15 America/New_York.
-# Changes: Covers the standalone First-to-N simulator, configurable Elo, draw
-# policy and calculations, W-D-L/SB statistics, persistence, validation, and
-# transactional replay.
+# Generated: 2026-09-03 08:14 America/New_York.
+# Changes: Added regression coverage for ASCII-safe league headings and window
+# titles while retaining simulator, configurable Elo, draw policy, W-D-L/SB,
+# persistence, validation, and transactional replay coverage.

@@ -59,4 +59,4 @@ players at 1500.00 without changing earlier ratings or match history.
 Existing single-league data is migrated to League 1 automatically.
 
 SHA-256 for EloLeagueCalculator.exe:
-07F0D5A6206E3A016534870CAC6ECE4FDBA0C981F06AE136C0A8364BABE1978E
+4E87C4614FFCE9B6799B5815E714538F6801CA980AC754566907D49A8CFF52C0
