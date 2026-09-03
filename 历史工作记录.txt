@@ -304,3 +304,11 @@
 - 修改文件：`elo_calculator.py`；`elo_simulator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`historyworklog.txt`；本文件。
 - 测试或验证结果：最终 merged suite 的 65 项 unittest 全部通过；Python AST、conflict-marker 和 `git diff --check` 检查通过；PyInstaller 6.22.0 classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；合并后 EXE 在 isolated `LOCALAPPDATA` 中运行 5 秒未退出并停止全部精确路径匹配进程。最终 EXE SHA-256 为 `6184478E2D626B03B2F7311F2A93BD5D75519696339CF47DDCDFC86CD72A7F34`。
 - GitHub Timeline：本地 commits `22e3d06`、`136608a` 已与最新 `origin/main` 正常合并，merge commit 尚未创建或 push；用户已明确授权 push，将完成 merge commit 后 normal push。
+
+## 2026-09-03 08:42:44 -04:00
+
+- 用户 Prompt 摘要：完成 push。
+- 具体动作：创建 normal merge commit `1777461`，包含 local SB graph fix、remote Apply One Season/dark-mode graphs、combined regression tests、documentation、work logs 和从 merged source 重建的 executable；push 前 fetch 确认为 ahead 3 / behind 0，随后 normal push。
+- 修改文件：仅 append 更新 `historyworklog.txt` 和本文件；implementation 和 merged executable 位于 commits `22e3d06` 与 `1777461`。
+- 测试或验证结果：最终验证保持 65/65 tests passed；merged EXE SHA-256 为 `6184478E2D626B03B2F7311F2A93BD5D75519696339CF47DDCDFC86CD72A7F34`；`git ls-remote` 返回 `1777461873b27f2e8902768e97032616fa7e12aa`。
+- GitHub Timeline：commits `22e3d06`、`136608a` 和 merge commit `1777461` 已成功 push 至 `origin/main`；本条 publication record 将作为 log-only follow-up commit 推送。
