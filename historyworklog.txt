@@ -174,3 +174,11 @@
 - Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and executable changes are contained in `2fbfb39`.
 - Tests and verification: GitHub accepted push `a76a43f..2fbfb39`; local `HEAD` and `origin/main` both resolved to `2fbfb39a3e0567c157f4a5e0bff4a63f5a5d0a27`; final verification remains 61/61 tests passed and executable SHA-256 `981EABEBC09E5D7F76292E5C0ABE804790688A56E9CD2E1CBA6F10DC2C37942A`.
 - GitHub Timeline: Merge commit `2fbfb39` is pushed to `origin/main`. This final record will be committed and pushed as a log-only follow-up.
+
+## 2026-09-03 08:34:00 -04:00
+
+- User Prompt summary: Make simulator results able to update leagues, make graphs compatible with dark mode, and push the completed update.
+- Actions: Added reproducible concrete First-to-N round-robin seasons and an **Apply One Season** action that records all simulated matches through normal league persistence, automatic backup, and audit paths; changed every graph canvas, axis, grid, label, and plot color to use the active theme palette; integrated the work on the latest `origin/main` after concurrent simulator and heading updates.
+- Modified files: `elo_simulator.py`; `elo_calculator.py`; `test_elo_model.py`; `README.md`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: Pending final compile, unittest, conflict-marker, and whitespace checks on the integrated branch.
+- GitHub Timeline: Changes are integrated on local branch `codex/simulator-dark-mode` from current `origin/main`; not yet committed or pushed. A normal fast-forward push will follow without force.
