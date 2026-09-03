@@ -211,3 +211,9 @@
 - Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and the merged executable are in commits `22e3d06` and `1777461`.
 - Tests and verification: Final verification remains 65/65 tests passing; merged EXE SHA-256 is `6184478E2D626B03B2F7311F2A93BD5D75519696339CF47DDCDFC86CD72A7F34`; `git ls-remote` returned `1777461873b27f2e8902768e97032616fa7e12aa`.
 - GitHub Timeline: commits `22e3d06`, `136608a`, and merge commit `1777461` were pushed successfully to `origin/main`; this publication record will be pushed as a log-only follow-up commit.
+
+
+## 2026-09-03 19:55
+- Rebuilt the EloLeagueCalculator executable to include the natural sorting and tiebreaker logic changes using PyInstaller.
+- Packaged the v19 build into release/EloLeagueCalculator-v19-Windows-x64.zip.
+- Pushed all sorting and packaging commits to origin/main.
