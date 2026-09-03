@@ -1158,9 +1158,9 @@ class EloCalculatorApp:
             if win_condition.score_mode == SCORE_MODE_CUSTOM
             else f"First to {win_condition.games_to_win}"
         )
-        self.heading_var.set(f"{player_count}-Player Elo League — {format_name}")
+        self.heading_var.set(f"{player_count}-Player Elo League - {format_name}")
         self.root.title(
-            f"{self.collection.active.name} — {player_count}-Player Elo League — "
+            f"{self.collection.active.name} - {player_count}-Player Elo League - "
             f"{format_name}"
         )
 
@@ -2332,7 +2332,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-09-02 17:15 America/New_York.
-# Changes: Integrated the standalone First-to-N simulator, graphs, configurable
-# Elo settings, per-league draw policy, precision-aware display, W-D-L/SB
-# standings, validation, transactional replay, and draw-aware undo.
+# Generated: 2026-09-03 08:14 America/New_York.
+# Changes: Replaced the remaining Unicode league-heading and title separators
+# with ASCII-safe hyphens while retaining simulator, graphs, configurable Elo,
+# draw policy, W-D-L/SB standings, validation, and transactional replay.

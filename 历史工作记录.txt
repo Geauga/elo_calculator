@@ -233,3 +233,11 @@
 - 修改文件：append-only 更新 `historyworklog.txt` 和本文件；implementation 和 executable changes 位于 merge commits `b27b5ef` 和 `8ec116a`。
 - 测试或验证结果：GitHub 接受 normal push `0000725..8ec116a`；push 后本地 `HEAD` 与 `origin/main` 均为 `8ec116aa3ca3635bb3fd991aa31f40664ddc5b03`。最终验证仍为 59/59 tests passed，executable SHA-256 为 `07F0D5A6206E3A016534870CAC6ECE4FDBA0C981F06AE136C0A8364BABE1978E`。
 - GitHub Timeline：merge commit `8ec116a` 已 push 至 `origin/main`；本条 final publication record 将作为 log-only follow-up commit 并 push。
+
+## 2026-09-03 08:17:00 -04:00
+
+- 用户 Prompt 摘要：修复 screenshot 中 league heading 显示的 `â€”` 类乱码 separator。
+- 具体动作：定位到 `_refresh_league_selector` 中剩余的两个 Unicode em dash；将 heading 和 window title separators 替换为 ASCII-safe ` - `；增加两个 exact strings 的 regression test；扫描全部 Python source 确认没有 non-ASCII characters；重新构建 tracked Windows executable。
+- 修改文件：`elo_calculator.py`；`test_elo_model.py`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`historyworklog.txt`；本文件。
+- 测试或验证结果：60 项 unittest 全部通过；全部 Python source files 通过 ASCII-only scan；`git diff --check` 通过；PyInstaller classified 1,003 runtime entries，并包含 `pyi_rth__tkinter.py`；executable 在 isolated five-second launch test 中持续运行；SHA-256 为 `4E87C4614FFCE9B6799B5815E714538F6801CA980AC754566907D49A8CFF52C0`。Read-only process inspection 表明 screenshot 来自 `C:\Code\elo_calculator` 下的 older v18 executable；没有停止或覆盖这些 user-owned processes。
+- GitHub Timeline：尚未 commit 或 push。用户要求 fix，但没有要求 GitHub push；后续将创建 focused local commit。
