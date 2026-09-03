@@ -174,3 +174,10 @@
 - Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and executable changes are contained in `2fbfb39`.
 - Tests and verification: GitHub accepted push `a76a43f..2fbfb39`; local `HEAD` and `origin/main` both resolved to `2fbfb39a3e0567c157f4a5e0bff4a63f5a5d0a27`; final verification remains 61/61 tests passed and executable SHA-256 `981EABEBC09E5D7F76292E5C0ABE804790688A56E9CD2E1CBA6F10DC2C37942A`.
 - GitHub Timeline: Merge commit `2fbfb39` is pushed to `origin/main`. This final record will be committed and pushed as a log-only follow-up.
+
+## 2026-09-03 08:36
+- User Prompt summary: Review code, fix, and commit.
+- Actions: Reviewed the current local OneDrive repository at `35e4629`. Reproduced an SB graph error: after Player 1 beats Player 2, a later Player 2 win raises Player 1's current SB, but the graph stayed stale because it sampled only matches involving Player 1. Updated the SB timeline after every league match, added a mock-canvas regression test, updated documentation, and rebuilt the tracked Windows executable.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 62 tests passed; `git diff --check`, duplicate-method AST, and ASCII-only source checks passed. PyInstaller 6.22.0 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the EXE passed an isolated five-second launch check and both exact-path processes were stopped. EXE SHA-256: `12B8A351BCD324525C36D5EBFE07C38AC211DD169DC4862B3370526ACDDE5AB5`.
+- GitHub Timeline: implementation commit `22e3d06` exists locally and has not been pushed. The user requested a commit, not a push; this publication record will be a local log-only follow-up commit.

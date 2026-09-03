@@ -272,3 +272,11 @@
 - 修改文件：append-only 更新 `historyworklog.txt` 和本文件；implementation 和 executable changes 位于 `2fbfb39`。
 - 测试或验证结果：GitHub 接受 push `a76a43f..2fbfb39`；本地 `HEAD` 与 `origin/main` 均为 `2fbfb39a3e0567c157f4a5e0bff4a63f5a5d0a27`；最终验证保持 61/61 tests passed，executable SHA-256 为 `981EABEBC09E5D7F76292E5C0ABE804790688A56E9CD2E1CBA6F10DC2C37942A`。
 - GitHub Timeline：merge commit `2fbfb39` 已 push 至 `origin/main`；本条 final record 将作为 log-only follow-up commit 并 push。
+
+## 2026-09-03 08:36:36 -04:00
+
+- 用户 Prompt 摘要：review code fix and commit。
+- 具体动作：在本地 OneDrive Git repository 的最新 `main` (`35e4629`) 上审查 model、storage、simulator 和 UI。复现 Graphs tab 的 SB 历史错误：Player 1 击败 Player 2 后，Player 2 后续获胜会提高 Player 1 的当前 SB，但 graph 因只在 selected player 参赛时采样而保持旧值。将 SB timeline 改为每场 league match 后重新计算并追加；增加 mock-canvas regression test；更新 README、分发说明和 tracked Windows executable。
+- 修改文件：`elo_calculator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`historyworklog.txt`；本文件。
+- 测试或验证结果：62 项 unittest 全部通过；`git diff --check` 通过；全部 Python source 的 AST duplicate-method 和 ASCII-only 检查通过；PyInstaller 6.22.0 classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；EXE 在 isolated `LOCALAPPDATA` 下运行 5 秒未退出，两个精确路径匹配进程均停止。EXE SHA-256 为 `12B8A351BCD324525C36D5EBFE07C38AC211DD169DC4862B3370526ACDDE5AB5`。
+- GitHub Timeline：implementation commit `22e3d06` 已在本地创建，尚未 push；用户要求 commit，未要求 push。本 publication record 将作为本地 log-only follow-up commit 提交。
