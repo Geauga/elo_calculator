@@ -204,3 +204,10 @@
 - Modified files: `elo_calculator.py`; `elo_simulator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
 - Tests and verification: All 65 merged tests passed; Python AST, conflict-marker, and `git diff --check` checks passed. PyInstaller 6.22.0 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the merged EXE passed an isolated five-second launch check and all exact-path processes were stopped. Final EXE SHA-256: `6184478E2D626B03B2F7311F2A93BD5D75519696339CF47DDCDFC86CD72A7F34`.
 - GitHub Timeline: local commits `22e3d06` and `136608a` are normally merged with current `origin/main`; the merge commit has not yet been created or pushed. The user explicitly authorized a normal push.
+
+## 2026-09-03 08:42
+- User Prompt summary: Complete the push.
+- Actions: Created normal merge commit `1777461` containing the local SB graph fix, remote Apply One Season and dark-mode graph features, combined regression tests, documentation, worklogs, and executable rebuilt from merged source. The pre-push fetch confirmed ahead 3 / behind 0, followed by a normal push.
+- Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and the merged executable are in commits `22e3d06` and `1777461`.
+- Tests and verification: Final verification remains 65/65 tests passing; merged EXE SHA-256 is `6184478E2D626B03B2F7311F2A93BD5D75519696339CF47DDCDFC86CD72A7F34`; `git ls-remote` returned `1777461873b27f2e8902768e97032616fa7e12aa`.
+- GitHub Timeline: commits `22e3d06`, `136608a`, and merge commit `1777461` were pushed successfully to `origin/main`; this publication record will be pushed as a log-only follow-up commit.
