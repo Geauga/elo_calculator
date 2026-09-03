@@ -868,12 +868,11 @@ class EloCalculatorApp:
                     match_scores[m.winner_id] += 1.0
                     if m.winner_id == player_id:
                         opponent_weights.append((m.loser_id, 1.0))
-                if m.winner_id == player_id or m.loser_id == player_id:
-                    sb = sum(
-                        match_scores[opponent_id] * weight
-                        for opponent_id, weight in opponent_weights
-                    )
-                    y_values.append(sb)
+                sb = sum(
+                    match_scores[opponent_id] * weight
+                    for opponent_id, weight in opponent_weights
+                )
+                y_values.append(sb)
 
         if not y_values:
             return
@@ -2332,7 +2331,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-09-03 08:14 America/New_York.
-# Changes: Replaced the remaining Unicode league-heading and title separators
-# with ASCII-safe hyphens while retaining simulator, graphs, configurable Elo,
-# draw policy, W-D-L/SB standings, validation, and transactional replay.
+# Generated: 2026-09-03 08:35 America/New_York.
+# Changes: Preserve ASCII-safe headings and existing features while updating the
+# SB graph after every league match so opponent results cannot leave it stale.
