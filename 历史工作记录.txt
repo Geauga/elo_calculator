@@ -312,3 +312,12 @@
 - 修改文件：仅 append 更新 `historyworklog.txt` 和本文件；implementation 和 merged executable 位于 commits `22e3d06` 与 `1777461`。
 - 测试或验证结果：最终验证保持 65/65 tests passed；merged EXE SHA-256 为 `6184478E2D626B03B2F7311F2A93BD5D75519696339CF47DDCDFC86CD72A7F34`；`git ls-remote` 返回 `1777461873b27f2e8902768e97032616fa7e12aa`。
 - GitHub Timeline：commits `22e3d06`、`136608a` 和 merge commit `1777461` 已成功 push 至 `origin/main`；本条 publication record 将作为 log-only follow-up commit 推送。
+
+
+## 2026-09-03 19:55:00 -04:00
+
+- 用户 Prompt 摘要：build and push。
+- 具体动作：使用 PyInstaller 重新构廻可执行程序，包含了自然排序和决背局规则慴改。打包为 v19 压缩包至 `release/EloLeagueCalculator-v19-Windows-x64.zip`.随后将所有更改推送到 GitHub (origin/main)。
+- 修改文件：historyworklog.txt；历史工作记录.txt；dist/EloLeagueCalculator.exe；release/EloLeagueCalculator-v19-Windows-x64.zip。
+- 测试或验证绒果：PyInstaller 构廻并鉓包 v19 成功。
+- GitHub Timeline：推送到 origin/main。
