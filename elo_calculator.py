@@ -25,7 +25,11 @@ from elo_model import (
     validate_elo_decimal_places,
     validate_k_factor,
 )
-from elo_simulator import simulate_first_to_n_league, simulation_limit
+from elo_simulator import (
+    simulate_first_to_n_league,
+    simulate_first_to_n_season,
+    simulation_limit,
+)
 from elo_storage import AuditLog, BackupManager, LeagueCollection
 
 
@@ -811,12 +815,33 @@ class EloCalculatorApp:
                 command=self._refresh_graph,
             )
             rb.pack(side="left", padx=4)
-        self.graph_canvas = tk.Canvas(parent, bg="white", highlightthickness=1, highlightbackground="#cccccc")
+        graph_colors = self._graph_colors()
+        self.graph_canvas = tk.Canvas(
+            parent,
+            bg=graph_colors["background"],
+            highlightthickness=1,
+            highlightbackground=graph_colors["axis"],
+        )
         self.graph_canvas.grid(row=1, column=0, sticky="nsew")
         self.graph_canvas.bind("<Configure>", lambda e: self._refresh_graph())
 
+    def _graph_colors(self) -> dict[str, str]:
+        colors = THEME_PALETTES[self.theme_var.get()]
+        return {
+            "background": colors["field"],
+            "axis": colors["border"],
+            "grid": colors["button_active"],
+            "text": colors["muted"],
+            "plot": colors["selection"],
+        }
+
     def _refresh_graph(self) -> None:
         if not hasattr(self, "graph_canvas"): return
+        graph_colors = self._graph_colors()
+        self.graph_canvas.configure(
+            background=graph_colors["background"],
+            highlightbackground=graph_colors["axis"],
+        )
         self.graph_canvas.delete("all")
         width = self.graph_canvas.winfo_width()
         height = self.graph_canvas.winfo_height()
@@ -886,26 +911,43 @@ class EloCalculatorApp:
         margin_x = 45
         margin_y = 20
 
-        self.graph_canvas.create_line(margin_x, height - margin_y, width, height - margin_y, fill="#cccccc")
-        self.graph_canvas.create_line(margin_x, 0, margin_x, height - margin_y, fill="#cccccc")
+        self.graph_canvas.create_line(
+            margin_x, height - margin_y, width, height - margin_y,
+            fill=graph_colors["axis"],
+        )
+        self.graph_canvas.create_line(
+            margin_x, 0, margin_x, height - margin_y,
+            fill=graph_colors["axis"],
+        )
 
         for i in range(5):
             y_pos = margin_y + i * (height - 2 * margin_y) / 4
             val = max_y - i * (max_y - min_y) / 4
-            self.graph_canvas.create_line(margin_x, y_pos, width, y_pos, fill="#eeeeee", dash=(4, 4))
-            self.graph_canvas.create_text(margin_x - 5, y_pos, text=f"{val:.1f}", anchor="e", font=("Segoe UI", 8), fill="#666666")
+            self.graph_canvas.create_line(
+                margin_x, y_pos, width, y_pos,
+                fill=graph_colors["grid"], dash=(4, 4),
+            )
+            self.graph_canvas.create_text(
+                margin_x - 5, y_pos, text=f"{val:.1f}", anchor="e",
+                font=("Segoe UI", 8), fill=graph_colors["text"],
+            )
 
         if len(y_values) == 1:
             x = margin_x + (width - margin_x) / 2
             y = margin_y + (max_y - y_values[0]) / (max_y - min_y) * (height - 2 * margin_y)
-            self.graph_canvas.create_oval(x-3, y-3, x+3, y+3, fill="#0078D7", outline="#0078D7")
+            self.graph_canvas.create_oval(
+                x - 3, y - 3, x + 3, y + 3,
+                fill=graph_colors["plot"], outline=graph_colors["plot"],
+            )
         else:
             points = []
             for i, val in enumerate(y_values):
                 x = margin_x + (i / (len(y_values) - 1)) * (width - margin_x - 10)
                 y = margin_y + (max_y - val) / (max_y - min_y) * (height - 2 * margin_y)
                 points.extend([x, y])
-            self.graph_canvas.create_line(points, fill="#0078D7", width=2)
+            self.graph_canvas.create_line(
+                points, fill=graph_colors["plot"], width=2
+            )
 
     def _apply_theme(self, theme: str, save: bool = True) -> None:
         if theme not in THEME_PALETTES:
@@ -1064,6 +1106,8 @@ class EloCalculatorApp:
             if isinstance(child, tk.Toplevel):
                 child.configure(background=colors["background"])
                 child.after_idle(lambda window=child: self._set_title_bar_theme(window))
+        if hasattr(self, "graph_canvas"):
+            self._refresh_graph()
 
         if save:
             try:
@@ -1299,7 +1343,7 @@ class EloCalculatorApp:
                 f"in First to {self.league.win_condition.games_to_win}. Game "
                 "probabilities use current Elo. Simulated Elo changes use this "
                 "league's K-factor, rounding, and score multipliers. Saved "
-                "ratings and results are never changed."
+                "ratings and results change only if Apply One Season is selected."
             ),
             wraplength=790,
             justify="left",
@@ -1434,10 +1478,74 @@ class EloCalculatorApp:
                 f"{self.collection.active.name}."
             )
 
+        def apply_simulated_season() -> None:
+            try:
+                seed_text = seed_var.get().strip()
+                seed = int(seed_text) if seed_text else None
+                simulated_matches = simulate_first_to_n_season(
+                    self.league, seed
+                )
+            except (ValueError, tk.TclError) as error:
+                self._show_error(
+                    "Invalid simulator input", str(error), parent=dialog
+                )
+                return
+
+            match_count = len(simulated_matches)
+            if not self._ask_yes_no(
+                "Apply simulated season?",
+                f"Add {match_count} simulated round-robin matches to "
+                f"{self.collection.active.name}?\n\n"
+                "This updates ratings, standings, graphs, and match history. "
+                "An automatic backup will be created first.",
+                parent=dialog,
+            ):
+                return
+
+            previous_state = self.collection.to_dict()
+            current = self.collection.active
+            try:
+                for match in simulated_matches:
+                    self.league.record_match(
+                        match.winner_id,
+                        match.loser_id,
+                        match.loser_games,
+                        match.winner_games,
+                    )
+                seed_description = str(seed) if seed is not None else "random"
+                self._commit_edit(
+                    previous_state,
+                    "simulation_applied",
+                    f"Applied one simulated round-robin season "
+                    f"({match_count} matches; seed: {seed_description}).",
+                    current.id,
+                    current.name,
+                )
+            except (OSError, ValueError) as error:
+                self._restore_collection(previous_state)
+                self._refresh_all()
+                self._show_error(
+                    "Simulation not applied",
+                    f"The league was not changed.\n\n{error}",
+                    parent=dialog,
+                )
+                return
+
+            self._refresh_all()
+            self.status_var.set(
+                f"Applied {match_count} simulated matches to {current.name}."
+            )
+            dialog.destroy()
+
         run_button = ttk.Button(
             buttons, text="Simulate", command=run_simulation
         )
         run_button.pack(side="left", padx=(0, 8))
+        ttk.Button(
+            buttons,
+            text="Apply One Season",
+            command=apply_simulated_season,
+        ).pack(side="left", padx=(0, 8))
         ttk.Button(buttons, text="Close", command=dialog.destroy).pack(
             side="left"
         )
@@ -2331,6 +2439,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-09-03 08:35 America/New_York.
-# Changes: Preserve ASCII-safe headings and existing features while updating the
-# SB graph after every league match so opponent results cannot leave it stale.
+# Generated: 2026-09-03 08:40 America/New_York.
+# Changes: Add backed-up simulated-season application and themed graphs while
+# updating SB after every match so opponent results cannot leave it stale.

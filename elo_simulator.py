@@ -32,6 +32,14 @@ class LeagueSimulationResult:
     players: tuple[PlayerSimulationResult, ...]
 
 
+@dataclass(frozen=True)
+class SimulatedMatch:
+    winner_id: int
+    loser_id: int
+    winner_games: int
+    loser_games: int
+
+
 def simulation_limit(player_count: int, games_to_win: int = 3) -> int:
     """Return a safe simulation limit for the given round-robin size."""
     if not isinstance(player_count, int) or isinstance(player_count, bool):
@@ -53,6 +61,72 @@ def simulation_limit(player_count: int, games_to_win: int = 3) -> int:
             MAX_GAME_TRIALS // (pair_count * maximum_games_per_match),
         ),
     )
+
+
+def simulate_first_to_n_season(
+    league: League,
+    seed: int | None = None,
+) -> tuple[SimulatedMatch, ...]:
+    """Generate one concrete round-robin season without modifying the league."""
+    if league.win_condition.score_mode != SCORE_MODE_FIXED:
+        raise ValueError("The league simulator supports First to N format only.")
+    if seed is not None and (
+        not isinstance(seed, int) or isinstance(seed, bool)
+    ):
+        raise ValueError("Random seed must be a whole number or blank.")
+
+    players = tuple(league.players)
+    games_to_win = league.win_condition.games_to_win
+    ratings = [player.rating for player in players]
+    pairings = [
+        (first, second)
+        for first in range(len(players))
+        for second in range(first + 1, len(players))
+    ]
+    rng = random.Random(seed)
+    rng.shuffle(pairings)
+    matches: list[SimulatedMatch] = []
+
+    for first, second in pairings:
+        first_probability = expected_score(ratings[first], ratings[second])
+        first_games = 0
+        second_games = 0
+        while first_games < games_to_win and second_games < games_to_win:
+            if rng.random() < first_probability:
+                first_games += 1
+            else:
+                second_games += 1
+
+        if first_games == games_to_win:
+            winner, loser = first, second
+            loser_games = second_games
+        else:
+            winner, loser = second, first
+            loser_games = first_games
+        matches.append(
+            SimulatedMatch(
+                winner_id=players[winner].id,
+                loser_id=players[loser].id,
+                winner_games=games_to_win,
+                loser_games=loser_games,
+            )
+        )
+
+        if league.calculate_elo:
+            multiplier = league.win_condition.get_multiplier(
+                loser_games, games_to_win
+            )
+            change = rating_change(
+                ratings[winner],
+                ratings[loser],
+                multiplier,
+                league.k_factor,
+                league.elo_decimal_places,
+            )
+            ratings[winner] += change
+            ratings[loser] -= change
+
+    return tuple(matches)
 
 
 def simulate_first_to_n_league(
@@ -223,6 +297,6 @@ def simulate_first_to_n_league(
 # Upstream: elo_model.py supplies league rules, ratings, and Elo calculations.
 # Upstream purpose: Represent validated leagues and persistent match results.
 # Environment: Python 3.10+ on Windows or any platform supported by the model.
-# Generated: 2026-09-02 17:27 America/New_York.
-# Changes: Preserve seeded workload-limited simulations while sharing title and
-# average-rank credit among players tied on every standings tiebreaker.
+# Generated: 2026-09-03 08:31 America/New_York.
+# Changes: Adds reproducible concrete round-robin seasons that can be recorded
+# through the application's normal persistence, backup, and audit path.

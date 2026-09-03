@@ -29,10 +29,13 @@ with adjustable rosters.
   the league's K-factor, rounding, and score multipliers. Results show title
   probability, average rank, and average match and game records; players tied
   on every standings tiebreaker share title and rank credit. An optional
-  random seed makes a run reproducible.
+  random seed makes a run reproducible. **Apply One Season** records one
+  concrete simulated round robin in the active league, with confirmation and
+  an automatic backup before ratings and history are updated.
 - The Graphs tab plots Elo, match score percentage, and SB history for the
   selected player, including draw-aware calculations and SB changes caused by
-  later results from prior opponents.
+  later results from prior opponents. Its background, axes, grid, labels, and
+  plot line follow the active theme.
 - The league Settings button selects a separate match format for each league.
   First-to-N mode sets the games needed to win and the Elo multiplier for every
   possible losing score. Custom-score mode accepts any whole-number result
