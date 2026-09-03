@@ -167,3 +167,10 @@
 - Modified files: `elo_calculator.py`; `elo_simulator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
 - Tests and verification: All 61 unittest cases passed; Python source remains ASCII-only; conflict-marker and whitespace checks passed; PyInstaller classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the executable passed an isolated five-second launch test; the temporary process and build directories were removed by verified path; SHA-256 is `981EABEBC09E5D7F76292E5C0ABE804790688A56E9CD2E1CBA6F10DC2C37942A`.
 - GitHub Timeline: The latest remote work is merged locally but not yet committed or pushed. A normal merge commit and push will follow without force.
+
+## 2026-09-03 08:20:44 -04:00
+- User Prompt summary: Complete the requested GitHub push.
+- Actions: Created merge commit `2fbfb39` containing the ASCII-safe heading fix, simulator tied-standings fairness update, combined tests, documentation, work logs, and rebuilt executable; pushed it normally to `origin/main`.
+- Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and executable changes are contained in `2fbfb39`.
+- Tests and verification: GitHub accepted push `a76a43f..2fbfb39`; local `HEAD` and `origin/main` both resolved to `2fbfb39a3e0567c157f4a5e0bff4a63f5a5d0a27`; final verification remains 61/61 tests passed and executable SHA-256 `981EABEBC09E5D7F76292E5C0ABE804790688A56E9CD2E1CBA6F10DC2C37942A`.
+- GitHub Timeline: Merge commit `2fbfb39` is pushed to `origin/main`. This final record will be committed and pushed as a log-only follow-up.

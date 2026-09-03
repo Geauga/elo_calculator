@@ -264,3 +264,11 @@
 - 修改文件：`elo_calculator.py`；`elo_simulator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`historyworklog.txt`；本文件。
 - 测试或验证结果：61 项 unittest 全部通过；Python source 保持 ASCII-only；conflict-marker 和 whitespace checks 通过；PyInstaller classified 1,003 runtime entries，并包含 `pyi_rth__tkinter.py`；executable 通过 isolated five-second launch test；temporary process 和 build directories 已按 verified path 清理；SHA-256 为 `981EABEBC09E5D7F76292E5C0ABE804790688A56E9CD2E1CBA6F10DC2C37942A`。
 - GitHub Timeline：latest remote work 已在本地完成 merge，尚未 commit 或 push；后续将使用 normal merge commit 和 push，不使用 force。
+
+## 2026-09-03 08:20:44 -04:00
+
+- 用户 Prompt 摘要：完成要求的 GitHub push。
+- 具体动作：创建 merge commit `2fbfb39`，包含 ASCII-safe heading fix、simulator tied-standings fairness update、combined tests、documentation、work logs 和 rebuilt executable；以 normal push 更新 `origin/main`。
+- 修改文件：append-only 更新 `historyworklog.txt` 和本文件；implementation 和 executable changes 位于 `2fbfb39`。
+- 测试或验证结果：GitHub 接受 push `a76a43f..2fbfb39`；本地 `HEAD` 与 `origin/main` 均为 `2fbfb39a3e0567c157f4a5e0bff4a63f5a5d0a27`；最终验证保持 61/61 tests passed，executable SHA-256 为 `981EABEBC09E5D7F76292E5C0ABE804790688A56E9CD2E1CBA6F10DC2C37942A`。
+- GitHub Timeline：merge commit `2fbfb39` 已 push 至 `origin/main`；本条 final record 将作为 log-only follow-up commit 并 push。
