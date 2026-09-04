@@ -2140,10 +2140,19 @@ class EloCalculatorApp:
         selected_id = int(selected[0]) if selected else None
         self.standings.delete(*self.standings.get_children())
         statistics = self.league.statistics()
+        rating_groups: dict[float, set[int]] = {}
+        for player in self.league.players:
+            rating_groups.setdefault(player.rating, set()).add(player.id)
+        head_to_head = {}
+        for player_ids in rating_groups.values():
+            head_to_head.update(
+                self.league.head_to_head_percentages(player_ids)
+            )
         ranked_players = sorted(
             self.league.players,
             key=lambda player: (
                 -player.rating,
+                -head_to_head[player.id],
                 -statistics[player.id].match_win_percentage,
                 -statistics[player.id].sb_score,
                 -statistics[player.id].game_win_percentage,
@@ -2492,6 +2501,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-09-03 20:15 America/New_York.
+# Generated: 2026-09-03 20:22 America/New_York.
 # Changes: Keep League Settings screen-bounded and scrollable; rank standings
-# by Elo, match score percentage, SB, game percentage, and natural player name.
+# by Elo, head-to-head score, match score percentage, SB, game percentage, and
+# natural player name.
