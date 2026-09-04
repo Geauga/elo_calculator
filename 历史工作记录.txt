@@ -352,3 +352,35 @@
 - 修改文件：`README.md`；`historyworklog.txt`；本文件。
 - 测试或验证结果：EXE 和 ZIP hashes 仍分别为 `926AA67CC1E19FA17CA0474FC46DA1B4B63138197342736DF51AABA003434281` 和 `437A493D7402BCB4096AC54B9036FA9BBC699E0AD07C56A6D8C386C369467A73`；targeted `git diff --check` 通过。
 - GitHub Timeline：v19 package commit 仍位于本地且领先 `origin/main`；README correction 和 work-log entries 尚未 commit 或 push。
+
+## 2026-09-03 19:55:00 -04:00
+
+- 用户 Prompt 摘要：build and push。
+- 具体动作：使用 PyInstaller 重新构廻可执行程序，包含了自然排序和决背局规则慴改。打包为 v19 压缩包至 `release/EloLeagueCalculator-v19-Windows-x64.zip`.随后将所有更改推送到 GitHub (origin/main)。
+- 修改文件：historyworklog.txt；历史工作记录.txt；dist/EloLeagueCalculator.exe；release/EloLeagueCalculator-v19-Windows-x64.zip。
+- 测试或验证绒果：PyInstaller 构廻并鉓包 v19 成功。
+- GitHub Timeline：推送到 origin/main。
+
+## 2026-09-03 20:02:03 -04:00
+
+- 用户 Prompt 摘要：截图中的 League Settings popup 无法完整显示；当前为 64-player、First-to-10 league。
+- 具体动作：将 dialog 初始尺寸限制在 usable screen 范围内；将完整 settings form 放入统一的垂直滚动区域；Cancel 和 Save 固定在始终可见的 footer；增加 mouse-wheel scrolling；移除 multiplier list 的 nested scrollbar，使大型 First-to-N 列表随主表单滚动。
+- 修改文件：`elo_calculator.py`；`test_elo_model.py`；`historyworklog.txt`；本文件。
+- 测试或验证结果：Python compile 通过；66 项 unit tests 全部通过，包括 screen-size capping regression coverage；focused whitespace check 通过。
+- GitHub Timeline：未 commit，未 push；用户本次未要求发布。既有无关 build、release、cache 和 helper-file changes 未纳入本次修改。
+
+## 2026-09-03 20:04:24 -04:00
+
+- 用户 Prompt 摘要：push League Settings popup fit fix。
+- 具体动作：创建 focused commit `f056b29`，包含 screen-bounded、scrollable settings dialog、fixed action footer、regression test 和 work records；以 normal push 更新 `origin/main`。Generated build、cache、release 和 helper files 均未纳入提交。
+- 修改文件：append-only 更新 `historyworklog.txt` 和本文件；implementation 与 test changes 位于 `f056b29`。
+- 测试或验证结果：publication verification 保持 66/66 unit tests passing；focused whitespace check 通过；push 后 local `HEAD` 与 `origin/main` 均为 `f056b2973c6b0a0c887e1c1f35efa5f6a99fd8b9`。
+- GitHub Timeline：commit `f056b29` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 推送。
+
+## 2026-09-03 20:13:03 -04:00
+
+- 用户 Prompt 摘要：push standings-order fix 和 v19 package。
+- 具体动作：fetch `origin/main` 的四个新增 commits；使用 normal merge 合并 remote natural-sort、standings-tiebreaker、package-log 和 screen-bounded League Settings changes，以及 local ordering regression 和 v19 package。Merged regression 发现 remote natural-sort helper 的 digit expression 被错误转义；修正为分割实际 numeric components。保留两份 append-only histories；从 merged source 重建最终 executable 和 v19 ZIP；更新 package hashes；清理 temporary build files。
+- 修改文件：`elo_calculator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v19-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v19-Windows-x64/README.txt`；`release/EloLeagueCalculator-v19-Windows-x64.zip`；`historyworklog.txt`；本文件。
+- 测试或验证结果：67 项 merged unit tests 全部通过，包括 numeric Player 1 至 Player 12 ordering 和 settings-window bounds；`git diff --check`、conflict-marker 和 Python ASCII-only checks 通过。PyInstaller 6.22.2 classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；最终 executable 通过 isolated 4-second launch check，并停止两个 exact-path processes。EXE SHA-256 为 `D45426DE2D59A38430864F54A726A91FFAC4A81D0C30B96CE1ABA43FCEE4EA05`；ZIP SHA-256 为 `CAA56D0A3EDC8896E0F007C1BA0D4B6E733D35713716B0F7E8139F2E9DE0255C`。
+- GitHub Timeline：normal merge 已在本地完成 conflict resolution，等待创建 merge commit；用户已明确要求 normal push 至 `origin/main`。

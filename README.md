@@ -20,7 +20,8 @@ with adjustable rosters.
   enabled or disabled independently for each league in League Settings.
 - Standings show match wins, draws, and losses; match score percentage; individual game
   wins and losses, game win percentage, and a Sonneborn-Berger (SB) score. Elo
-  remains the primary ranking key; equal Elo ratings are ordered by SB score.
+  remains the primary ranking key, followed by match score percentage, SB,
+  game win percentage, and a natural player-name order.
 - New leagues use first-to-three rules: 3-2 applies 50%, 3-1 applies 75%, and
   3-0 applies 100% of the normal Elo change.
 - The Simulator button runs a read-only Monte Carlo single round-robin for the
@@ -86,9 +87,9 @@ be installed. Extract the ZIP, then double-click the executable to start it.
 Package verification:
 
 - Executable SHA-256:
-  `926AA67CC1E19FA17CA0474FC46DA1B4B63138197342736DF51AABA003434281`
+  `D45426DE2D59A38430864F54A726A91FFAC4A81D0C30B96CE1ABA43FCEE4EA05`
 - ZIP SHA-256:
-  `437A493D7402BCB4096AC54B9036FA9BBC699E0AD07C56A6D8C386C369467A73`
+  `CAA56D0A3EDC8896E0F007C1BA0D4B6E733D35713716B0F7E8139F2E9DE0255C`
 - Validation: 66 unit tests passed, followed by a four-second isolated Windows
   launch test.
 

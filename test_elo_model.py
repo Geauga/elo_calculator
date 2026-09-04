@@ -9,6 +9,7 @@ from elo_calculator import (
     ApplicationInstanceLock,
     EloCalculatorApp,
     THEME_PALETTES,
+    fit_window_to_screen,
     load_theme,
     save_theme,
 )
@@ -174,6 +175,11 @@ class EloModelTests(unittest.TestCase):
                 self.assertEqual(graph_colors["text"], palette["muted"])
                 self.assertEqual(graph_colors["plot"], palette["selection"])
 
+    def test_settings_window_size_is_capped_to_usable_screen(self) -> None:
+        self.assertEqual(fit_window_to_screen(1920, 1080, 560, 760), (560, 760))
+        self.assertEqual(fit_window_to_screen(800, 600, 560, 760), (560, 500))
+        self.assertEqual(fit_window_to_screen(400, 300, 560, 760), (320, 200))
+
     def test_league_heading_and_window_title_use_ascii_safe_separators(self) -> None:
         app = object.__new__(EloCalculatorApp)
         app.collection = LeagueCollection.new()
@@ -192,7 +198,7 @@ class EloModelTests(unittest.TestCase):
             "League 1 - 12-Player Elo League - First to 3"
         )
 
-    def test_fully_tied_standings_preserve_roster_order(self) -> None:
+    def test_fully_tied_standings_use_natural_player_name_order(self) -> None:
         app = object.__new__(EloCalculatorApp)
         app.league = League.new(12)
         app.standings = Mock()
@@ -208,6 +214,46 @@ class EloModelTests(unittest.TestCase):
         self.assertEqual(
             displayed_names,
             [f"Player {number}" for number in range(1, 13)],
+        )
+
+    def test_standings_apply_every_documented_tiebreaker(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.league = League.new(4)
+        app.standings = Mock()
+        app.standings.selection.return_value = ()
+        app.standings.get_children.return_value = ()
+        statistics = {}
+        for player in app.league.players:
+            statistics[player.id] = Mock(
+                matches_won=0,
+                matches_drawn=0,
+                matches_lost=0,
+                games_won=0,
+                games_lost=0,
+                match_win_percentage=0.0,
+                sb_score=0.0,
+                game_win_percentage=0.0,
+            )
+        statistics[0].match_win_percentage = 25.0
+        statistics[0].sb_score = 10.0
+        statistics[0].game_win_percentage = 100.0
+        statistics[1].match_win_percentage = 50.0
+        statistics[2].match_win_percentage = 50.0
+        statistics[2].sb_score = 2.0
+        statistics[3].match_win_percentage = 50.0
+        statistics[3].sb_score = 2.0
+        statistics[3].game_win_percentage = 80.0
+        app.league.statistics = Mock(return_value=statistics)
+
+        app._refresh_standings()
+
+        displayed_names = [
+            call.kwargs["values"][1]
+            for call in app.standings.insert.call_args_list
+        ]
+        self.assertEqual(
+            displayed_names,
+            ["Player 4", "Player 3", "Player 2", "Player 1"],
         )
 
     def test_sb_graph_updates_when_an_opponent_plays(self) -> None:
@@ -1015,7 +1061,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-03 20:04 America/New_York.
-# Changes: Covers simulated-season recording, themed graphs, simulator ties,
-# configurable Elo, draws, persistence, opponent-driven SB updates, and roster
-# ordering when every displayed standing is tied.
+# Generated: 2026-09-03 20:15 America/New_York.
+# Changes: Covers screen-bounded settings, the complete standings tiebreak
+# chain, simulated seasons, themed graphs, Elo, draws, persistence, and SB.
