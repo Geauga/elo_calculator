@@ -192,6 +192,24 @@ class EloModelTests(unittest.TestCase):
             "League 1 - 12-Player Elo League - First to 3"
         )
 
+    def test_fully_tied_standings_preserve_roster_order(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.league = League.new(12)
+        app.standings = Mock()
+        app.standings.selection.return_value = ()
+        app.standings.get_children.return_value = ()
+
+        app._refresh_standings()
+
+        displayed_names = [
+            call.kwargs["values"][1]
+            for call in app.standings.insert.call_args_list
+        ]
+        self.assertEqual(
+            displayed_names,
+            [f"Player {number}" for number in range(1, 13)],
+        )
+
     def test_sb_graph_updates_when_an_opponent_plays(self) -> None:
         league = League.new(3)
         league.record_match(0, 1, 0)
@@ -997,6 +1015,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-03 08:40 America/New_York.
+# Generated: 2026-09-03 20:04 America/New_York.
 # Changes: Covers simulated-season recording, themed graphs, simulator ties,
-# configurable Elo, draws, persistence, and opponent-driven SB updates.
+# configurable Elo, draws, persistence, opponent-driven SB updates, and roster
+# ordering when every displayed standing is tied.

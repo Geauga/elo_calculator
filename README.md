@@ -78,8 +78,19 @@ The previous single-league database is also upgraded automatically to
 
 ## Standalone Windows package
 
-The packaged version is distributed as `EloLeagueCalculator.exe`. It does not
-require Python to be installed. Double-click the executable to start it.
+The current packaged release is
+`release/EloLeagueCalculator-v19-Windows-x64.zip`.
+It contains `EloLeagueCalculator.exe` and `README.txt`; Python does not need to
+be installed. Extract the ZIP, then double-click the executable to start it.
+
+Package verification:
+
+- Executable SHA-256:
+  `926AA67CC1E19FA17CA0474FC46DA1B4B63138197342736DF51AABA003434281`
+- ZIP SHA-256:
+  `437A493D7402BCB4096AC54B9036FA9BBC699E0AD07C56A6D8C386C369467A73`
+- Validation: 66 unit tests passed, followed by a four-second isolated Windows
+  launch test.
 
 ## Test
 

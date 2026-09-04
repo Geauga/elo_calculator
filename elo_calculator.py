@@ -2089,12 +2089,16 @@ class EloCalculatorApp:
         selected_id = int(selected[0]) if selected else None
         self.standings.delete(*self.standings.get_children())
         statistics = self.league.statistics()
+        roster_positions = {
+            player.id: position
+            for position, player in enumerate(self.league.players)
+        }
         ranked_players = sorted(
             self.league.players,
             key=lambda player: (
                 -player.rating,
                 -statistics[player.id].sb_score,
-                player.name.casefold(),
+                roster_positions[player.id],
             ),
         )
         for rank, player in enumerate(ranked_players, start=1):
@@ -2439,6 +2443,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-09-03 08:40 America/New_York.
+# Generated: 2026-09-03 20:04 America/New_York.
 # Changes: Add backed-up simulated-season application and themed graphs while
-# updating SB after every match so opponent results cannot leave it stale.
+# updating SB after every match so opponent results cannot leave it stale; keep
+# fully tied standings in roster order instead of lexicographic name order.
