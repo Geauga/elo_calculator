@@ -309,3 +309,10 @@
 - Modified files: `elo_model.py`; `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v20-Windows-x64/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v20-Windows-x64/README.txt`; `release/EloLeagueCalculator-v20-Windows-x64.zip`; `historyworklog.txt`; `历史工作记录.txt`.
 - Tests and verification: All 69 unit tests passed; `git diff --check` and ASCII-only Python checks passed. PyInstaller 6.22.2 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the v20 executable passed an isolated five-second launch check. The archive contains only `EloLeagueCalculator.exe` and `README.txt`. EXE SHA-256: `4BC4C422F437503663C6D673A8F4F9CCB194AC8D70BC23815681672F03150DF6`. ZIP SHA-256: `6EBD27780D5D330D247BDA0C684F129B1764376D40B0E7CA3A1CA3B73B709554`.
 - GitHub Timeline: The head-to-head implementation and v20 package are local and uncommitted; the user explicitly requested commit and normal push to `origin/main`.
+
+## 2026-09-03 20:29
+- User Prompt summary: Complete the head-to-head v20 GitHub publication.
+- Actions: Created commit `9e94a29` containing the head-to-head secondary tiebreaker, regression test, documentation, tracked executable, and v20 archive; fetched immediately before publication, confirmed ahead 1 / behind 0, and pushed normally without rewriting history.
+- Modified files: This append-only update to `historyworklog.txt` and `历史工作记录.txt`; the implementation and v20 artifacts are in commit `9e94a29`.
+- Tests and verification: Publication verification remains 69/69 tests passing; EXE SHA-256 is `4BC4C422F437503663C6D673A8F4F9CCB194AC8D70BC23815681672F03150DF6`; ZIP SHA-256 is `6EBD27780D5D330D247BDA0C684F129B1764376D40B0E7CA3A1CA3B73B709554`; `git ls-remote` returned `9e94a29a7b8f0aafe86edabcedc6aec9a10d7c8e`.
+- GitHub Timeline: Commit `9e94a29` was pushed successfully to `origin/main`; this publication record will be committed and pushed as a log-only follow-up.
