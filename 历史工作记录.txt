@@ -329,3 +329,11 @@
 - 修改文件：`elo_calculator.py`；`test_elo_model.py`；`historyworklog.txt`；本文件。
 - 测试或验证结果：Python compile 通过；66 项 unit tests 全部通过，包括 screen-size capping regression coverage；focused whitespace check 通过。
 - GitHub Timeline：未 commit，未 push；用户本次未要求发布。既有无关 build、release、cache 和 helper-file changes 未纳入本次修改。
+
+## 2026-09-03 20:04:24 -04:00
+
+- 用户 Prompt 摘要：push League Settings popup fit fix。
+- 具体动作：创建 focused commit `f056b29`，包含 screen-bounded、scrollable settings dialog、fixed action footer、regression test 和 work records；以 normal push 更新 `origin/main`。Generated build、cache、release 和 helper files 均未纳入提交。
+- 修改文件：append-only 更新 `historyworklog.txt` 和本文件；implementation 与 test changes 位于 `f056b29`。
+- 测试或验证结果：publication verification 保持 66/66 unit tests passing；focused whitespace check 通过；push 后 local `HEAD` 与 `origin/main` 均为 `f056b2973c6b0a0c887e1c1f35efa5f6a99fd8b9`。
+- GitHub Timeline：commit `f056b29` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 推送。
