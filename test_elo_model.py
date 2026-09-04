@@ -216,6 +216,33 @@ class EloModelTests(unittest.TestCase):
             [f"Player {number}" for number in range(1, 13)],
         )
 
+    def test_head_to_head_is_the_secondary_standings_tiebreaker(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.league = League.new(3)
+        app.league.calculate_elo = False
+        app.league.players[2].rating = 1400.0
+        app.league.record_match(0, 1, 0)
+        for _ in range(3):
+            app.league.record_match(2, 0, 0)
+        for _ in range(2):
+            app.league.record_match(1, 2, 0)
+        app.standings = Mock()
+        app.standings.selection.return_value = ()
+        app.standings.get_children.return_value = ()
+
+        statistics = app.league.statistics()
+        self.assertLess(
+            statistics[0].match_win_percentage,
+            statistics[1].match_win_percentage,
+        )
+        app._refresh_standings()
+
+        displayed_names = [
+            call.kwargs["values"][1]
+            for call in app.standings.insert.call_args_list
+        ]
+        self.assertEqual(displayed_names[:2], ["Player 1", "Player 2"])
+
     def test_standings_apply_every_documented_tiebreaker(self) -> None:
         app = object.__new__(EloCalculatorApp)
         app.league = League.new(4)
@@ -1061,6 +1088,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-03 20:15 America/New_York.
+# Generated: 2026-09-03 20:22 America/New_York.
 # Changes: Covers screen-bounded settings, the complete standings tiebreak
-# chain, simulated seasons, themed graphs, Elo, draws, persistence, and SB.
+# chain including head-to-head, simulated seasons, themed graphs, Elo, draws,
+# persistence, and SB.

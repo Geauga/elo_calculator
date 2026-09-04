@@ -416,3 +416,11 @@
 - 修改文件：`historyworklog.txt`；本文件。
 - 测试或验证结果：publication verification 保持 68/68 tests passing；EXE SHA-256 为 `EAAE3E046D45842B8D281FF11F76900E6C4202C1F056A116B187792EA2FD475E`；ZIP SHA-256 为 `139D86ECE887C74C99247AEC356A49E53C346A5AC5ABF43D508D4C820328A10A`；`git ls-remote` 返回 `d87a2c4173795604bf8ea4fa072a532fc7536ff9`。
 - GitHub Timeline：commit `d87a2c4` 已 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 提交并 push。
+
+## 2026-09-03 20:28:04 -04:00
+
+- 用户 Prompt 摘要：增加 head-to-head 作为 standings secondary tiebreaker，push 并生成 v20。
+- 具体动作：为每个 equal-Elo group 增加 reusable head-to-head match-score calculation，win 计 1 point、draw 计 0.5；将其放在 Elo 之后、overall Match %、SB、Game % 和 natural player-name order 之前；增加 regression coverage，证明 head-to-head 优先于较高的 overall match percentage；更新 documentation；构建 tracked executable 和独立 flat `release/EloLeagueCalculator-v20-Windows-x64.zip`，同时保留 v19；清理 temporary build/cache files。
+- 修改文件：`elo_model.py`；`elo_calculator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v20-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v20-Windows-x64/README.txt`；`release/EloLeagueCalculator-v20-Windows-x64.zip`；`historyworklog.txt`；本文件。
+- 测试或验证结果：69 项 unit tests 全部通过；`git diff --check` 和 Python ASCII-only checks 通过。PyInstaller 6.22.2 classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；v20 executable 通过 isolated 5-second launch check。Archive 仅包含 `EloLeagueCalculator.exe` 和 `README.txt`。EXE SHA-256 为 `4BC4C422F437503663C6D673A8F4F9CCB194AC8D70BC23815681672F03150DF6`；ZIP SHA-256 为 `6EBD27780D5D330D247BDA0C684F129B1764376D40B0E7CA3A1CA3B73B709554`。
+- GitHub Timeline：head-to-head implementation 和 v20 package 位于本地且尚未 commit；用户已明确要求 commit 并 normal push 至 `origin/main`。

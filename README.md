@@ -20,8 +20,9 @@ with adjustable rosters.
   enabled or disabled independently for each league in League Settings.
 - Standings show match wins, draws, and losses; match score percentage; individual game
   wins and losses, game win percentage, and a Sonneborn-Berger (SB) score. Elo
-  remains the primary ranking key, followed by match score percentage, SB,
-  game win percentage, and a natural player-name order.
+  remains the primary ranking key. Among players tied on Elo, head-to-head match
+  score percentage is the secondary tiebreaker, followed by overall match score
+  percentage, SB, game win percentage, and a natural player-name order.
 - New leagues use first-to-three rules: 3-2 applies 50%, 3-1 applies 75%, and
   3-0 applies 100% of the normal Elo change.
 - The Simulator button runs a read-only Monte Carlo single round-robin for the
@@ -80,17 +81,17 @@ The previous single-league database is also upgraded automatically to
 ## Standalone Windows package
 
 The current packaged release is
-`release/EloLeagueCalculator-v19-Windows-x64.zip`.
+`release/EloLeagueCalculator-v20-Windows-x64.zip`.
 It contains `EloLeagueCalculator.exe` and `README.txt`; Python does not need to
 be installed. Extract the ZIP, then double-click the executable to start it.
 
 Package verification:
 
 - Executable SHA-256:
-  `EAAE3E046D45842B8D281FF11F76900E6C4202C1F056A116B187792EA2FD475E`
+  `4BC4C422F437503663C6D673A8F4F9CCB194AC8D70BC23815681672F03150DF6`
 - ZIP SHA-256:
-  `139D86ECE887C74C99247AEC356A49E53C346A5AC5ABF43D508D4C820328A10A`
-- Validation: 68 unit tests passed, followed by an isolated Windows
+  `6EBD27780D5D330D247BDA0C684F129B1764376D40B0E7CA3A1CA3B73B709554`
+- Validation: 69 unit tests passed, followed by an isolated Windows
   launch test.
 
 ## Test

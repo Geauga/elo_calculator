@@ -302,3 +302,10 @@
 - Modified files: `historyworklog.txt`; `历史工作记录.txt`.
 - Tests and verification: Publication verification remains 68/68 tests passing; EXE SHA-256 is `EAAE3E046D45842B8D281FF11F76900E6C4202C1F056A116B187792EA2FD475E`; ZIP SHA-256 is `139D86ECE887C74C99247AEC356A49E53C346A5AC5ABF43D508D4C820328A10A`; `git ls-remote` returned `d87a2c4173795604bf8ea4fa072a532fc7536ff9`.
 - GitHub Timeline: Commit `d87a2c4` is pushed to `origin/main`; this publication record will be committed and pushed as a log-only follow-up.
+
+## 2026-09-03 20:28
+- User Prompt summary: Add head-to-head as the secondary standings tiebreaker, push, and generate v20.
+- Actions: Added a reusable head-to-head match-score calculation for each equal-Elo group, counting wins as 1 point and draws as 0.5; inserted it after Elo and before overall Match %, SB, Game %, and natural player-name order; added regression coverage proving head-to-head outranks a better overall match percentage; updated documentation; built the tracked executable and a separate flat `release/EloLeagueCalculator-v20-Windows-x64.zip` while retaining v19; and removed temporary build/cache files.
+- Modified files: `elo_model.py`; `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v20-Windows-x64/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v20-Windows-x64/README.txt`; `release/EloLeagueCalculator-v20-Windows-x64.zip`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 69 unit tests passed; `git diff --check` and ASCII-only Python checks passed. PyInstaller 6.22.2 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the v20 executable passed an isolated five-second launch check. The archive contains only `EloLeagueCalculator.exe` and `README.txt`. EXE SHA-256: `4BC4C422F437503663C6D673A8F4F9CCB194AC8D70BC23815681672F03150DF6`. ZIP SHA-256: `6EBD27780D5D330D247BDA0C684F129B1764376D40B0E7CA3A1CA3B73B709554`.
+- GitHub Timeline: The head-to-head implementation and v20 package are local and uncommitted; the user explicitly requested commit and normal push to `origin/main`.
