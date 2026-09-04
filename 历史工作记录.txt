@@ -312,3 +312,43 @@
 - 修改文件：仅 append 更新 `historyworklog.txt` 和本文件；implementation 和 merged executable 位于 commits `22e3d06` 与 `1777461`。
 - 测试或验证结果：最终验证保持 65/65 tests passed；merged EXE SHA-256 为 `6184478E2D626B03B2F7311F2A93BD5D75519696339CF47DDCDFC86CD72A7F34`；`git ls-remote` 返回 `1777461873b27f2e8902768e97032616fa7e12aa`。
 - GitHub Timeline：commits `22e3d06`、`136608a` 和 merge commit `1777461` 已成功 push 至 `origin/main`；本条 publication record 将作为 log-only follow-up commit 推送。
+
+## 2026-09-03 19:38:07 -04:00
+
+- 用户 Prompt 摘要：build package。
+- 具体动作：使用 PyInstaller 6.22.0 从当前 `main` source clean build 单文件 Windows executable；更新 distribution checksum；将 executable 和 README 复制到 `release/EloLeagueCalculator-v19-Windows-x64`；创建 flat archive `release/EloLeagueCalculator-v19-Windows-x64.zip`；更新 tracked `dist/EloLeagueCalculator.exe`；清理 temporary build directories 和生成的 bytecode changes。
+- 修改文件：`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v19-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v19-Windows-x64/README.txt`；`release/EloLeagueCalculator-v19-Windows-x64.zip`；`historyworklog.txt`；本文件。
+- 测试或验证结果：65 项 unit tests 全部通过；PyInstaller classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；warning report 仅包含预期的 platform-conditional modules；executable 在 isolated smoke test 中持续运行 5 秒，两个 exact v19 executable processes 均已停止。EXE SHA-256 为 `27686893DBEFF3512097506016B6CDBB1871EE4564F86959B79F848DF87F2DD6`；ZIP SHA-256 为 `B8F9CFED8AB9A850CC6977CF74869505439B7B0990C85A236556EB5C495A3C0C`。
+- GitHub Timeline：package changes 位于本地且尚未 commit；用户要求 build，未要求 commit 或 push。
+
+## 2026-09-03 20:07:25 -04:00
+
+- 用户 Prompt 摘要：update readme。
+- 具体动作：更新 root `README.md` 的 standalone Windows package section，加入 v19 archive path、source commit、archive contents、解压和启动说明、EXE/ZIP SHA-256，以及已完成的 tests 和 launch validation；保留 worktree 中先前存在且与本任务无关的 source/test changes。
+- 修改文件：`README.md`；`historyworklog.txt`；本文件。
+- 测试或验证结果：README 和 work-log update 通过 `git diff --check`；package verification 保持 65/65 unit tests passed 和 isolated five-second Windows launch test passed；README 中的 hashes 与生成的 v19 artifacts 一致。
+- GitHub Timeline：README 和 package changes 仍位于本地且尚未 commit；用户未要求 commit 或 push。
+
+## 2026-09-03 20:06:59 -04:00
+
+- 用户 Prompt 摘要：修复 standings 显示为 Player 1、Player 10、Player 11、Player 12、Player 2 的排序错误。
+- 具体动作：将 Elo 和 SB 完全相同时的 alphabetical name fallback 改为稳定的 roster-position ordering；增加 12-player GUI regression test；记录该行为；从修正后的 source 重建 tracked executable 和待提交的 v19 Windows package；删除 temporary build files。
+- 修改文件：`elo_calculator.py`；`test_elo_model.py`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v19-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v19-Windows-x64/README.txt`；`release/EloLeagueCalculator-v19-Windows-x64.zip`；`historyworklog.txt`；本文件。
+- 测试或验证结果：66 项 unit tests 全部通过，包括新的 Player 1 至 Player 12 ordering regression；`git diff --check` 和 Python source ASCII-only checks 通过。PyInstaller 6.22.2 classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；重建的 executable 在 isolated 4-second smoke test 中持续运行。EXE SHA-256 为 `926AA67CC1E19FA17CA0474FC46DA1B4B63138197342736DF51AABA003434281`；ZIP SHA-256 为 `437A493D7402BCB4096AC54B9036FA9BBC699E0AD07C56A6D8C386C369467A73`。
+- GitHub Timeline：ordering fix 和更新后的 v19 package 位于本地且尚未 commit；用户未要求 push。随后创建 focused local commit。
+
+## 2026-09-03 20:09:00 -04:00
+
+- 用户 Prompt 摘要：update readme；在 concurrent v19 rebuild 后校正文档。
+- 具体动作：README verification 期间检测到 commit `5b5b582` 已使用 tied-standings ordering fix 重建并提交 v19；校正 root `README.md`，写入 commit `5b5b582`、实际 rebuilt EXE/ZIP hashes、66 项 passing tests 和 4-second launch check；此前 append-only record 保留为 rebuild 前的历史状态。
+- 修改文件：`README.md`；`historyworklog.txt`；本文件。
+- 测试或验证结果：确认两个 tracked executable copies 的 SHA-256 均为 `926AA67CC1E19FA17CA0474FC46DA1B4B63138197342736DF51AABA003434281`；v19 ZIP SHA-256 为 `437A493D7402BCB4096AC54B9036FA9BBC699E0AD07C56A6D8C386C369467A73`；test suite 包含 66 项 tests，rebuild record 报告全部通过；targeted documentation diff check 通过。
+- GitHub Timeline：commit `5b5b582` 已在本地创建但尚未 push；本次 README correction 和 logs 也位于本地且尚未 commit。
+
+## 2026-09-03 20:10:00 -04:00
+
+- 用户 Prompt 摘要：local package commit 被 concurrent amend 后完成 README update。
+- 具体动作：从 package description 删除可能继续变化的 local commit identifier，使 README 在 unpushed commit 再次 amend 时仍保持准确；保留 verified v19 path、contents、hashes 和 validation results。
+- 修改文件：`README.md`；`historyworklog.txt`；本文件。
+- 测试或验证结果：EXE 和 ZIP hashes 仍分别为 `926AA67CC1E19FA17CA0474FC46DA1B4B63138197342736DF51AABA003434281` 和 `437A493D7402BCB4096AC54B9036FA9BBC699E0AD07C56A6D8C386C369467A73`；targeted `git diff --check` 通过。
+- GitHub Timeline：v19 package commit 仍位于本地且领先 `origin/main`；README correction 和 work-log entries 尚未 commit 或 push。
