@@ -87,10 +87,10 @@ be installed. Extract the ZIP, then double-click the executable to start it.
 Package verification:
 
 - Executable SHA-256:
-  `D45426DE2D59A38430864F54A726A91FFAC4A81D0C30B96CE1ABA43FCEE4EA05`
+  `EAAE3E046D45842B8D281FF11F76900E6C4202C1F056A116B187792EA2FD475E`
 - ZIP SHA-256:
-  `CAA56D0A3EDC8896E0F007C1BA0D4B6E733D35713716B0F7E8139F2E9DE0255C`
-- Validation: 66 unit tests passed, followed by a four-second isolated Windows
+  `139D86ECE887C74C99247AEC356A49E53C346A5AC5ABF43D508D4C820328A10A`
+- Validation: 68 unit tests passed, followed by an isolated Windows
   launch test.
 
 ## Test

@@ -384,3 +384,27 @@
 - 修改文件：`elo_calculator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v19-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v19-Windows-x64/README.txt`；`release/EloLeagueCalculator-v19-Windows-x64.zip`；`historyworklog.txt`；本文件。
 - 测试或验证结果：67 项 merged unit tests 全部通过，包括 numeric Player 1 至 Player 12 ordering 和 settings-window bounds；`git diff --check`、conflict-marker 和 Python ASCII-only checks 通过。PyInstaller 6.22.2 classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；最终 executable 通过 isolated 4-second launch check，并停止两个 exact-path processes。EXE SHA-256 为 `D45426DE2D59A38430864F54A726A91FFAC4A81D0C30B96CE1ABA43FCEE4EA05`；ZIP SHA-256 为 `CAA56D0A3EDC8896E0F007C1BA0D4B6E733D35713716B0F7E8139F2E9DE0255C`。
 - GitHub Timeline：normal merge 已在本地完成 conflict resolution，等待创建 merge commit；用户已明确要求 normal push 至 `origin/main`。
+
+## 2026-09-03 20:14:59 -04:00
+
+- 用户 Prompt 摘要：完成 GitHub push。
+- 具体动作：创建 merge commit `6d2aee3`，包含 ordering fix、final v19 package、natural-sort correction、popup-fit changes、tests、documentation 和合并后的 append-only histories。最终 fetch 发现 remote work-log correction `4c2ed49`，以 `e715bac` 正常 merge；随后不重写历史地 push `main`。
+- 修改文件：本次仅 append 更新 `historyworklog.txt` 和本文件；implementation 和 package changes 位于 commits `7bc6afe`、`6d2aee3` 和 `e715bac`。
+- 测试或验证结果：最终验证保持 67/67 tests passing；final EXE SHA-256 为 `D45426DE2D59A38430864F54A726A91FFAC4A81D0C30B96CE1ABA43FCEE4EA05`；final ZIP SHA-256 为 `CAA56D0A3EDC8896E0F007C1BA0D4B6E733D35713716B0F7E8139F2E9DE0255C`；push 后 `git ls-remote` 返回 `e715bac4f7b30be0792a297fc9d6d53eb6282a2c`。
+- GitHub Timeline：截至 `e715bac` 的 commits 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 提交并 push。
+
+## 2026-09-03 20:16:51 -04:00
+
+- 用户 Prompt 摘要：在 concurrent package verification changes 后完成 push。
+- 具体动作：main code push 后检测到两个 tracked executable copies 和 v19 ZIP 被 concurrent rebuild；保留该 rebuild，核对 documented hashes 与实际文件，按实际 merged suite 将 validation count 校正为 68 tests，并独立 smoke-test rebuilt tracked executable。
+- 修改文件：`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v19-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v19-Windows-x64/README.txt`；`release/EloLeagueCalculator-v19-Windows-x64.zip`；`historyworklog.txt`；本文件。
+- 测试或验证结果：68 项 unit tests 全部通过；`git diff --check` 通过；final tracked executable 在 isolated 4-second launch check 中持续运行。两个 executable copies 的 SHA-256 均为 `EAAE3E046D45842B8D281FF11F76900E6C4202C1F056A116B187792EA2FD475E`；v19 ZIP SHA-256 为 `139D86ECE887C74C99247AEC356A49E53C346A5AC5ABF43D508D4C820328A10A`。
+- GitHub Timeline：截至 `e715bac` 的 main source 和 merge commits 已 push；final package refresh 和 publication records 位于本地，将 normal commit 并 push。
+
+## 2026-09-03 20:18:00 -04:00
+
+- 用户 Prompt 摘要：review code、patch defects，并 commit 两组 integrated features。
+- 具体动作：审查 merged natural-order/tiebreaker 和 screen-bounded League Settings changes；保留两组功能；验证 corrected numeric regex；修复 standings documentation stale defect；增加覆盖 Elo、match score percentage、SB、game percentage 和 natural-name 完整 tiebreak chain 的 regression test；同步 root/package READMEs；从 reviewed source 重建 v19；删除误纳入版本控制的 PyInstaller intermediate directories。
+- 修改文件：`elo_calculator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v19-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v19-Windows-x64/README.txt`；`release/EloLeagueCalculator-v19-Windows-x64.zip`；`historyworklog.txt`；本文件。Generated `build_review_merge_final` 和 `dist_review_merge_final` directories 将删除。
+- 测试或验证结果：Python compilation 和 68 项 unit tests 全部通过；conflict-marker 和 whitespace checks 通过；PyInstaller 6.22.0 classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；仅保留预期 platform-conditional warnings；final EXE 通过 isolated five-second launch test，两个 exact-path processes 均已停止。EXE SHA-256 为 `EAAE3E046D45842B8D281FF11F76900E6C4202C1F056A116B187792EA2FD475E`；ZIP SHA-256 为 `139D86ECE887C74C99247AEC356A49E53C346A5AC5ABF43D508D4C820328A10A`。
+- GitHub Timeline：此前 integrated merge 已 push 至 `e715bac`；本次 review/package cleanup 位于本地，将根据用户仅要求 commit 而不 push。
