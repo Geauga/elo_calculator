@@ -424,3 +424,11 @@
 - 修改文件：`elo_model.py`；`elo_calculator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v20-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v20-Windows-x64/README.txt`；`release/EloLeagueCalculator-v20-Windows-x64.zip`；`historyworklog.txt`；本文件。
 - 测试或验证结果：69 项 unit tests 全部通过；`git diff --check` 和 Python ASCII-only checks 通过。PyInstaller 6.22.2 classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；v20 executable 通过 isolated 5-second launch check。Archive 仅包含 `EloLeagueCalculator.exe` 和 `README.txt`。EXE SHA-256 为 `4BC4C422F437503663C6D673A8F4F9CCB194AC8D70BC23815681672F03150DF6`；ZIP SHA-256 为 `6EBD27780D5D330D247BDA0C684F129B1764376D40B0E7CA3A1CA3B73B709554`。
 - GitHub Timeline：head-to-head implementation 和 v20 package 位于本地且尚未 commit；用户已明确要求 commit 并 normal push 至 `origin/main`。
+
+## 2026-09-03 20:29:58 -04:00
+
+- 用户 Prompt 摘要：完成 head-to-head v20 GitHub publication。
+- 具体动作：创建 commit `9e94a29`，包含 head-to-head secondary tiebreaker、regression test、documentation、tracked executable 和 v20 archive；publication 前立即 fetch，确认 ahead 1 / behind 0，并以 normal push 发布，不重写历史。
+- 修改文件：本次仅 append 更新 `historyworklog.txt` 和本文件；implementation 和 v20 artifacts 位于 commit `9e94a29`。
+- 测试或验证结果：publication verification 保持 69/69 tests passing；EXE SHA-256 为 `4BC4C422F437503663C6D673A8F4F9CCB194AC8D70BC23815681672F03150DF6`；ZIP SHA-256 为 `6EBD27780D5D330D247BDA0C684F129B1764376D40B0E7CA3A1CA3B73B709554`；`git ls-remote` 返回 `9e94a29a7b8f0aafe86edabcedc6aec9a10d7c8e`。
+- GitHub Timeline：commit `9e94a29` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 提交并 push。
