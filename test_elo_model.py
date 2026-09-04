@@ -9,6 +9,7 @@ from elo_calculator import (
     ApplicationInstanceLock,
     EloCalculatorApp,
     THEME_PALETTES,
+    fit_window_to_screen,
     load_theme,
     save_theme,
 )
@@ -173,6 +174,11 @@ class EloModelTests(unittest.TestCase):
                 self.assertEqual(graph_colors["grid"], palette["button_active"])
                 self.assertEqual(graph_colors["text"], palette["muted"])
                 self.assertEqual(graph_colors["plot"], palette["selection"])
+
+    def test_settings_window_size_is_capped_to_usable_screen(self) -> None:
+        self.assertEqual(fit_window_to_screen(1920, 1080, 560, 760), (560, 760))
+        self.assertEqual(fit_window_to_screen(800, 600, 560, 760), (560, 500))
+        self.assertEqual(fit_window_to_screen(400, 300, 560, 760), (320, 200))
 
     def test_league_heading_and_window_title_use_ascii_safe_separators(self) -> None:
         app = object.__new__(EloCalculatorApp)
@@ -997,6 +1003,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-03 08:40 America/New_York.
-# Changes: Covers simulated-season recording, themed graphs, simulator ties,
-# configurable Elo, draws, persistence, and opponent-driven SB updates.
+# Generated: 2026-09-03 19:59 America/New_York.
+# Changes: Covers screen-bounded settings sizing alongside simulated seasons,
+# themed graphs, simulator ties, Elo, draws, persistence, and SB updates.

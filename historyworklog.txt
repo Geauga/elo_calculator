@@ -217,3 +217,11 @@
 - Rebuilt the EloLeagueCalculator executable to include the natural sorting and tiebreaker logic changes using PyInstaller.
 - Packaged the v19 build into release/EloLeagueCalculator-v19-Windows-x64.zip.
 - Pushed all sorting and packaging commits to origin/main.
+
+## 2026-09-03 20:02:03 -04:00
+
+- User Prompt summary: The League Settings popup does not fit on screen, as shown with a 64-player, First-to-10 league.
+- Actions: Capped the dialog's initial size to the usable screen; moved the complete settings form into one vertically scrollable area; kept Cancel and Save in a fixed footer; added mouse-wheel scrolling; removed the nested multiplier scrollbar so large First-to-N lists participate in the main form scroll.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: Python compilation passed; all 66 unit tests passed, including screen-size capping regression coverage; focused whitespace check passed.
+- GitHub Timeline: Not committed and not pushed; the user did not request publication. Existing unrelated build, release, cache, and helper-file changes were excluded.

@@ -97,6 +97,21 @@ def save_theme(path: Path, theme: str) -> None:
     temporary_path.replace(path)
 
 
+def fit_window_to_screen(
+    screen_width: int,
+    screen_height: int,
+    preferred_width: int,
+    preferred_height: int,
+    horizontal_margin: int = 80,
+    vertical_margin: int = 100,
+) -> tuple[int, int]:
+    """Return a preferred window size capped to the usable screen area."""
+    return (
+        min(preferred_width, max(1, screen_width - horizontal_margin)),
+        min(preferred_height, max(1, screen_height - vertical_margin)),
+    )
+
+
 APP_DATA_DIRECTORY = application_data_directory()
 DATA_FILE = APP_DATA_DIRECTORY / "elo_league_data.json"
 SETTINGS_FILE = APP_DATA_DIRECTORY / "app_settings.json"
@@ -1561,18 +1576,60 @@ class EloCalculatorApp:
     def _edit_rules(self) -> None:
         dialog = tk.Toplevel(self.root)
         dialog.title("League Settings")
-        dialog.geometry("480x700")
-        dialog.minsize(440, 580)
+        dialog_width, dialog_height = fit_window_to_screen(
+            dialog.winfo_screenwidth(),
+            dialog.winfo_screenheight(),
+            560,
+            760,
+        )
+        dialog.geometry(f"{dialog_width}x{dialog_height}")
+        dialog.minsize(min(440, dialog_width), min(520, dialog_height))
         self._configure_dialog(
             dialog, self.root, resizable=(True, True)
         )
         dialog.columnconfigure(0, weight=1)
-        dialog.rowconfigure(4, weight=1)
+        dialog.rowconfigure(0, weight=1)
 
         colors = THEME_PALETTES[self.theme_var.get()]
         dialog.configure(background=colors["background"])
 
-        format_frame = ttk.LabelFrame(dialog, text="Match format", padding=10)
+        content_canvas = tk.Canvas(
+            dialog,
+            borderwidth=0,
+            highlightthickness=0,
+            background=colors["background"],
+        )
+        content_scrollbar = ttk.Scrollbar(
+            dialog, orient="vertical", command=content_canvas.yview
+        )
+        content = ttk.Frame(content_canvas)
+        content.columnconfigure(0, weight=1)
+        content_window = content_canvas.create_window(
+            (0, 0), window=content, anchor="nw"
+        )
+        content.bind(
+            "<Configure>",
+            lambda _event: content_canvas.configure(
+                scrollregion=content_canvas.bbox("all")
+            ),
+        )
+        content_canvas.bind(
+            "<Configure>",
+            lambda event: content_canvas.itemconfigure(
+                content_window, width=event.width
+            ),
+        )
+        content_canvas.configure(yscrollcommand=content_scrollbar.set)
+        content_canvas.grid(row=0, column=0, sticky="nsew")
+        content_scrollbar.grid(row=0, column=1, sticky="ns")
+        dialog.bind(
+            "<MouseWheel>",
+            lambda event: content_canvas.yview_scroll(
+                int(-event.delta / 120), "units"
+            ),
+        )
+
+        format_frame = ttk.LabelFrame(content, text="Match format", padding=10)
         format_frame.grid(row=0, column=0, padx=10, pady=(10, 5), sticky="ew")
         format_frame.columnconfigure(1, weight=1)
         ttk.Label(format_frame, text="Format:").grid(
@@ -1600,7 +1657,7 @@ class EloCalculatorApp:
         format_help = ttk.Label(format_frame, wraplength=370, justify="left")
         format_help.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(8, 0))
 
-        fixed_frame = ttk.LabelFrame(dialog, text="First-to-N settings", padding=10)
+        fixed_frame = ttk.LabelFrame(content, text="First-to-N settings", padding=10)
         fixed_frame.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
         fixed_frame.columnconfigure(1, weight=1)
         ttk.Label(fixed_frame, text="Games to win:").grid(
@@ -1615,7 +1672,7 @@ class EloCalculatorApp:
             width=6,
         ).grid(row=0, column=1, pady=(0, 5), sticky="w")
 
-        elo_frame = ttk.LabelFrame(dialog, text="Elo settings", padding=10)
+        elo_frame = ttk.LabelFrame(content, text="Elo settings", padding=10)
         elo_frame.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
         elo_frame.columnconfigure(1, weight=1)
         ttk.Label(elo_frame, text="K-factor:").grid(
@@ -1651,7 +1708,7 @@ class EloCalculatorApp:
 
         calc_elo_var = tk.BooleanVar(value=self.league.calculate_elo)
         allow_draws_var = tk.BooleanVar(value=self.league.allow_draws)
-        options_frame = ttk.Frame(dialog)
+        options_frame = ttk.Frame(content)
         options_frame.grid(row=3, column=0, padx=12, pady=5, sticky="w")
         ttk.Checkbutton(
             options_frame, text="Auto-calculate Elo", variable=calc_elo_var
@@ -1660,24 +1717,11 @@ class EloCalculatorApp:
             options_frame, text="Allow draws", variable=allow_draws_var
         ).pack(side="left", padx=(16, 0))
 
-        mult_frame = ttk.LabelFrame(dialog, text="Score Multipliers", padding=10)
-        mult_frame.grid(row=4, column=0, padx=10, pady=5, sticky="nsew")
-        mult_frame.rowconfigure(0, weight=1)
+        mult_frame = ttk.LabelFrame(content, text="Score Multipliers", padding=10)
+        mult_frame.grid(row=4, column=0, padx=10, pady=5, sticky="ew")
         mult_frame.columnconfigure(0, weight=1)
-        
-        canvas = tk.Canvas(mult_frame, borderwidth=0, highlightthickness=0, background=colors["background"])
-        scrollbar = ttk.Scrollbar(mult_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
-        
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        canvas.grid(row=0, column=0, sticky="nsew")
-        scrollbar.grid(row=0, column=1, sticky="ns")
+        scrollable_frame = ttk.Frame(mult_frame)
+        scrollable_frame.grid(row=0, column=0, sticky="ew")
 
         mult_vars = {}
         for i in range(MAX_GAMES_TO_WIN):
@@ -1787,7 +1831,9 @@ class EloCalculatorApp:
             dialog.destroy()
 
         buttons = ttk.Frame(dialog)
-        buttons.grid(row=5, column=0, padx=10, pady=10, sticky="e")
+        buttons.grid(
+            row=1, column=0, columnspan=2, padx=10, pady=10, sticky="e"
+        )
         ttk.Button(buttons, text="Cancel", command=dialog.destroy).pack(
             side="left", padx=(0, 8)
         )
@@ -2446,6 +2492,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-09-03 08:40 America/New_York.
-# Changes: Add backed-up simulated-season application and themed graphs while
-# updating SB after every match so opponent results cannot leave it stale.
+# Generated: 2026-09-03 19:59 America/New_York.
+# Changes: Keeps League Settings within the usable screen area, scrolls its
+# complete settings content, and leaves Save/Cancel fixed and visible.
