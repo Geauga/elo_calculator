@@ -39,8 +39,8 @@ Rules
   be enabled or disabled independently for each league in League Settings.
 - Standings include match W-D-L, match score percentage, individual game W-L,
   game win percentage, and SB. For example, a 3-2 result records five games.
-  Players tied on Elo and SB remain in roster order, so default player numbers
-  display in numeric sequence.
+  Rankings use Elo, match score percentage, SB, game win percentage, and then
+  natural player-name order, so default player numbers display numerically.
 - The Graphs tab plots Elo, match score percentage, and SB history for the
   selected player, including draw-aware calculations and SB changes caused by
   later results from prior opponents.
@@ -63,4 +63,4 @@ players at 1500.00 without changing earlier ratings or match history.
 Existing single-league data is migrated to League 1 automatically.
 
 SHA-256 for EloLeagueCalculator.exe:
-D45426DE2D59A38430864F54A726A91FFAC4A81D0C30B96CE1ABA43FCEE4EA05
+EAAE3E046D45842B8D281FF11F76900E6C4202C1F056A116B187792EA2FD475E
