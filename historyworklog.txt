@@ -246,3 +246,31 @@
 - Modified files: `README.md`; `historyworklog.txt`; `历史工作记录.txt`.
 - Tests and verification: The EXE and ZIP hashes remain `926AA67CC1E19FA17CA0474FC46DA1B4B63138197342736DF51AABA003434281` and `437A493D7402BCB4096AC54B9036FA9BBC699E0AD07C56A6D8C386C369467A73`; targeted `git diff --check` passed.
 - GitHub Timeline: The v19 package commit remains local and ahead of `origin/main`; the README correction and work-log entries are uncommitted and unpushed.
+
+## 2026-09-03 19:55
+- Rebuilt the EloLeagueCalculator executable to include the natural sorting and tiebreaker logic changes using PyInstaller.
+- Packaged the v19 build into release/EloLeagueCalculator-v19-Windows-x64.zip.
+- Pushed all sorting and packaging commits to origin/main.
+
+## 2026-09-03 20:02:03 -04:00
+
+- User Prompt summary: The League Settings popup does not fit on screen, as shown with a 64-player, First-to-10 league.
+- Actions: Capped the dialog's initial size to the usable screen; moved the complete settings form into one vertically scrollable area; kept Cancel and Save in a fixed footer; added mouse-wheel scrolling; removed the nested multiplier scrollbar so large First-to-N lists participate in the main form scroll.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: Python compilation passed; all 66 unit tests passed, including screen-size capping regression coverage; focused whitespace check passed.
+- GitHub Timeline: Not committed and not pushed; the user did not request publication. Existing unrelated build, release, cache, and helper-file changes were excluded.
+
+## 2026-09-03 20:04:24 -04:00
+
+- User Prompt summary: Push the League Settings popup fit fix.
+- Actions: Created focused commit `f056b29` containing the screen-bounded, scrollable settings dialog, fixed action footer, regression test, and work records; pushed normally to `origin/main`. Generated build, cache, release, and helper files were excluded.
+- Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and test changes are contained in `f056b29`.
+- Tests and verification: Publication verification remains 66/66 unit tests passing; focused whitespace check passed; local `HEAD` and `origin/main` both resolved to `f056b2973c6b0a0c887e1c1f35efa5f6a99fd8b9` after the push.
+- GitHub Timeline: Commit `f056b29` was pushed successfully to `origin/main`; this publication record will be pushed as a log-only follow-up commit.
+
+## 2026-09-03 20:13
+- User Prompt summary: Push the standings-order fix and v19 package.
+- Actions: Fetched four newer `origin/main` commits; normally merged the remote natural-sort, standings-tiebreaker, package-log, and screen-bounded League Settings changes with the local ordering regression and v19 package. The merged regression exposed an incorrectly escaped digit expression in the remote natural-sort helper; corrected it to split actual numeric components. Preserved both append-only histories, rebuilt the final executable and v19 ZIP from merged source, updated package hashes, and removed temporary build files.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v19-Windows-x64/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v19-Windows-x64/README.txt`; `release/EloLeagueCalculator-v19-Windows-x64.zip`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 67 merged unit tests passed, including numeric Player 1 through Player 12 ordering and settings-window bounds; `git diff --check`, conflict-marker, and ASCII-only Python checks passed. PyInstaller 6.22.2 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the final executable passed an isolated four-second launch check and both exact-path processes were stopped. EXE SHA-256: `D45426DE2D59A38430864F54A726A91FFAC4A81D0C30B96CE1ABA43FCEE4EA05`. ZIP SHA-256: `CAA56D0A3EDC8896E0F007C1BA0D4B6E733D35713716B0F7E8139F2E9DE0255C`.
+- GitHub Timeline: The normal merge is resolved locally and awaiting its merge commit; the user explicitly requested a normal push to `origin/main`.
