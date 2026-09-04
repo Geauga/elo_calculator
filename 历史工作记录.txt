@@ -321,3 +321,11 @@
 - 修改文件：historyworklog.txt；历史工作记录.txt；dist/EloLeagueCalculator.exe；release/EloLeagueCalculator-v19-Windows-x64.zip。
 - 测试或验证绒果：PyInstaller 构廻并鉓包 v19 成功。
 - GitHub Timeline：推送到 origin/main。
+
+## 2026-09-03 20:02:03 -04:00
+
+- 用户 Prompt 摘要：截图中的 League Settings popup 无法完整显示；当前为 64-player、First-to-10 league。
+- 具体动作：将 dialog 初始尺寸限制在 usable screen 范围内；将完整 settings form 放入统一的垂直滚动区域；Cancel 和 Save 固定在始终可见的 footer；增加 mouse-wheel scrolling；移除 multiplier list 的 nested scrollbar，使大型 First-to-N 列表随主表单滚动。
+- 修改文件：`elo_calculator.py`；`test_elo_model.py`；`historyworklog.txt`；本文件。
+- 测试或验证结果：Python compile 通过；66 项 unit tests 全部通过，包括 screen-size capping regression coverage；focused whitespace check 通过。
+- GitHub Timeline：未 commit，未 push；用户本次未要求发布。既有无关 build、release、cache 和 helper-file changes 未纳入本次修改。
