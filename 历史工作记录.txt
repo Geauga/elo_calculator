@@ -408,3 +408,11 @@
 - 修改文件：`elo_calculator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v19-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v19-Windows-x64/README.txt`；`release/EloLeagueCalculator-v19-Windows-x64.zip`；`historyworklog.txt`；本文件。Generated `build_review_merge_final` 和 `dist_review_merge_final` directories 将删除。
 - 测试或验证结果：Python compilation 和 68 项 unit tests 全部通过；conflict-marker 和 whitespace checks 通过；PyInstaller 6.22.0 classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；仅保留预期 platform-conditional warnings；final EXE 通过 isolated five-second launch test，两个 exact-path processes 均已停止。EXE SHA-256 为 `EAAE3E046D45842B8D281FF11F76900E6C4202C1F056A116B187792EA2FD475E`；ZIP SHA-256 为 `139D86ECE887C74C99247AEC356A49E53C346A5AC5ABF43D508D4C820328A10A`。
 - GitHub Timeline：此前 integrated merge 已 push 至 `e715bac`；本次 review/package cleanup 位于本地，将根据用户仅要求 commit 而不 push。
+
+## 2026-09-03 20:19:06 -04:00
+
+- 用户 Prompt 摘要：push reviewed code 和 final v19 package。
+- 具体动作：fetch `origin/main`，确认 reviewed publication commit 已存在于 remote，并在追加本条 append-only publication record 前验证 GitHub `main` 的 exact commit。
+- 修改文件：`historyworklog.txt`；本文件。
+- 测试或验证结果：publication verification 保持 68/68 tests passing；EXE SHA-256 为 `EAAE3E046D45842B8D281FF11F76900E6C4202C1F056A116B187792EA2FD475E`；ZIP SHA-256 为 `139D86ECE887C74C99247AEC356A49E53C346A5AC5ABF43D508D4C820328A10A`；`git ls-remote` 返回 `d87a2c4173795604bf8ea4fa072a532fc7536ff9`。
+- GitHub Timeline：commit `d87a2c4` 已 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 提交并 push。
