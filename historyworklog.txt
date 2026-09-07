@@ -323,3 +323,10 @@
 - Modified files: `elo_simulator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v21-Windows-x64/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v21-Windows-x64/README.txt`; `release/EloLeagueCalculator-v21-Windows-x64.zip`; `historyworklog.txt`; `历史工作记录.txt`.
 - Tests and verification: Python compilation and all 70 unit tests passed; conflict-marker and whitespace checks passed. PyInstaller 6.22.0 on Python 3.12.14 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; only expected platform-conditional warnings remained. The v21 executable passed an isolated five-second launch test, and both exact-path processes were stopped. EXE SHA-256: `7C13201EE3A81D7923909A0BC6BCA4D7A720D83BCD102AF293CD3C81D3A6C994`. ZIP SHA-256: `4223B2A577BC62F0CF858EDA60E8FC2742F823B7EC83CCCE037EB8C9D3415062`.
 - GitHub Timeline: Changes are local and uncommitted; the user explicitly requested a normal push to `origin/main`.
+
+## 2026-09-07 14:24
+- User Prompt summary: Complete the reviewed v21 GitHub publication.
+- Actions: Created commit `4962704` containing the simulator head-to-head fix, regression test, updated documentation, tracked executable, and independent v21 archive; fetched immediately before publication, confirmed no divergence, and pushed normally without rewriting history.
+- Modified files: This append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and v21 artifacts are in commit `4962704`.
+- Tests and verification: Publication verification remains 70/70 tests passing; EXE SHA-256 is `7C13201EE3A81D7923909A0BC6BCA4D7A720D83BCD102AF293CD3C81D3A6C994`; ZIP SHA-256 is `4223B2A577BC62F0CF858EDA60E8FC2742F823B7EC83CCCE037EB8C9D3415062`; `git ls-remote` returned `496270466f14f5a1d6bcb7e32ea6a07b5c6a99d0`.
+- GitHub Timeline: Commit `4962704` was pushed successfully to `origin/main`; this publication record will be committed and pushed as a log-only follow-up.

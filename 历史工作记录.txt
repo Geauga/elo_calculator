@@ -440,3 +440,11 @@
 - 修改文件：`elo_simulator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v21-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v21-Windows-x64/README.txt`；`release/EloLeagueCalculator-v21-Windows-x64.zip`；`historyworklog.txt`；本文件。
 - 测试或验证结果：Python compilation 和 70 项 unit tests 全部通过；conflict-marker 和 whitespace checks 通过。PyInstaller 6.22.0 在 Python 3.12.14 上 classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；仅保留预期 platform-conditional warnings；v21 executable 通过 isolated five-second launch test，两个 exact-path processes 均停止。EXE SHA-256 为 `7C13201EE3A81D7923909A0BC6BCA4D7A720D83BCD102AF293CD3C81D3A6C994`；ZIP SHA-256 为 `4223B2A577BC62F0CF858EDA60E8FC2742F823B7EC83CCCE037EB8C9D3415062`。
 - GitHub Timeline：changes 位于本地且尚未 commit；用户已明确要求 normal push 至 `origin/main`。
+
+## 2026-09-07 14:24:51 -04:00
+
+- 用户 Prompt 摘要：完成 reviewed v21 GitHub publication。
+- 具体动作：创建 commit `4962704`，包含 simulator head-to-head fix、regression test、updated documentation、tracked executable 和独立 v21 archive；publication 前立即 fetch，确认无 divergence，并以 normal push 发布，不重写历史。
+- 修改文件：本次仅 append 更新 `historyworklog.txt` 和本文件；implementation 和 v21 artifacts 位于 commit `4962704`。
+- 测试或验证结果：publication verification 保持 70/70 tests passing；EXE SHA-256 为 `7C13201EE3A81D7923909A0BC6BCA4D7A720D83BCD102AF293CD3C81D3A6C994`；ZIP SHA-256 为 `4223B2A577BC62F0CF858EDA60E8FC2742F823B7EC83CCCE037EB8C9D3415062`；`git ls-remote` 返回 `496270466f14f5a1d6bcb7e32ea6a07b5c6a99d0`。
+- GitHub Timeline：commit `4962704` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 提交并 push。
