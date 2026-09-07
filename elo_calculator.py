@@ -621,7 +621,11 @@ class EloCalculatorApp:
             "player": ("Player", 150, "w"),
             "rating": ("Rating", 85, "e"),
             "sb_score": ("SB", 50, "e"),
-            "match_record": ("Match W-D-L", 90, "center"),
+            "match_record": (
+                "Match W-D-L" if self.league.allow_draws else "Match W-L",
+                90,
+                "center",
+            ),
             "match_pct": ("Match %", 70, "e"),
             "game_record": ("Game W-L", 80, "center"),
             "game_pct": ("Game %", 70, "e"),
@@ -2168,6 +2172,11 @@ class EloCalculatorApp:
     def _refresh_standings(self) -> None:
         selected = self.standings.selection()
         selected_id = int(selected[0]) if selected else None
+        show_draws = self.league.allow_draws
+        self.standings.heading(
+            "match_record",
+            text="Match W-D-L" if show_draws else "Match W-L",
+        )
         self.standings.delete(*self.standings.get_children())
         statistics = self.league.statistics()
         rating_groups: dict[float, set[int]] = {}
@@ -2191,6 +2200,11 @@ class EloCalculatorApp:
         )
         for rank, player in enumerate(ranked_players, start=1):
             stats = statistics[player.id]
+            match_record = (
+                f"{stats.matches_won}-{stats.matches_drawn}-{stats.matches_lost}"
+                if show_draws
+                else f"{stats.matches_won}-{stats.matches_lost}"
+            )
             self.standings.insert(
                 "",
                 "end",
@@ -2200,7 +2214,7 @@ class EloCalculatorApp:
                     player.name,
                     self._format_elo(player.rating),
                     f"{stats.sb_score:.1f}",
-                    f"{stats.matches_won}-{stats.matches_drawn}-{stats.matches_lost}",
+                    match_record,
                     f"{stats.match_win_percentage:.1f}%",
                     f"{stats.games_won}-{stats.games_lost}",
                     f"{stats.game_win_percentage:.1f}%",
@@ -2531,6 +2545,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-09-07 16:14 America/New_York.
-# Changes: Size League Settings dynamically from visible content while keeping
-# the screen cap, scrollbar, fixed footer, and current standings rules.
+# Generated: 2026-09-07 16:21 America/New_York.
+# Changes: Show Match W-L when draws are disabled and Match W-D-L when enabled,
+# refreshing both the heading and row values whenever league settings change.

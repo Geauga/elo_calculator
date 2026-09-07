@@ -550,6 +550,37 @@ class EloModelTests(unittest.TestCase):
             app.preview_var.set.call_args.args[0],
         )
 
+    def test_standings_hide_draw_column_when_draws_are_disabled(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.league = League.new(2)
+        app.league.record_draw(0, 1)
+        app.league.allow_draws = False
+        app.standings = Mock()
+        app.standings.selection.return_value = ()
+        app.standings.get_children.return_value = ()
+
+        app._refresh_standings()
+
+        app.standings.heading.assert_called_once_with(
+            "match_record", text="Match W-L"
+        )
+        self.assertEqual(
+            app.standings.insert.call_args_list[0].kwargs["values"][4], "0-0"
+        )
+
+        app.league.allow_draws = True
+        app.standings.reset_mock()
+        app.standings.selection.return_value = ()
+        app.standings.get_children.return_value = ()
+        app._refresh_standings()
+
+        app.standings.heading.assert_called_once_with(
+            "match_record", text="Match W-D-L"
+        )
+        self.assertEqual(
+            app.standings.insert.call_args_list[0].kwargs["values"][4], "0-1-0"
+        )
+
     def test_draw_moves_unequal_ratings_toward_each_other_and_is_zero_sum(self) -> None:
         league = League.new(2)
         league.player(0).rating = 1700.0
@@ -1108,6 +1139,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-07 16:14 America/New_York.
-# Changes: Covers dynamic screen-capped settings and the complete standings
-# tiebreak chain, simulator, themed graphs, Elo, draws, persistence, and SB.
+# Generated: 2026-09-07 16:21 America/New_York.
+# Changes: Covers conditional W-L/W-D-L standings alongside dynamic settings,
+# tiebreaks, simulator, themed graphs, Elo, draws, persistence, and SB.

@@ -18,8 +18,9 @@ with adjustable rosters.
 - A draw gives each player a 0.5 Elo result, updates both ratings, and contributes
   half of the opponent's match score to each player's SB score. Draws can be
   enabled or disabled independently for each league in League Settings.
-- Standings show match wins, draws, and losses; match score percentage; individual game
-  wins and losses, game win percentage, and a Sonneborn-Berger (SB) score. Elo
+- Standings show match W-D-L when draws are enabled and W-L when draws are
+  disabled, plus match score percentage, individual game wins and losses, game
+  win percentage, and a Sonneborn-Berger (SB) score. Elo
   remains the primary ranking key. Among players tied on Elo, head-to-head match
   score percentage is the secondary tiebreaker, followed by overall match score
   percentage, SB, game win percentage, and a natural player-name order.

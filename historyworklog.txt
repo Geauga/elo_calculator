@@ -346,3 +346,11 @@
 - Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and test changes are contained in `a662745`.
 - Tests and verification: Publication verification remains 70/70 tests passing; local integration `HEAD` and `origin/main` both resolved to `a662745417a5cfd4c52a49abc917402a0c2dbace` after push.
 - GitHub Timeline: Commit `a662745` was pushed successfully to `origin/main`; this publication record will be pushed as a log-only follow-up commit.
+
+## 2026-09-07 16:26:06 -04:00
+
+- User Prompt summary: Standings still show W-D-L when draws are not allowed.
+- Actions: Made the standings match-record heading and row format conditional per league: draw-enabled leagues show Match W-D-L, while draw-disabled leagues show Match W-L. Existing historical draws remain preserved and continue contributing to numerical match percentages and tiebreak calculations; only the disabled-league record display omits the draw field. Updated documentation and regression coverage.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `README.md`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: Python compilation and all 71 unit tests passed; focused whitespace check passed; regression test verifies immediate W-L/W-D-L heading and row changes when the setting changes.
+- GitHub Timeline: Not committed and not pushed; the user did not request publication. Changes are isolated on local branch `codex/standings-wl` based on current `origin/main`.
