@@ -495,3 +495,11 @@
 - 修改文件：`elo_calculator.py`；`test_elo_model.py`；`historyworklog.txt`；本文件。现有 v22 executable/package 未重建或修改。
 - 测试或验证结果：5 个 focused tests 和完整 75 项 unit tests 全部通过；5 个 Python files 通过 in-memory compilation；exact conflict-marker、Python ASCII-only、whitespace checks 全部通过；worktree 未产生 bytecode 或 temporary build files。
 - GitHub Timeline：changes 当前位于 synchronized local `main` 且尚未 commit；用户已明确要求 normal commit 和 push 至 `origin/main`。
+
+## 2026-09-07 19:38:21 -04:00
+
+- 用户 Prompt 摘要：完成 reviewed data-recovery 和 Elo tie fixes 的 GitHub publication。
+- 具体动作：创建 commit `be60154`，包含 unreadable-database recovery/save guard、precision-normalized standings ranking 和三个 regression tests；push 前重新 fetch，确认 ahead 1 / behind 0；normal push 后使用 `git ls-remote` 核对 GitHub branch tip。
+- 修改文件：本次仅 append 更新 `historyworklog.txt` 和本文件；implementation 和 tests 位于 commit `be60154`。现有 v22 executable/package 保持不变。
+- 测试或验证结果：publication verification 保持 75/75 unit tests passing；in-memory compilation、exact conflict-marker、Python ASCII-only 和 whitespace checks 通过；remote verification 返回 `be60154fff83bb6d91bd31bff1b347cad1c1707a`。
+- GitHub Timeline：commit `be60154` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 提交并 push。
