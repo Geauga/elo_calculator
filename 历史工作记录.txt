@@ -464,3 +464,11 @@
 - 修改文件：append-only 更新 `historyworklog.txt` 和本文件；implementation 与 test changes 位于 `a662745`。
 - 测试或验证结果：publication verification 保持 70/70 tests passing；push 后 local integration `HEAD` 与 `origin/main` 均为 `a662745417a5cfd4c52a49abc917402a0c2dbace`。
 - GitHub Timeline：commit `a662745` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 推送。
+
+## 2026-09-07 16:26:06 -04:00
+
+- 用户 Prompt 摘要：draws 不允许时，Standings 仍显示 W-D-L。
+- 具体动作：根据每个 league 的设置动态显示 standings match record heading 和 row format：draw-enabled league 显示 Match W-D-L，draw-disabled league 显示 Match W-L。既有 historical draws 保留，并继续参与 numerical match percentage 和 tiebreak calculations；仅 disabled-league record display 省略 draw field。同步更新 documentation 和 regression coverage。
+- 修改文件：`elo_calculator.py`；`test_elo_model.py`；`README.md`；`historyworklog.txt`；本文件。
+- 测试或验证结果：Python compilation 和 71 项 unit tests 全部通过；focused whitespace check 通过；regression test 验证 setting 改变后 W-L/W-D-L heading 和 row 立即切换。
+- GitHub Timeline：未 commit，未 push；用户本次未要求发布。Changes 位于基于 current `origin/main` 的本地 `codex/standings-wl` branch。
