@@ -11,6 +11,7 @@ from elo_calculator import (
     THEME_PALETTES,
     fit_window_to_screen,
     load_theme,
+    preserve_unreadable_database,
     save_theme,
 )
 from elo_model import (
@@ -243,6 +244,30 @@ class EloModelTests(unittest.TestCase):
             for call in app.standings.insert.call_args_list
         ]
         self.assertEqual(displayed_names[:2], ["Player 1", "Player 2"])
+
+    def test_display_tied_elo_uses_head_to_head_despite_float_residue(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.league = League.new(2)
+        app.league.calculate_elo = False
+        app.league.elo_decimal_places = 2
+        app.league.players[0].rating = 1503.0399999999997
+        app.league.players[1].rating = 1503.0400000000002
+        app.league.record_match(0, 1, 0)
+        app.standings = Mock()
+        app.standings.selection.return_value = ()
+        app.standings.get_children.return_value = ()
+
+        self.assertEqual(
+            app._format_elo(app.league.players[0].rating),
+            app._format_elo(app.league.players[1].rating),
+        )
+        app._refresh_standings()
+
+        displayed_names = [
+            call.kwargs["values"][1]
+            for call in app.standings.insert.call_args_list
+        ]
+        self.assertEqual(displayed_names, ["Player 1", "Player 2"])
 
     def test_head_to_head_game_percentage_is_the_third_tiebreaker(self) -> None:
         app = object.__new__(EloCalculatorApp)
@@ -1001,6 +1026,46 @@ class EloModelTests(unittest.TestCase):
         app.backups.create.assert_not_called()
         self.assertEqual(restored.active_league_id, first_id)
 
+    def test_unreadable_database_is_preserved_byte_for_byte(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            data_file = root / "elo_league_data.json"
+            original = b"\xff{damaged database"
+            data_file.write_bytes(original)
+
+            recovery_path = preserve_unreadable_database(
+                data_file, root / "recovery"
+            )
+
+            self.assertEqual(data_file.read_bytes(), original)
+            self.assertEqual(recovery_path.read_bytes(), original)
+            self.assertEqual(recovery_path.parent, root / "recovery")
+
+    def test_commit_is_blocked_when_unreadable_database_was_not_preserved(
+        self,
+    ) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.collection = LeagueCollection.new()
+        app.league = app.collection.active.league
+        app.backups = Mock()
+        app.audit_log = Mock()
+        app.data_save_block_reason = "Original database was not preserved."
+        previous_state = app.collection.to_dict()
+
+        with TemporaryDirectory() as directory:
+            data_file = Path(directory) / "leagues.json"
+            with patch("elo_calculator.DATA_FILE", data_file):
+                with self.assertRaisesRegex(ValueError, "not preserved"):
+                    app._commit_edit(
+                        previous_state,
+                        "player_renamed",
+                        "Unsafe replacement attempt.",
+                    )
+            self.assertFalse(data_file.exists())
+
+        app.backups.create.assert_not_called()
+        app.audit_log.append.assert_not_called()
+
     def test_backup_restores_all_leagues(self) -> None:
         collection = LeagueCollection.new()
         collection.active.league.rename_player(0, "Before Backup")
@@ -1146,6 +1211,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-07 16:25 America/New_York.
-# Changes: Covers dynamic screen-capped settings, H2H match/game tiebreakers,
-# simulated seasons, themed graphs, Elo, draws, persistence, and SB.
+# Generated: 2026-09-07 19:30 America/New_York.
+# Changes: Line 14 and lines 248-271 cover precision-safe Elo ties; lines
+# 1029-1070 cover byte-for-byte unreadable-database recovery and unsafe-save
+# blocking, alongside the existing settings, H2H, simulation, and storage tests.

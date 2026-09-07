@@ -366,3 +366,11 @@
 - Modified files: This append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and v22 artifacts are in `6a46f57` and final integration is in `87bf2d2`.
 - Tests and verification: Publication verification remains 72/72 tests passing; final EXE SHA-256 is `6FFF6FEE8158655F5F712C7797C8DA6F1AF282415DF82825E261000EB7160109`; final ZIP SHA-256 is `F23D3FC1B43B26FE0CC191CA0EA835EDBBB0D9D45B64E7135F38DCD530210D04`; `git ls-remote` returned `87bf2d22911a62dcc3ce87569dd9ffef3af62688`.
 - GitHub Timeline: Commits `6a46f57` and `87bf2d2` were pushed successfully to `origin/main`; this publication record will be committed and pushed as a log-only follow-up.
+
+## 2026-09-07 19:36:26 -04:00
+
+- User Prompt summary: Patch the code-review findings and push them to GitHub.
+- Actions: Fixed the data-loss path where the first edit after an unreadable database load replaced the original file; startup now creates a byte-for-byte copy in `%LOCALAPPDATA%\EloLeagueCalculator\recovery`, blocks ordinary league saves if that copy fails, and retains an explicitly confirmed backup-restore path. Quantized the standings Elo ranking/grouping key to the league's configured decimal precision so players displaying the same Elo enter the H2H Match/Game tiebreakers consistently. Added three regression tests.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `historyworklog.txt`; `历史工作记录.txt`. The existing v22 executable/package was not rebuilt or modified.
+- Tests and verification: Five focused tests and all 75 unit tests passed; five Python files passed in-memory compilation; exact conflict-marker, Python ASCII-only, and whitespace checks passed; no bytecode or temporary build files were produced.
+- GitHub Timeline: Changes are on synchronized local `main` and are not committed yet; the user explicitly requested a normal commit and push to `origin/main`.

@@ -6,6 +6,7 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
+import shutil
 import tkinter as tk
 from tkinter import messagebox, ttk
 
@@ -112,10 +113,26 @@ def fit_window_to_screen(
     )
 
 
+def preserve_unreadable_database(path: Path, recovery_directory: Path) -> Path:
+    """Copy an unreadable database aside before a new database can replace it."""
+    recovery_directory.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().astimezone().strftime("%Y%m%d-%H%M%S-%f")
+    suffix = path.suffix or ".json"
+    base_name = f"{path.stem}-unreadable-{timestamp}"
+    recovery_path = recovery_directory / f"{base_name}{suffix}"
+    counter = 2
+    while recovery_path.exists():
+        recovery_path = recovery_directory / f"{base_name}-{counter}{suffix}"
+        counter += 1
+    shutil.copyfile(path, recovery_path)
+    return recovery_path
+
+
 APP_DATA_DIRECTORY = application_data_directory()
 DATA_FILE = APP_DATA_DIRECTORY / "elo_league_data.json"
 SETTINGS_FILE = APP_DATA_DIRECTORY / "app_settings.json"
 BACKUP_DIRECTORY = APP_DATA_DIRECTORY / "backups"
+RECOVERY_DIRECTORY = APP_DATA_DIRECTORY / "recovery"
 AUDIT_LOG_FILE = APP_DATA_DIRECTORY / "audit_log.jsonl"
 LOCK_FILE = APP_DATA_DIRECTORY / "app.lock"
 
@@ -163,14 +180,33 @@ class EloCalculatorApp:
         self.root = root
         self.load_warning: str | None = None
         self.opened_new_league_after_load_failure = False
+        self.data_save_block_reason: str | None = None
         self.backups = BackupManager(BACKUP_DIRECTORY)
         self.audit_log = AuditLog(AUDIT_LOG_FILE)
         try:
             self.collection = LeagueCollection.load(DATA_FILE)
         except ValueError as error:
             self.collection = LeagueCollection.new()
-            self.load_warning = str(error)
             self.opened_new_league_after_load_failure = True
+            try:
+                recovery_path = preserve_unreadable_database(
+                    DATA_FILE, RECOVERY_DIRECTORY
+                )
+            except OSError as recovery_error:
+                self.data_save_block_reason = (
+                    "League changes are blocked because the unreadable database "
+                    "could not be copied to the recovery directory. Restore a "
+                    "backup or correct the file-access problem, then restart the "
+                    f"application. Recovery error: {recovery_error}"
+                )
+                self.load_warning = (
+                    f"{error}\n\n{self.data_save_block_reason}"
+                )
+            else:
+                self.load_warning = (
+                    f"{error}\n\nA byte-for-byte recovery copy was created at:\n"
+                    f"{recovery_path}"
+                )
         self.league = self.collection.active.league
 
         if self.collection.migrated_from_single_league:
@@ -1187,8 +1223,12 @@ class EloCalculatorApp:
         league_id: str | None = None,
         league_name: str | None = None,
         create_backup: bool = True,
+        allow_recovery_overwrite: bool = False,
     ) -> None:
         """Save a mutation, optionally backing up its prior state, and audit it."""
+        block_reason = getattr(self, "data_save_block_reason", None)
+        if block_reason and not allow_recovery_overwrite:
+            raise ValueError(block_reason)
         previous = LeagueCollection.from_dict(previous_state)
         try:
             if create_backup:
@@ -2077,12 +2117,15 @@ class EloCalculatorApp:
                     previous_state,
                     "backup_restored",
                     f"Restored all leagues from {backup.path.name}.",
+                    allow_recovery_overwrite=True,
                 )
             except (OSError, ValueError) as error:
                 self._restore_collection(previous_state)
                 self._show_error("Backup not restored", str(error), parent=window)
                 return
             self.player_name_to_id.clear()
+            self.data_save_block_reason = None
+            self.opened_new_league_after_load_failure = False
             self.status_var.set(f"Restored backup {backup.path.name}.")
             self._refresh_all()
             window.destroy()
@@ -2170,9 +2213,15 @@ class EloCalculatorApp:
         selected_id = int(selected[0]) if selected else None
         self.standings.delete(*self.standings.get_children())
         statistics = self.league.statistics()
+        ranking_ratings = {
+            player.id: round(player.rating, self.league.elo_decimal_places)
+            for player in self.league.players
+        }
         rating_groups: dict[float, set[int]] = {}
         for player in self.league.players:
-            rating_groups.setdefault(player.rating, set()).add(player.id)
+            rating_groups.setdefault(ranking_ratings[player.id], set()).add(
+                player.id
+            )
         head_to_head = {}
         head_to_head_games = {}
         for player_ids in rating_groups.values():
@@ -2185,7 +2234,7 @@ class EloCalculatorApp:
         ranked_players = sorted(
             self.league.players,
             key=lambda player: (
-                -player.rating,
+                -ranking_ratings[player.id],
                 -head_to_head[player.id],
                 -head_to_head_games[player.id],
                 -statistics[player.id].match_win_percentage,
@@ -2536,6 +2585,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-09-07 16:25 America/New_York.
-# Changes: Size League Settings dynamically within the screen and rank by Elo,
-# H2H match/game scores, match score, SB, overall game score, and natural name.
+# Generated: 2026-09-07 19:30 America/New_York.
+# Changes: Lines 9, 116-135, 181-209, 1218-1231, and 2111-2128 preserve
+# unreadable databases, block unsafe saves, and allow confirmed backup recovery;
+# lines 2211-2239 quantize Elo before applying standings tiebreakers.

@@ -487,3 +487,11 @@
 - 修改文件：本次仅 append 更新 `historyworklog.txt` 和本文件；implementation 和 v22 artifacts 位于 `6a46f57`，final integration 位于 `87bf2d2`。
 - 测试或验证结果：publication verification 保持 72/72 tests passing；final EXE SHA-256 为 `6FFF6FEE8158655F5F712C7797C8DA6F1AF282415DF82825E261000EB7160109`；final ZIP SHA-256 为 `F23D3FC1B43B26FE0CC191CA0EA835EDBBB0D9D45B64E7135F38DCD530210D04`；`git ls-remote` 返回 `87bf2d22911a62dcc3ce87569dd9ffef3af62688`。
 - GitHub Timeline：commits `6a46f57` 和 `87bf2d2` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 提交并 push。
+
+## 2026-09-07 19:36:26 -04:00
+
+- 用户 Prompt 摘要：patch code-review findings 并 push 到 GitHub。
+- 具体动作：修复 unreadable database 首次编辑会覆盖原始文件的 data-loss path；加载失败时先在 `%LOCALAPPDATA%\EloLeagueCalculator\recovery` 创建 byte-for-byte recovery copy，copy 失败时阻止普通 league saves，同时保留经用户确认的 backup restore 路径；standings 使用 league configured decimal precision 对 Elo ranking/grouping key 做一致量化，使显示相同 Elo 的 players 正确进入 H2H Match/Game tiebreakers；增加三个 regression tests。
+- 修改文件：`elo_calculator.py`；`test_elo_model.py`；`historyworklog.txt`；本文件。现有 v22 executable/package 未重建或修改。
+- 测试或验证结果：5 个 focused tests 和完整 75 项 unit tests 全部通过；5 个 Python files 通过 in-memory compilation；exact conflict-marker、Python ASCII-only、whitespace checks 全部通过；worktree 未产生 bytecode 或 temporary build files。
+- GitHub Timeline：changes 当前位于 synchronized local `main` 且尚未 commit；用户已明确要求 normal commit 和 push 至 `origin/main`。
