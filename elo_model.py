@@ -264,6 +264,9 @@ class League:
     k_factor: float = K_FACTOR
     elo_decimal_places: int = DEFAULT_ELO_DECIMAL_PLACES
     allow_draws: bool = True
+    base_elo: float = INITIAL_RATING
+    k_factor_scaling: bool = False
+    tiebreaker_hierarchy: list[str] = field(default_factory=lambda: ["rating", "match_pct", "sb_score", "game_pct", "name"])
 
     def __post_init__(self) -> None:
         self.k_factor = validate_k_factor(self.k_factor)
@@ -304,13 +307,18 @@ class League:
         loser = self.player(loser_id)
         if winner_games is None:
             winner_games = self.win_condition.games_to_win
+            
+        active_k_factor = self.k_factor
+        if self.k_factor_scaling and winner_games > loser_games:
+            active_k_factor *= (1.0 + (winner_games - loser_games) * 0.1)
+            
         multiplier = self.win_condition.get_multiplier(loser_games, winner_games)
         change = (
             rating_change(
                 winner.rating,
                 loser.rating,
                 multiplier,
-                self.k_factor,
+                active_k_factor,
                 self.elo_decimal_places,
             )
             if self.calculate_elo
