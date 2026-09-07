@@ -330,3 +330,11 @@
 - Modified files: This append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and v21 artifacts are in commit `4962704`.
 - Tests and verification: Publication verification remains 70/70 tests passing; EXE SHA-256 is `7C13201EE3A81D7923909A0BC6BCA4D7A720D83BCD102AF293CD3C81D3A6C994`; ZIP SHA-256 is `4223B2A577BC62F0CF858EDA60E8FC2742F823B7EC83CCCE037EB8C9D3415062`; `git ls-remote` returned `496270466f14f5a1d6bcb7e32ea6a07b5c6a99d0`.
 - GitHub Timeline: Commit `4962704` was pushed successfully to `origin/main`; this publication record will be committed and pushed as a log-only follow-up.
+
+## 2026-09-07 16:16:06 -04:00
+
+- User Prompt summary: Push the dynamic League Settings length fix.
+- Actions: Integrated the change onto current `origin/main` after ten newer v19-v21 commits; removed the remaining fixed 760-pixel target; made League Settings calculate size from visible content and dynamically resize/recenter when format or games-to-win changes; retained screen capping, scrolling, and fixed Save/Cancel controls.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: Python compilation and all 70 unit tests passed; focused whitespace check passed; dynamic-height and screen-cap regression coverage passed.
+- GitHub Timeline: Integrated changes are local and uncommitted on `codex/dynamic-popup`, based on current `origin/main`; the user requested a normal push.
