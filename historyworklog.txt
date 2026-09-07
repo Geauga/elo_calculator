@@ -346,3 +346,9 @@
 - Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and test changes are contained in `a662745`.
 - Tests and verification: Publication verification remains 70/70 tests passing; local integration `HEAD` and `origin/main` both resolved to `a662745417a5cfd4c52a49abc917402a0c2dbace` after push.
 - GitHub Timeline: Commit `a662745` was pushed successfully to `origin/main`; this publication record will be pushed as a log-only follow-up commit.
+
+
+## 2026-09-07 16:26
+- Implemented Head-to-Head (H2H) horizontal bar chart in the Graphs tab.
+- Added "H2H" radio button.
+- 70/70 unit tests passed.
