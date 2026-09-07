@@ -77,24 +77,42 @@ def application_data_directory() -> Path:
     return base / "EloLeagueCalculator"
 
 
-def load_theme(path: Path) -> str:
+def load_app_settings(path: Path) -> dict:
     if not path.exists():
-        return "light"
+        return {}
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
     except (OSError, json.JSONDecodeError):
-        return "light"
-    theme = data.get("theme") if isinstance(data, dict) else None
-    return theme if theme in THEME_PALETTES else "light"
+        return {}
 
+def save_app_settings(path: Path, settings: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = path.with_suffix(path.suffix + ".tmp")
+    temporary_path.write_text(json.dumps(settings, indent=2), encoding="utf-8")
+    temporary_path.replace(path)
+
+def load_theme(path: Path) -> str:
+    theme = load_app_settings(path).get("theme")
+    return theme if theme in THEME_PALETTES else "light"
 
 def save_theme(path: Path, theme: str) -> None:
     if theme not in THEME_PALETTES:
         raise ValueError("Theme must be light or dark.")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary_path = path.with_suffix(path.suffix + ".tmp")
-    temporary_path.write_text(json.dumps({"theme": theme}, indent=2), encoding="utf-8")
-    temporary_path.replace(path)
+    settings = load_app_settings(path)
+    settings["theme"] = theme
+    save_app_settings(path, settings)
+    
+def load_visible_columns(path: Path) -> list[str]:
+    cols = load_app_settings(path).get("visible_columns")
+    if cols is None or not isinstance(cols, list):
+        return ["rank", "player", "rating", "sb_score", "match_record", "match_pct", "game_record", "game_pct"]
+    return cols
+
+def save_visible_columns(path: Path, columns: list[str]) -> None:
+    settings = load_app_settings(path)
+    settings["visible_columns"] = columns
+    save_app_settings(path, settings)
 
 
 def fit_window_to_screen(
@@ -643,6 +661,23 @@ class EloCalculatorApp:
             xscrollcommand=standings_horizontal_scroll.set,
         )
 
+        self.settings_menu.add_separator()
+        self.visible_columns = [
+            c for c in load_visible_columns(SETTINGS_FILE) if c in headings
+        ]
+        if not self.visible_columns:
+            self.visible_columns = ["rank", "player", "rating", "sb_score", "match_record", "match_pct", "game_record", "game_pct"]
+        self.column_vars = {}
+        for col_id, (label, _, _) in headings.items():
+            var = tk.BooleanVar(value=col_id in self.visible_columns)
+            self.column_vars[col_id] = var
+            self.settings_menu.add_checkbutton(
+                label=f"Show {label}",
+                variable=var,
+                command=self._update_columns
+            )
+        self.standings.configure(displaycolumns=self.visible_columns)
+
         standings_buttons = ttk.Frame(standings_frame)
         standings_buttons.grid(
             row=2, column=0, columnspan=2, sticky="ew", pady=(10, 0)
@@ -826,15 +861,31 @@ class EloCalculatorApp:
         self.graph_player_combo.pack(side="left", padx=(4, 16))
         self.graph_player_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_graph())
         self.graph_metric_var = tk.StringVar(value="elo")
-        for metric, label in (("elo", "Elo"), ("pct", "Win %"), ("sb", "SB Score"), ("h2h", "H2H")):
-            rb = ttk.Radiobutton(
-                controls,
-                text=label,
-                value=metric,
-                variable=self.graph_metric_var,
-                command=self._refresh_graph,
-            )
-            rb.pack(side="left", padx=4)
+        
+        metrics = {
+            "elo": "Elo Rating",
+            "match_pct": "Match Win %",
+            "game_pct": "Game Win %",
+            "sb": "SB Score",
+            "h2h": "H2H Record"
+        }
+        self.reverse_metrics = {v: k for k, v in metrics.items()}
+        
+        self.graph_metric_combo_var = tk.StringVar(value=metrics["elo"])
+        self.graph_metric_combo = ttk.Combobox(
+            controls,
+            textvariable=self.graph_metric_combo_var,
+            state="readonly",
+            values=list(metrics.values()),
+            width=15
+        )
+        self.graph_metric_combo.pack(side="left", padx=4)
+        
+        def on_metric_change(*args):
+            self.graph_metric_var.set(self.reverse_metrics[self.graph_metric_combo_var.get()])
+            self._refresh_graph()
+            
+        self.graph_metric_combo.bind("<<ComboboxSelected>>", on_metric_change)
         graph_colors = self._graph_colors()
         self.graph_canvas = tk.Canvas(
             parent,
@@ -885,7 +936,7 @@ class EloCalculatorApp:
                 elif m.loser_id == player_id:
                     current_elo -= m.rating_change
                     y_values.append(current_elo)
-        elif metric == "pct":
+        elif metric == "match_pct":
             match_points = 0.0
             total = 0
             y_values.append(0.0)
@@ -897,6 +948,18 @@ class EloCalculatorApp:
                     elif m.winner_id == player_id:
                         match_points += 1.0
                     y_values.append((match_points / total) * 100)
+        elif metric == "game_pct":
+            games_won = 0.0
+            total_games = 0.0
+            y_values.append(0.0)
+            for m in matches:
+                if m.winner_id == player_id or m.loser_id == player_id:
+                    total_games += m.winner_games + m.loser_games
+                    if m.winner_id == player_id:
+                        games_won += m.winner_games
+                    elif m.loser_id == player_id:
+                        games_won += m.loser_games
+                    y_values.append((games_won / total_games) * 100 if total_games else 0.0)
         elif metric == "h2h":
             h2h_stats = {}
             for m in matches:
@@ -1063,6 +1126,15 @@ class EloCalculatorApp:
             self.graph_canvas.create_line(
                 points, fill=graph_colors["plot"], width=2
             )
+
+    def _update_columns(self) -> None:
+        self.visible_columns = [
+            col_id for col_id, var in self.column_vars.items() if var.get()
+        ]
+        if not self.visible_columns:
+            self.visible_columns = ["player"]
+        self.standings.configure(displaycolumns=self.visible_columns)
+        save_visible_columns(SETTINGS_FILE, self.visible_columns)
 
     def _apply_theme(self, theme: str, save: bool = True) -> None:
         if theme not in THEME_PALETTES:
@@ -1762,15 +1834,24 @@ class EloCalculatorApp:
         elo_frame = ttk.LabelFrame(content, text="Elo settings", padding=10)
         elo_frame.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
         elo_frame.columnconfigure(1, weight=1)
-        ttk.Label(elo_frame, text="K-factor:").grid(
+        ttk.Label(elo_frame, text="Base Elo:").grid(
             row=0, column=0, padx=(0, 8), pady=3, sticky="w"
+        )
+        base_elo_var = tk.StringVar(value=f"{self.league.base_elo:g}")
+        ttk.Entry(
+            elo_frame, textvariable=base_elo_var, width=10
+        ).grid(row=0, column=1, pady=3, sticky="w")
+        
+        ttk.Label(elo_frame, text="K-factor:").grid(
+            row=1, column=0, padx=(0, 8), pady=3, sticky="w"
         )
         k_factor_var = tk.StringVar(value=f"{self.league.k_factor:g}")
         ttk.Entry(
             elo_frame, textvariable=k_factor_var, width=10
-        ).grid(row=0, column=1, pady=3, sticky="w")
+        ).grid(row=1, column=1, pady=3, sticky="w")
+        
         ttk.Label(elo_frame, text="Elo decimal places:").grid(
-            row=1, column=0, padx=(0, 8), pady=3, sticky="w"
+            row=2, column=0, padx=(0, 8), pady=3, sticky="w"
         )
         decimal_places_var = tk.IntVar(
             value=self.league.elo_decimal_places
@@ -1781,7 +1862,8 @@ class EloCalculatorApp:
             to=MAX_ELO_DECIMAL_PLACES,
             textvariable=decimal_places_var,
             width=6,
-        ).grid(row=1, column=1, pady=3, sticky="w")
+        ).grid(row=2, column=1, pady=3, sticky="w")
+        
         ttk.Label(
             elo_frame,
             text=(
@@ -1791,21 +1873,67 @@ class EloCalculatorApp:
             ),
             wraplength=410,
             justify="left",
-        ).grid(row=2, column=0, columnspan=2, sticky="ew", pady=(6, 0))
+        ).grid(row=3, column=0, columnspan=2, sticky="ew", pady=(6, 0))
 
         calc_elo_var = tk.BooleanVar(value=self.league.calculate_elo)
         allow_draws_var = tk.BooleanVar(value=self.league.allow_draws)
+        k_factor_scaling_var = tk.BooleanVar(value=self.league.k_factor_scaling)
         options_frame = ttk.Frame(content)
         options_frame.grid(row=3, column=0, padx=12, pady=5, sticky="w")
         ttk.Checkbutton(
             options_frame, text="Auto-calculate Elo", variable=calc_elo_var
-        ).pack(side="left")
+        ).grid(row=0, column=0, sticky="w", pady=2)
         ttk.Checkbutton(
             options_frame, text="Allow draws", variable=allow_draws_var
-        ).pack(side="left", padx=(16, 0))
+        ).grid(row=0, column=1, sticky="w", padx=(16, 0), pady=2)
+        ttk.Checkbutton(
+            options_frame, text="Scale K-Factor by Victory Margin", variable=k_factor_scaling_var
+        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=2)
+
+        tiebreaker_frame = ttk.LabelFrame(content, text="Tiebreakers (Rank Priority)", padding=10)
+        tiebreaker_frame.grid(row=4, column=0, padx=10, pady=5, sticky="ew")
+        
+        tiebreaker_listbox = tk.Listbox(tiebreaker_frame, height=5, selectmode=tk.SINGLE, exportselection=False)
+        tiebreaker_listbox.grid(row=0, column=0, rowspan=2, padx=(0, 10), sticky="ew")
+        tiebreaker_frame.columnconfigure(0, weight=1)
+        
+        tb_map = {
+            "rating": "Rating",
+            "match_pct": "Match Win %",
+            "sb_score": "SB Score",
+            "game_pct": "Game Win %",
+            "name": "Name (Alphabetical)"
+        }
+        reverse_tb_map = {v: k for k, v in tb_map.items()}
+        
+        for tb in self.league.tiebreaker_hierarchy:
+            tiebreaker_listbox.insert(tk.END, tb_map.get(tb, tb))
+            
+        def move_up():
+            idx = tiebreaker_listbox.curselection()
+            if not idx or idx[0] == 0: return
+            idx = idx[0]
+            val = tiebreaker_listbox.get(idx)
+            tiebreaker_listbox.delete(idx)
+            tiebreaker_listbox.insert(idx - 1, val)
+            tiebreaker_listbox.selection_set(idx - 1)
+            
+        def move_down():
+            idx = tiebreaker_listbox.curselection()
+            if not idx or idx[0] == tiebreaker_listbox.size() - 1: return
+            idx = idx[0]
+            val = tiebreaker_listbox.get(idx)
+            tiebreaker_listbox.delete(idx)
+            tiebreaker_listbox.insert(idx + 1, val)
+            tiebreaker_listbox.selection_set(idx + 1)
+            
+        tb_buttons = ttk.Frame(tiebreaker_frame)
+        tb_buttons.grid(row=0, column=1, sticky="n")
+        ttk.Button(tb_buttons, text="Move Up", command=move_up).pack(fill="x", pady=(0, 2))
+        ttk.Button(tb_buttons, text="Move Down", command=move_down).pack(fill="x")
 
         mult_frame = ttk.LabelFrame(content, text="Score Multipliers", padding=10)
-        mult_frame.grid(row=4, column=0, padx=10, pady=5, sticky="ew")
+        mult_frame.grid(row=5, column=0, padx=10, pady=5, sticky="ew")
         mult_frame.columnconfigure(0, weight=1)
         scrollable_frame = ttk.Frame(mult_frame)
         scrollable_frame.grid(row=0, column=0, sticky="ew")
@@ -1891,9 +2019,18 @@ class EloCalculatorApp:
             previous_state = self.collection.to_dict()
             self.league.win_condition = new_rules
             self.league.calculate_elo = calc_elo_var.get()
+            self.league.base_elo = float(base_elo_var.get())
             self.league.k_factor = new_k_factor
+            self.league.k_factor_scaling = k_factor_scaling_var.get()
             self.league.elo_decimal_places = new_decimal_places
             self.league.allow_draws = allow_draws_var.get()
+            
+            new_hierarchy = []
+            for i in range(tiebreaker_listbox.size()):
+                val = tiebreaker_listbox.get(i)
+                new_hierarchy.append(reverse_tb_map.get(val, val))
+            self.league.tiebreaker_hierarchy = new_hierarchy
+            
             try:
                 format_name = (
                     "custom scores"
@@ -1904,9 +2041,9 @@ class EloCalculatorApp:
                     previous_state,
                     "rules_edited",
                     f"Set {self.collection.active.name} to {format_name}; "
-                    f"K={new_k_factor:g}; Elo rounding={new_decimal_places} "
-                    f"decimal places; automatic Elo "
-                    f"{'on' if calc_elo_var.get() else 'off'}; "
+                    f"Base={self.league.base_elo}; K={new_k_factor:g} (Scale: {self.league.k_factor_scaling}); "
+                    f"Elo rounding={new_decimal_places} decimal places; "
+                    f"auto Elo {'on' if calc_elo_var.get() else 'off'}; "
                     f"draws {'allowed' if allow_draws_var.get() else 'disabled'}.",
                 )
             except (OSError, ValueError) as e:
@@ -2273,16 +2410,24 @@ class EloCalculatorApp:
             head_to_head.update(
                 self.league.head_to_head_percentages(player_ids)
             )
+            
+        def get_metric(player, metric_name):
+            stats = statistics[player.id]
+            if metric_name == "rating":
+                return -player.rating, -head_to_head.get(player.id, 0.0)
+            elif metric_name == "match_pct":
+                return -stats.match_win_percentage
+            elif metric_name == "sb_score":
+                return -stats.sb_score
+            elif metric_name == "game_pct":
+                return -stats.game_win_percentage
+            elif metric_name == "name":
+                return _natural_sort_key(player.name)
+            return 0
+            
         ranked_players = sorted(
             self.league.players,
-            key=lambda player: (
-                -player.rating,
-                -head_to_head[player.id],
-                -statistics[player.id].match_win_percentage,
-                -statistics[player.id].sb_score,
-                -statistics[player.id].game_win_percentage,
-                _natural_sort_key(player.name),
-            ),
+            key=lambda player: tuple(get_metric(player, m) for m in self.league.tiebreaker_hierarchy)
         )
         for rank, player in enumerate(ranked_players, start=1):
             stats = statistics[player.id]

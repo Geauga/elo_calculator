@@ -437,7 +437,7 @@ class League:
     def reset_standings(self) -> None:
         """Reset ratings and records while retaining the player roster."""
         for player in self.players:
-            player.rating = INITIAL_RATING
+            player.rating = self.base_elo
         self.matches.clear()
 
     def resize_players(self, player_count: int) -> dict[str, Any]:
@@ -455,7 +455,7 @@ class League:
                 name = f"Player {roster_number}"
                 while name.casefold() in existing_names:
                     name += " New"
-                self.players.append(Player(id=next_id, name=name))
+                self.players.append(Player(id=next_id, name=name, rating=self.base_elo))
                 existing_names.add(name.casefold())
                 added.append(name)
                 next_id += 1
@@ -630,6 +630,9 @@ class League:
             "k_factor": self.k_factor,
             "elo_decimal_places": self.elo_decimal_places,
             "allow_draws": self.allow_draws,
+            "base_elo": self.base_elo,
+            "k_factor_scaling": self.k_factor_scaling,
+            "tiebreaker_hierarchy": self.tiebreaker_hierarchy,
         }
 
     @classmethod
@@ -741,6 +744,13 @@ class League:
         allow_draws = data.get("allow_draws", True)
         if not isinstance(allow_draws, bool):
             raise ValueError("The allow-draws setting must be true or false.")
+            
+        base_elo = float(data.get("base_elo", INITIAL_RATING))
+        k_factor_scaling = bool(data.get("k_factor_scaling", False))
+        tiebreaker_hierarchy = data.get("tiebreaker_hierarchy", ["rating", "match_pct", "sb_score", "game_pct", "name"])
+        if not isinstance(tiebreaker_hierarchy, list):
+            tiebreaker_hierarchy = ["rating", "match_pct", "sb_score", "game_pct", "name"]
+            
         league = cls(
             players=players, 
             matches=matches, 
@@ -749,6 +759,9 @@ class League:
             k_factor=k_factor,
             elo_decimal_places=elo_decimal_places,
             allow_draws=allow_draws,
+            base_elo=base_elo,
+            k_factor_scaling=k_factor_scaling,
+            tiebreaker_hierarchy=tiebreaker_hierarchy,
         )
         valid_ids = {player.id for player in players}
         for match in matches:

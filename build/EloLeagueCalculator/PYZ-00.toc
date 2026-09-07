@@ -72,6 +72,7 @@
    'C:\\Users\\danie\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\dis.py',
    'PYMODULE'),
   ('elo_model', 'C:\\Code\\elo_calculator\\elo_model.py', 'PYMODULE'),
+  ('elo_simulator', 'C:\\Code\\elo_calculator\\elo_simulator.py', 'PYMODULE'),
   ('elo_storage', 'C:\\Code\\elo_calculator\\elo_storage.py', 'PYMODULE'),
   ('email',
    'C:\\Users\\danie\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\email\\__init__.py',
