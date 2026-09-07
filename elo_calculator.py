@@ -826,7 +826,7 @@ class EloCalculatorApp:
         self.graph_player_combo.pack(side="left", padx=(4, 16))
         self.graph_player_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_graph())
         self.graph_metric_var = tk.StringVar(value="elo")
-        for metric, label in (("elo", "Elo"), ("pct", "Win %"), ("sb", "SB Score")):
+        for metric, label in (("elo", "Elo"), ("pct", "Win %"), ("sb", "SB Score"), ("h2h", "H2H")):
             rb = ttk.Radiobutton(
                 controls,
                 text=label,
@@ -897,6 +897,101 @@ class EloCalculatorApp:
                     elif m.winner_id == player_id:
                         match_points += 1.0
                     y_values.append((match_points / total) * 100)
+        elif metric == "h2h":
+            h2h_stats = {}
+            for m in matches:
+                if m.winner_id == player_id:
+                    opp = m.loser_id
+                    if opp not in h2h_stats: h2h_stats[opp] = {"w":0, "d":0, "l":0}
+                    if m.is_draw: h2h_stats[opp]["d"] += 1
+                    else: h2h_stats[opp]["w"] += 1
+                elif m.loser_id == player_id:
+                    opp = m.winner_id
+                    if opp not in h2h_stats: h2h_stats[opp] = {"w":0, "d":0, "l":0}
+                    if m.is_draw: h2h_stats[opp]["d"] += 1
+                    else: h2h_stats[opp]["l"] += 1
+            
+            if not h2h_stats: return
+            
+            def win_pct(stats):
+                total = stats["w"] + stats["d"] + stats["l"]
+                return (stats["w"] + 0.5 * stats["d"]) / total if total > 0 else 0
+                
+            opponents = sorted(
+                h2h_stats.keys(),
+                key=lambda opp: (win_pct(h2h_stats[opp]), h2h_stats[opp]["w"]),
+                reverse=True
+            )
+            
+            margin_left = 110
+            margin_right = 25
+            margin_top = 20
+            margin_bottom = 30
+            
+            self.graph_canvas.create_line(
+                margin_left, height - margin_bottom, width - margin_right, height - margin_bottom,
+                fill=graph_colors["axis"]
+            )
+            self.graph_canvas.create_line(
+                margin_left, margin_top, margin_left, height - margin_bottom,
+                fill=graph_colors["axis"]
+            )
+            
+            for i in range(5):
+                x_pos = margin_left + i * (width - margin_left - margin_right) / 4
+                val = i * 25
+                self.graph_canvas.create_line(
+                    x_pos, margin_top, x_pos, height - margin_bottom,
+                    fill=graph_colors["grid"], dash=(4, 4)
+                )
+                self.graph_canvas.create_text(
+                    x_pos, height - margin_bottom + 5, text=f"{val}%", anchor="n",
+                    font=("Segoe UI", 8), fill=graph_colors["text"]
+                )
+                
+            bar_height = min(25, (height - margin_top - margin_bottom) / len(opponents) * 0.7)
+            y_spacing = (height - margin_top - margin_bottom) / len(opponents)
+            id_to_name = {p.id: p.name for p in self.league.players}
+            
+            for i, opp_id in enumerate(opponents):
+                stats = h2h_stats[opp_id]
+                pct = win_pct(stats)
+                y_center = margin_top + (i + 0.5) * y_spacing
+                name = id_to_name.get(opp_id, f"Player {opp_id}")
+                if len(name) > 14: name = name[:12] + "..."
+                
+                self.graph_canvas.create_text(
+                    margin_left - 8, y_center, text=name, anchor="e",
+                    font=("Segoe UI", 9), fill=graph_colors["text"]
+                )
+                
+                bar_width = pct * (width - margin_left - margin_right)
+                x1 = margin_left
+                y1 = y_center - bar_height / 2
+                x2 = margin_left + max(2, bar_width)
+                y2 = y_center + bar_height / 2
+                
+                self.graph_canvas.create_rectangle(
+                    x1, y1, x2, y2,
+                    fill=graph_colors["plot"], outline=""
+                )
+                
+                record_text = f"{stats['w']}-{stats['d']}-{stats['l']}"
+                if bar_width > 40:
+                    text_x = x2 - 5
+                    text_anchor = "e"
+                    text_color = graph_colors["background"]
+                else:
+                    text_x = x2 + 5
+                    text_anchor = "w"
+                    text_color = graph_colors["text"]
+                    
+                self.graph_canvas.create_text(
+                    text_x, y_center, text=record_text, anchor=text_anchor,
+                    font=("Segoe UI", 8, "bold"), fill=text_color
+                )
+            return
+
         elif metric == "sb":
             match_scores = {p.id: 0.0 for p in self.league.players}
             opponent_weights: list[tuple[int, float]] = []
