@@ -374,3 +374,11 @@
 - Modified files: `elo_calculator.py`; `test_elo_model.py`; `historyworklog.txt`; `历史工作记录.txt`. The existing v22 executable/package was not rebuilt or modified.
 - Tests and verification: Five focused tests and all 75 unit tests passed; five Python files passed in-memory compilation; exact conflict-marker, Python ASCII-only, and whitespace checks passed; no bytecode or temporary build files were produced.
 - GitHub Timeline: Changes are on synchronized local `main` and are not committed yet; the user explicitly requested a normal commit and push to `origin/main`.
+
+## 2026-09-07 19:38:21 -04:00
+
+- User Prompt summary: Complete GitHub publication of the reviewed data-recovery and Elo-tie fixes.
+- Actions: Created commit `be60154` containing unreadable-database recovery/save protection, precision-normalized standings ranking, and three regression tests; fetched again before publication and confirmed ahead 1 / behind 0; verified the GitHub branch tip with `git ls-remote` after a normal push.
+- Modified files: This append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and tests are in commit `be60154`. The existing v22 executable/package remains unchanged.
+- Tests and verification: Publication verification remains 75/75 unit tests passing; in-memory compilation, exact conflict-marker, Python ASCII-only, and whitespace checks passed; remote verification returned `be60154fff83bb6d91bd31bff1b347cad1c1707a`.
+- GitHub Timeline: Commit `be60154` was pushed successfully to `origin/main`; this publication record will be committed and pushed as a log-only follow-up.
