@@ -456,3 +456,26 @@
 - 修改文件：`elo_model.py`；`elo_calculator.py`；`elo_simulator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v22-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v22-Windows-x64/README.txt`；`release/EloLeagueCalculator-v22-Windows-x64.zip`；`historyworklog.txt`；本文件。
 - 测试或验证结果：72 项 unit tests 全部通过；`git diff --check` 和 Python ASCII-only checks 通过。PyInstaller 6.22.0 在 Python 3.12.14 上 classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；仅保留预期 platform-conditional warnings。v22 executable 通过 isolated 5-second launch check，两个 exact-path processes 均停止。Archive 仅包含 executable 和 README。EXE SHA-256 为 `7800EBB73AA42981980E03D1CFD9243542089286088576118FB6D6CBDBDF3571`；ZIP SHA-256 为 `FA43D2AD2AB032E82FD3B988EA5EDBF36FF7C9B6DEB3019F9D48342CE2150802`。
 - GitHub Timeline：changes 位于本地且尚未 commit；用户已明确要求 normal push 至 `origin/main`。
+## 2026-09-07 16:16:06 -04:00
+
+- 用户 Prompt 摘要：push dynamic League Settings length fix。
+- 具体动作：在十个更新的 v19-v21 commits 后将 change 集成至 current `origin/main`；移除 remaining fixed 760-pixel target；League Settings 根据 visible content 计算 size，并在 format 或 games-to-win 变化时动态 resize/recenter；保留 screen capping、scrolling 和 fixed Save/Cancel controls。
+- 修改文件：`elo_calculator.py`；`test_elo_model.py`；`historyworklog.txt`；本文件。
+- 测试或验证结果：Python compilation 和 70 项 unit tests 全部通过；focused whitespace check 通过；dynamic-height 和 screen-cap regression coverage 通过。
+- GitHub Timeline：integrated changes 位于基于 current `origin/main` 的本地 `codex/dynamic-popup` branch，尚未 commit；用户要求 normal push。
+
+## 2026-09-07 16:17:37 -04:00
+
+- 用户 Prompt 摘要：完成 dynamic League Settings popup push。
+- 具体动作：从 latest v21 branch 创建 focused commit `a662745` 并以 normal push 更新 `origin/main`；existing release packages 和无关 generated files 均未纳入提交。
+- 修改文件：append-only 更新 `historyworklog.txt` 和本文件；implementation 与 test changes 位于 `a662745`。
+- 测试或验证结果：publication verification 保持 70/70 tests passing；push 后 local integration `HEAD` 与 `origin/main` 均为 `a662745417a5cfd4c52a49abc917402a0c2dbace`。
+- GitHub Timeline：commit `a662745` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 推送。
+
+## 2026-09-07 16:29:40 -04:00
+
+- 用户 Prompt 摘要：concurrent remote changes 后完成 H2H Game % integration 并 push。
+- 具体动作：fetch remote dynamic League Settings commits `a662745` 和 `4960b16`；与 local commit `6a46f57` normal merge；保留两份 append-only histories；合并 dynamic popup sizing 与 H2H Match/Game tiebreakers；重跑 merged suite；从 final merged source 重建并 smoke-test v22；刷新两个 executable copies、archive、documentation 和 hashes；恢复 tracked build-cache bytecode；删除 temporary merged-build files。
+- 修改文件：`elo_calculator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v22-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v22-Windows-x64/README.txt`；`release/EloLeagueCalculator-v22-Windows-x64.zip`；`historyworklog.txt`；本文件。H2H model/simulator implementation 保留在 local commit `6a46f57`。
+- 测试或验证结果：72 项 merged unit tests 全部通过；conflict-marker、whitespace 和 Python ASCII-only checks 通过。PyInstaller 6.22.0 在 Python 3.12.14 上 classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；final merged v22 executable 通过 isolated 5-second launch check，两个 exact-path processes 均停止。EXE SHA-256 为 `6FFF6FEE8158655F5F712C7797C8DA6F1AF282415DF82825E261000EB7160109`；ZIP SHA-256 为 `F23D3FC1B43B26FE0CC191CA0EA835EDBBB0D9D45B64E7135F38DCD530210D04`。
+- GitHub Timeline：normal merge 已在本地完成 conflict resolution，等待 merge commit；用户已明确要求 normal push 至 `origin/main`。
