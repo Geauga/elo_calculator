@@ -432,3 +432,11 @@
 - 修改文件：本次仅 append 更新 `historyworklog.txt` 和本文件；implementation 和 v20 artifacts 位于 commit `9e94a29`。
 - 测试或验证结果：publication verification 保持 69/69 tests passing；EXE SHA-256 为 `4BC4C422F437503663C6D673A8F4F9CCB194AC8D70BC23815681672F03150DF6`；ZIP SHA-256 为 `6EBD27780D5D330D247BDA0C684F129B1764376D40B0E7CA3A1CA3B73B709554`；`git ls-remote` 返回 `9e94a29a7b8f0aafe86edabcedc6aec9a10d7c8e`。
 - GitHub Timeline：commit `9e94a29` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 提交并 push。
+
+## 2026-09-07 14:22:59 -04:00
+
+- 用户 Prompt 摘要：review code、patch defects、package，并 push 到 GitHub。
+- 具体动作：审查 model、storage、simulator、UI integration 和最近的 head-to-head change；复现 deterministic seven-player season，其中 simulator 在两个 match-win leaders 之间错误平分 title，虽然其中一人直接击败另一人；在 simulated-season ranking 中将 head-to-head score 加到 match wins 之后；增加 regression coverage；更新两份 distribution documents；保留 v20 并建立独立 v21 Windows package；清理 temporary build 和 bytecode files。
+- 修改文件：`elo_simulator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v21-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v21-Windows-x64/README.txt`；`release/EloLeagueCalculator-v21-Windows-x64.zip`；`historyworklog.txt`；本文件。
+- 测试或验证结果：Python compilation 和 70 项 unit tests 全部通过；conflict-marker 和 whitespace checks 通过。PyInstaller 6.22.0 在 Python 3.12.14 上 classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；仅保留预期 platform-conditional warnings；v21 executable 通过 isolated five-second launch test，两个 exact-path processes 均停止。EXE SHA-256 为 `7C13201EE3A81D7923909A0BC6BCA4D7A720D83BCD102AF293CD3C81D3A6C994`；ZIP SHA-256 为 `4223B2A577BC62F0CF858EDA60E8FC2742F823B7EC83CCCE037EB8C9D3415062`。
+- GitHub Timeline：changes 位于本地且尚未 commit；用户已明确要求 normal push 至 `origin/main`。
