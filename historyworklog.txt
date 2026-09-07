@@ -359,3 +359,10 @@
 - Modified files: `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v22-Windows-x64/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v22-Windows-x64/README.txt`; `release/EloLeagueCalculator-v22-Windows-x64.zip`; `historyworklog.txt`; `历史工作记录.txt`. The H2H model/simulator implementation remains in local commit `6a46f57`.
 - Tests and verification: All 72 merged unit tests passed; conflict-marker, whitespace, and ASCII-only Python checks passed. PyInstaller 6.22.0 on Python 3.12.14 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the final merged v22 executable passed an isolated five-second launch check and both exact-path processes were stopped. EXE SHA-256: `6FFF6FEE8158655F5F712C7797C8DA6F1AF282415DF82825E261000EB7160109`. ZIP SHA-256: `F23D3FC1B43B26FE0CC191CA0EA835EDBBB0D9D45B64E7135F38DCD530210D04`.
 - GitHub Timeline: The normal merge is resolved locally and awaiting its merge commit; the user explicitly requested a normal push to `origin/main`.
+
+## 2026-09-07 16:31
+- User Prompt summary: Complete H2H Game % and v22 GitHub publication.
+- Actions: Created local implementation commit `6a46f57`; normally merged remote dynamic-popup commits in `87bf2d2`; rebuilt v22 from the combined source; fetched immediately before publication, confirmed ahead 2 / behind 0, and pushed without rewriting history.
+- Modified files: This append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and v22 artifacts are in `6a46f57` and final integration is in `87bf2d2`.
+- Tests and verification: Publication verification remains 72/72 tests passing; final EXE SHA-256 is `6FFF6FEE8158655F5F712C7797C8DA6F1AF282415DF82825E261000EB7160109`; final ZIP SHA-256 is `F23D3FC1B43B26FE0CC191CA0EA835EDBBB0D9D45B64E7135F38DCD530210D04`; `git ls-remote` returned `87bf2d22911a62dcc3ce87569dd9ffef3af62688`.
+- GitHub Timeline: Commits `6a46f57` and `87bf2d2` were pushed successfully to `origin/main`; this publication record will be committed and pushed as a log-only follow-up.
