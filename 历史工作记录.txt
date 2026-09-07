@@ -456,3 +456,11 @@
 - 修改文件：`elo_calculator.py`；`test_elo_model.py`；`historyworklog.txt`；本文件。
 - 测试或验证结果：Python compilation 和 70 项 unit tests 全部通过；focused whitespace check 通过；dynamic-height 和 screen-cap regression coverage 通过。
 - GitHub Timeline：integrated changes 位于基于 current `origin/main` 的本地 `codex/dynamic-popup` branch，尚未 commit；用户要求 normal push。
+
+## 2026-09-07 16:17:37 -04:00
+
+- 用户 Prompt 摘要：完成 dynamic League Settings popup push。
+- 具体动作：从 latest v21 branch 创建 focused commit `a662745` 并以 normal push 更新 `origin/main`；existing release packages 和无关 generated files 均未纳入提交。
+- 修改文件：append-only 更新 `historyworklog.txt` 和本文件；implementation 与 test changes 位于 `a662745`。
+- 测试或验证结果：publication verification 保持 70/70 tests passing；push 后 local integration `HEAD` 与 `origin/main` 均为 `a662745417a5cfd4c52a49abc917402a0c2dbace`。
+- GitHub Timeline：commit `a662745` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 推送。

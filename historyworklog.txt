@@ -338,3 +338,11 @@
 - Modified files: `elo_calculator.py`; `test_elo_model.py`; `historyworklog.txt`; `历史工作记录.txt`.
 - Tests and verification: Python compilation and all 70 unit tests passed; focused whitespace check passed; dynamic-height and screen-cap regression coverage passed.
 - GitHub Timeline: Integrated changes are local and uncommitted on `codex/dynamic-popup`, based on current `origin/main`; the user requested a normal push.
+
+## 2026-09-07 16:17:37 -04:00
+
+- User Prompt summary: Complete the dynamic League Settings popup push.
+- Actions: Created focused commit `a662745` from the latest v21 branch and pushed it normally to `origin/main`; existing release packages and unrelated generated files were excluded.
+- Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and test changes are contained in `a662745`.
+- Tests and verification: Publication verification remains 70/70 tests passing; local integration `HEAD` and `origin/main` both resolved to `a662745417a5cfd4c52a49abc917402a0c2dbace` after push.
+- GitHub Timeline: Commit `a662745` was pushed successfully to `origin/main`; this publication record will be pushed as a log-only follow-up commit.
