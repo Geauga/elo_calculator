@@ -1893,7 +1893,16 @@ class EloCalculatorApp:
         tiebreaker_frame = ttk.LabelFrame(content, text="Tiebreakers (Rank Priority)", padding=10)
         tiebreaker_frame.grid(row=4, column=0, padx=10, pady=5, sticky="ew")
         
-        tiebreaker_listbox = tk.Listbox(tiebreaker_frame, height=5, selectmode=tk.SINGLE, exportselection=False)
+        tiebreaker_listbox = tk.Listbox(
+            tiebreaker_frame,
+            height=5,
+            selectmode=tk.SINGLE,
+            exportselection=False,
+            bg=colors["field"],
+            fg=colors["foreground"],
+            selectbackground=colors["selection"],
+            selectforeground=colors["selection_text"]
+        )
         tiebreaker_listbox.grid(row=0, column=0, rowspan=2, padx=(0, 10), sticky="ew")
         tiebreaker_frame.columnconfigure(0, weight=1)
         

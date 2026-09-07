@@ -359,4 +359,5 @@
  -   I m p l e m e n t e d   d y n a m i c   S t a n d i n g s   c o l u m n   t o g g l i n g   f r o m   t h e   m a i n   U I   s e t t i n g s   m e n u . 
  -   R e b u i l t   P y I n s t a l l e r   p a c k a g e   a n d   v e r i f i e d   a l l   t e s t s   p a s s .  
  -   F i x e d   a n   u n h a n d l e d   T k i n t e r   e x c e p t i o n   o n   s t a r t u p   c a u s e d   b y   m i s m a t c h e d   d i s p l a y c o l u m n s   c o n f i g u r a t i o n   a n d   r e b u i l t   P y I n s t a l l e r .  
+ -   F i x e d   t h e   L i s t b o x   s t y l i n g   i n   T i e b r e a k e r s   s o   i t   p r o p e r l y   r e s p e c t s   l i g h t / d a r k   m o d e   t h e m e   c o n f i g u r a t i o n s .  
  
