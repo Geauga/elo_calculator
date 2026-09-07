@@ -448,3 +448,11 @@
 - 修改文件：本次仅 append 更新 `historyworklog.txt` 和本文件；implementation 和 v21 artifacts 位于 commit `4962704`。
 - 测试或验证结果：publication verification 保持 70/70 tests passing；EXE SHA-256 为 `7C13201EE3A81D7923909A0BC6BCA4D7A720D83BCD102AF293CD3C81D3A6C994`；ZIP SHA-256 为 `4223B2A577BC62F0CF858EDA60E8FC2742F823B7EC83CCCE037EB8C9D3415062`；`git ls-remote` 返回 `496270466f14f5a1d6bcb7e32ea6a07b5c6a99d0`。
 - GitHub Timeline：commit `4962704` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 提交并 push。
+
+## 2026-09-07 16:16:06 -04:00
+
+- 用户 Prompt 摘要：push dynamic League Settings length fix。
+- 具体动作：在十个更新的 v19-v21 commits 后将 change 集成至 current `origin/main`；移除 remaining fixed 760-pixel target；League Settings 根据 visible content 计算 size，并在 format 或 games-to-win 变化时动态 resize/recenter；保留 screen capping、scrolling 和 fixed Save/Cancel controls。
+- 修改文件：`elo_calculator.py`；`test_elo_model.py`；`historyworklog.txt`；本文件。
+- 测试或验证结果：Python compilation 和 70 项 unit tests 全部通过；focused whitespace check 通过；dynamic-height 和 screen-cap regression coverage 通过。
+- GitHub Timeline：integrated changes 位于基于 current `origin/main` 的本地 `codex/dynamic-popup` branch，尚未 commit；用户要求 normal push。
