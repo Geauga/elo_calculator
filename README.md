@@ -30,10 +30,12 @@ with adjustable rosters.
   current Elo supplies game probabilities, while simulated rating changes use
   the league's K-factor, rounding, and score multipliers. Results show title
   probability, average rank, and average match and game records; players tied
-  on every standings tiebreaker share title and rank credit. An optional
-  random seed makes a run reproducible. **Apply One Season** records one
-  concrete simulated round robin in the active league, with confirmation and
-  an automatic backup before ratings and history are updated.
+  on match wins are separated by head-to-head score before the remaining
+  season tiebreakers, while players tied on every tiebreaker share title and
+  rank credit. An optional random seed makes a run reproducible. **Apply One
+  Season** records one concrete simulated round robin in the active league,
+  with confirmation and an automatic backup before ratings and history are
+  updated.
 - The Graphs tab plots Elo, match score percentage, and SB history for the
   selected player, including draw-aware calculations and SB changes caused by
   later results from prior opponents. Its background, axes, grid, labels, and
@@ -81,17 +83,17 @@ The previous single-league database is also upgraded automatically to
 ## Standalone Windows package
 
 The current packaged release is
-`release/EloLeagueCalculator-v20-Windows-x64.zip`.
+`release/EloLeagueCalculator-v21-Windows-x64.zip`.
 It contains `EloLeagueCalculator.exe` and `README.txt`; Python does not need to
 be installed. Extract the ZIP, then double-click the executable to start it.
 
 Package verification:
 
 - Executable SHA-256:
-  `4BC4C422F437503663C6D673A8F4F9CCB194AC8D70BC23815681672F03150DF6`
+  `7C13201EE3A81D7923909A0BC6BCA4D7A720D83BCD102AF293CD3C81D3A6C994`
 - ZIP SHA-256:
-  `6EBD27780D5D330D247BDA0C684F129B1764376D40B0E7CA3A1CA3B73B709554`
-- Validation: 69 unit tests passed, followed by an isolated Windows
+  `4223B2A577BC62F0CF858EDA60E8FC2742F823B7EC83CCCE037EB8C9D3415062`
+- Validation: 70 unit tests passed, followed by an isolated Windows
   launch test.
 
 ## Test
