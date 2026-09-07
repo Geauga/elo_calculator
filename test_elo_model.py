@@ -243,6 +243,30 @@ class EloModelTests(unittest.TestCase):
         ]
         self.assertEqual(displayed_names[:2], ["Player 1", "Player 2"])
 
+    def test_head_to_head_game_percentage_is_the_third_tiebreaker(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.league = League.new(3)
+        app.league.calculate_elo = False
+        app.league.record_match(0, 1, 0)
+        app.league.record_match(1, 2, 2)
+        app.league.record_match(2, 0, 2)
+        app.standings = Mock()
+        app.standings.selection.return_value = ()
+        app.standings.get_children.return_value = ()
+
+        head_to_head_games = app.league.head_to_head_game_percentages(
+            {0, 1, 2}
+        )
+        self.assertGreater(head_to_head_games[0], head_to_head_games[2])
+        self.assertGreater(head_to_head_games[2], head_to_head_games[1])
+        app._refresh_standings()
+
+        displayed_names = [
+            call.kwargs["values"][1]
+            for call in app.standings.insert.call_args_list
+        ]
+        self.assertEqual(displayed_names, ["Player 1", "Player 3", "Player 2"])
+
     def test_standings_apply_every_documented_tiebreaker(self) -> None:
         app = object.__new__(EloCalculatorApp)
         app.league = League.new(4)
@@ -346,6 +370,20 @@ class EloModelTests(unittest.TestCase):
         self.assertEqual(by_id[4].title_probability, 0.0)
         self.assertEqual(by_id[2].average_rank, 1.0)
         self.assertEqual(by_id[4].average_rank, 2.0)
+
+    def test_simulator_uses_head_to_head_games_as_third_tiebreaker(self) -> None:
+        league = League.new(4)
+        league.calculate_elo = False
+
+        result = simulate_first_to_n_league(league, simulations=1, seed=8)
+        by_id = {player.player_id: player for player in result.players}
+
+        for player_id in (0, 1, 2):
+            self.assertEqual(by_id[player_id].average_matches_won, 2.0)
+        self.assertEqual(by_id[1].title_probability, 100.0)
+        self.assertEqual(by_id[1].average_rank, 1.0)
+        self.assertEqual(by_id[0].average_rank, 2.0)
+        self.assertEqual(by_id[2].average_rank, 3.0)
 
     def test_custom_k_factor_and_rounding_control_transfer(self) -> None:
         self.assertEqual(
@@ -1107,7 +1145,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-07 14:20 America/New_York.
+# Generated: 2026-09-07 16:15 America/New_York.
 # Changes: Covers screen-bounded settings, the complete standings tiebreak
-# chain including simulator head-to-head, simulated seasons, themed graphs,
-# Elo, draws, persistence, and SB.
+# chain including head-to-head match/game results, simulated seasons, themed
+# graphs, Elo, draws, persistence, and SB.
