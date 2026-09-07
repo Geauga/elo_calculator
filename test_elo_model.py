@@ -175,8 +175,9 @@ class EloModelTests(unittest.TestCase):
                 self.assertEqual(graph_colors["text"], palette["muted"])
                 self.assertEqual(graph_colors["plot"], palette["selection"])
 
-    def test_settings_window_size_is_capped_to_usable_screen(self) -> None:
+    def test_dynamic_settings_window_size_is_capped_to_usable_screen(self) -> None:
         self.assertEqual(fit_window_to_screen(1920, 1080, 560, 760), (560, 760))
+        self.assertEqual(fit_window_to_screen(1920, 1080, 620, 1400), (620, 980))
         self.assertEqual(fit_window_to_screen(800, 600, 560, 760), (560, 500))
         self.assertEqual(fit_window_to_screen(400, 300, 560, 760), (320, 200))
 
@@ -1145,7 +1146,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-07 16:15 America/New_York.
-# Changes: Covers screen-bounded settings, the complete standings tiebreak
-# chain including head-to-head match/game results, simulated seasons, themed
-# graphs, Elo, draws, persistence, and SB.
+# Generated: 2026-09-07 16:25 America/New_York.
+# Changes: Covers dynamic screen-capped settings, H2H match/game tiebreakers,
+# simulated seasons, themed graphs, Elo, draws, persistence, and SB.

@@ -1576,14 +1576,6 @@ class EloCalculatorApp:
     def _edit_rules(self) -> None:
         dialog = tk.Toplevel(self.root)
         dialog.title("League Settings")
-        dialog_width, dialog_height = fit_window_to_screen(
-            dialog.winfo_screenwidth(),
-            dialog.winfo_screenheight(),
-            560,
-            760,
-        )
-        dialog.geometry(f"{dialog_width}x{dialog_height}")
-        dialog.minsize(min(440, dialog_width), min(520, dialog_height))
         self._configure_dialog(
             dialog, self.root, resizable=(True, True)
         )
@@ -1838,7 +1830,45 @@ class EloCalculatorApp:
             side="left", padx=(0, 8)
         )
         ttk.Button(buttons, text="Save", command=save).pack(side="left")
-        self._center_dialog(dialog, self.root)
+
+        resize_job = None
+
+        def resize_settings_dialog() -> None:
+            nonlocal resize_job
+            resize_job = None
+            dialog.update_idletasks()
+            requested_width = max(
+                480,
+                min(
+                    620,
+                    content.winfo_reqwidth()
+                    + content_scrollbar.winfo_reqwidth(),
+                ),
+            )
+            requested_height = (
+                content.winfo_reqheight() + buttons.winfo_reqheight() + 20
+            )
+            dialog_width, dialog_height = fit_window_to_screen(
+                dialog.winfo_screenwidth(),
+                dialog.winfo_screenheight(),
+                requested_width,
+                requested_height,
+            )
+            dialog.minsize(
+                min(440, dialog_width), min(360, dialog_height)
+            )
+            dialog.geometry(f"{dialog_width}x{dialog_height}")
+            self._center_dialog(dialog, self.root)
+
+        def schedule_settings_resize(*_args) -> None:
+            nonlocal resize_job
+            if resize_job is not None:
+                dialog.after_cancel(resize_job)
+            resize_job = dialog.after_idle(resize_settings_dialog)
+
+        games_var.trace_add("write", schedule_settings_resize)
+        format_var.trace_add("write", schedule_settings_resize)
+        resize_settings_dialog()
 
     def _change_player_count(self) -> None:
         current = self.collection.active
@@ -2506,7 +2536,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-09-07 16:15 America/New_York.
-# Changes: Keep League Settings screen-bounded and scrollable; rank standings
-# by Elo, head-to-head match/game scores, match score percentage, SB, overall
-# game percentage, and natural player name.
+# Generated: 2026-09-07 16:25 America/New_York.
+# Changes: Size League Settings dynamically within the screen and rank by Elo,
+# H2H match/game scores, match score, SB, overall game score, and natural name.
