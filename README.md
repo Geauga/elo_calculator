@@ -21,8 +21,9 @@ with adjustable rosters.
 - Standings show match wins, draws, and losses; match score percentage; individual game
   wins and losses, game win percentage, and a Sonneborn-Berger (SB) score. Elo
   remains the primary ranking key. Among players tied on Elo, head-to-head match
-  score percentage is the secondary tiebreaker, followed by overall match score
-  percentage, SB, game win percentage, and a natural player-name order.
+  score percentage is the secondary tiebreaker and head-to-head game percentage
+  is third, followed by overall match score percentage, SB, overall game win
+  percentage, and a natural player-name order.
 - New leagues use first-to-three rules: 3-2 applies 50%, 3-1 applies 75%, and
   3-0 applies 100% of the normal Elo change.
 - The Simulator button runs a read-only Monte Carlo single round-robin for the
@@ -30,9 +31,10 @@ with adjustable rosters.
   current Elo supplies game probabilities, while simulated rating changes use
   the league's K-factor, rounding, and score multipliers. Results show title
   probability, average rank, and average match and game records; players tied
-  on match wins are separated by head-to-head score before the remaining
-  season tiebreakers, while players tied on every tiebreaker share title and
-  rank credit. An optional random seed makes a run reproducible. **Apply One
+  on match wins are separated by head-to-head match score and then head-to-head
+  game percentage before the remaining season tiebreakers. Players tied on
+  every tiebreaker share title and rank credit. An optional random seed makes
+  a run reproducible. **Apply One
   Season** records one concrete simulated round robin in the active league,
   with confirmation and an automatic backup before ratings and history are
   updated.
@@ -83,17 +85,17 @@ The previous single-league database is also upgraded automatically to
 ## Standalone Windows package
 
 The current packaged release is
-`release/EloLeagueCalculator-v21-Windows-x64.zip`.
+`release/EloLeagueCalculator-v22-Windows-x64.zip`.
 It contains `EloLeagueCalculator.exe` and `README.txt`; Python does not need to
 be installed. Extract the ZIP, then double-click the executable to start it.
 
 Package verification:
 
 - Executable SHA-256:
-  `7C13201EE3A81D7923909A0BC6BCA4D7A720D83BCD102AF293CD3C81D3A6C994`
+  `7800EBB73AA42981980E03D1CFD9243542089286088576118FB6D6CBDBDF3571`
 - ZIP SHA-256:
-  `4223B2A577BC62F0CF858EDA60E8FC2742F823B7EC83CCCE037EB8C9D3415062`
-- Validation: 70 unit tests passed, followed by an isolated Windows
+  `FA43D2AD2AB032E82FD3B988EA5EDBF36FF7C9B6DEB3019F9D48342CE2150802`
+- Validation: 72 unit tests passed, followed by an isolated Windows
   launch test.
 
 ## Test
