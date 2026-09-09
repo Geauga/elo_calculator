@@ -748,3 +748,418 @@
 - Modified files: This append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and tests are in commit `be60154`. The existing v22 executable/package remains unchanged.
 - Tests and verification: Publication verification remains 75/75 unit tests passing; in-memory compilation, exact conflict-marker, Python ASCII-only, and whitespace checks passed; remote verification returned `be60154fff83bb6d91bd31bff1b347cad1c1707a`.
 - GitHub Timeline: Commit `be60154` was pushed successfully to `origin/main`; this publication record will be committed and pushed as a log-only follow-up.
+# History Worklog
+
+## 2026-08-22 22:18
+- Implemented customizable win conditions (`WinCondition`) in `elo_model.py`, allowing users to define games required to win and custom score multipliers.
+- Updated `elo_calculator.py` UI to feature a dynamic score selector in the Match Record panel.
+- Added an "Edit Rules" dialog to allow users to modify league win conditions and score multipliers.
+- Fixed dark mode UI styling bugs in the "Edit Rules" dialog.
+- Added an "Auto-calculate Elo" toggle to allow users to disable Elo changes while continuing to track match history.
+- Bumped `LEAGUE_SCHEMA_VERSION` and updated backwards compatibility layers.
+- Rebuilt `dist/EloLeagueCalculator.exe` with the latest changes.
+- Committed and pushed changes to GitHub.
+
+## 2026-08-23 09:56
+- Added strict type checking and value validation for `WinCondition` variables (e.g. `games_to_win`, `score_multipliers`).
+- Enforced finite/nonnegative constraints for all score multipliers.
+- Validated `loser_games` against the `games_to_win` bound directly inside `rating_change`.
+- Built new `EloLeagueCalculator.exe` and merged to `release/EloLeagueCalculator-v8-Windows-x64` zip.
+
+## 2026-08-26 17:03
+# History Worklog
+
+## 2026-08-22 22:18
+- Implemented customizable win conditions (`WinCondition`) in `elo_model.py`, allowing users to define games required to win and custom score multipliers.
+- Updated `elo_calculator.py` UI to feature a dynamic score selector in the Match Record panel.
+- Added an "Edit Rules" dialog to allow users to modify league win conditions and score multipliers.
+- Fixed dark mode UI styling bugs in the "Edit Rules" dialog.
+- Added an "Auto-calculate Elo" toggle to allow users to disable Elo changes while continuing to track match history.
+- Bumped `LEAGUE_SCHEMA_VERSION` and updated backwards compatibility layers.
+- Rebuilt `dist/EloLeagueCalculator.exe` with the latest changes.
+- Committed and pushed changes to GitHub.
+
+## 2026-08-23 09:56
+- Added strict type checking and value validation for `WinCondition` variables (e.g. `games_to_win`, `score_multipliers`).
+- Enforced finite/nonnegative constraints for all score multipliers.
+- Validated `loser_games` against the `games_to_win` bound directly inside `rating_change`.
+- Built new `EloLeagueCalculator.exe` and merged to `release/EloLeagueCalculator-v8-Windows-x64` zip.
+
+## 2026-08-26 17:03
+- Added Sonneborn-Berger (SB) tiebreaker scoring to league standings in `elo_model.py` based on opponent match wins.
+- Updated `elo_calculator.py` UI to include an 'SB' column and sort by SB score when Elo matches.
+
+## 2026-08-27 17:10
+- Built and packaged version 11 executable to `release/EloLeagueCalculator-v11-Windows-x64.zip`.
+
+## 2026-08-28 17:06
+- Added a horizontal scrollbar to the "Activity log" Treeview in `elo_calculator.py` to prevent text truncation.
+- Built and packaged version 12 executable to `release/EloLeagueCalculator-v12-Windows-x64.zip`.
+
+## 2026-08-30 21:02
+- Updated `elo_calculator.py` to append SB scores to the details of "match_recorded" and "match_undone" activity log events.
+- Built and packaged version 13 executable (due to v12 being in use) to `release/EloLeagueCalculator-v13-Windows-x64.zip`.
+
+## 2026-08-30 21:09
+- Renamed the "Edit Rules" button to "Settings" in the main UI and updated the dialog title from "Edit League Rules" to "League Settings" for clarity.
+
+## 2026-08-30 21:11
+- Built and packaged version 14 executable to `release/EloLeagueCalculator-v14-Windows-x64.zip`.
+
+## 2026-08-30 21:14
+- Updated `README.md` to clarify the global Settings menu vs. the league Settings button, and documented the activity log enhancements (horizontal scrolling, SB scores).
+
+## 2026-08-30 21:32
+- Preserved customizable K-factor and Elo rounding while rejecting nonfinite transfers before mutation.
+- Removed the duplicate `_build_ui` method and hidden UTF-8 BOM; added overflow regression coverage.
+- Rebuilt and smoke-tested the current Windows executable, then packaged version 15.
+- Worked from a temporary clone because Windows reported the OneDrive checkout as corrupted and unreadable.
+
+## 2026-08-31 19:50
+- Made failed roster replay atomic and rejected invalid expected-score ratings and collection shapes.
+- Guarded out-of-range match targets during live League Settings updates.
+- Added three regression tests, rebuilt the tracked executable, and verified its isolated launch.
+## 2026-08-31 19:44
+- Added a persistent draw result with standard 0.5-score Elo calculation, W-D-L standings, match score percentage, draw-aware SB scoring, undo, roster replay, and schema-5 compatibility.
+- Added the `Record draw` UI action, draw Elo preview, draw-specific history/activity/status text, README documentation, and regression coverage.
+- Python compilation passed and all 43 unit tests passed. Live Tk rendering could not be tested because the bundled workspace Python has no usable Tcl `init.tcl`.
+- GitHub Timeline: not committed and not pushed; the user did not request GitHub publication.
+
+## 2026-08-31 20:00
+- Created draw-feature commit `13e1526` after Python compilation and all 43 tests passed.
+- Excluded generated builds, releases, caches, helper scripts, and `.build_tools` deletions from the commit.
+- GitHub Timeline: committed but not pushed. The push to `https://github.com/Geauga/elo_calculator.git` was rejected pending explicit user authorization for that destination and payload.
+
+## 2026-08-31 19:58
+- Added a "Graphs" tab to the main UI to display historical tracking charts for Elo, Win %, and SB Scores using a native `tk.Canvas` implementation without external dependencies.
+- Pushed changes to GitHub.
+
+## 2026-08-31 20:04
+- Rebuilt and packaged version 15 executable to `release/EloLeagueCalculator-v15-Windows-x64.zip`.
+
+## 2026-09-01 20:12
+- User Prompt summary: Add a First-to-N league simulator and publish the combined project to GitHub.
+- Actions: Merged the remotely published Graphs and draw-result branch with the local simulator, customizable K-factor/rounding, and validation work without force-pushing; resolved model, GUI, test, documentation, and append-only log conflicts; made draw Elo and its display honor each league's K-factor and decimal precision; made Graphs draw-aware; retained transactional historical replay; added a regression test; added reproducible PyInstaller Tcl/Tk hooks after the bundled runtime's automatic Tk detection failed; rebuilt the tracked executable.
+- Modified files: `elo_model.py`; `elo_calculator.py`; `elo_simulator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `EloLeagueCalculator.spec`; `packaging_hooks/hook-_tkinter.py`; `packaging_hooks/pre_find_module_path/hook-tkinter.py`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 55 unittest cases passed; conflict-marker and whitespace checks passed; the final PyInstaller build classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the executable remained running during an isolated five-second launch test; SHA-256 is `EAF19DF9FC2C9EC945C5F8A19C62FA6D4677D061E7A971210CEE92D91C665D82`.
+- GitHub Timeline: Merge is resolved locally but not yet committed or pushed. The user explicitly requested GitHub publication; a normal merge commit and push to `origin/main` will follow, without force push.
+## 2026-08-31 20:16
+- Rebuilt the First-to-N League Simulator using Monte Carlo simulations and integrated the Simulator dialog into the main UI.
+- All 44 unit tests are passing.
+- Committed the changes locally.
+
+## 2026-09-01 20:00
+- Pushed the Simulator commit to GitHub.
+- Rebuilt and packaged version 16 executable to `release/EloLeagueCalculator-v16-Windows-x64.zip`.
+
+## 2026-09-01 20:04
+- Added a per-league `Allow draws` setting in League Settings.
+- Disabling draws now disables only the draw action and preview; model-level validation rejects new draws while preserving historical draw results and statistics.
+- Save schema 7 persists the setting, while schemas 1-6 default to draws enabled.
+- Python compilation and all 48 unit tests passed.
+- GitHub Timeline: not committed and not pushed.
+
+## 2026-09-01 20:06
+- Committed the per-league draw-policy update as `a0200d6` and pushed it to `origin/main`.
+- The push was a fast-forward from `16668cf` to `a0200d6`; generated files and helper scripts were excluded.
+- GitHub Timeline: pushed successfully.
+
+## 2026-09-01 20:11
+- Updated Simulator UI and logic to output absolute average Match and Game W-L counts instead of percentages.
+- Pushed changes to GitHub.
+- Rebuilt and packaged version 17 executable to `release/EloLeagueCalculator-v17-Windows-x64.zip`.
+
+## 2026-09-01 20:15
+- Fixed mojibake encoding issues in the UI where characters like `–` and `±` were incorrectly rendered as `â€“` and `Â±` respectively.
+- Committed the changes locally.
+
+## 2026-09-01 20:17
+- Pushed the encoding fix commit to GitHub.
+- Rebuilt and packaged version 18 executable to `release/EloLeagueCalculator-v18-Windows-x64.zip`.
+
+## 2026-09-02 17:18
+- User Prompt summary: Continue publishing the combined First-to-N simulator update to GitHub.
+- Actions: After the first push was rejected because `origin/main` advanced, fetched and normally merged nine remote commits; integrated the per-league Allow draws policy and ASCII-safe UI text with customizable K-factor/rounding; retained the validated standalone simulator with absolute average match/game W-L output; removed the remotely reintroduced duplicate simulator class and duplicate shadowing UI method; corrected the League Settings options row so it does not overlap the Elo settings; rebuilt the executable with the project Tcl/Tk hooks.
+- Modified files: `elo_model.py`; `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 59 unittest cases passed; conflict-marker, mojibake-source, and whitespace checks passed; PyInstaller classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the executable remained running during an isolated five-second launch test; the verified child process was stopped by exact executable path and temporary build directories were removed; SHA-256 is `07F0D5A6206E3A016534870CAC6ECE4FDBA0C981F06AE136C0A8364BABE1978E`.
+- GitHub Timeline: Local merge of latest `origin/main` is resolved but not yet committed or pushed. A normal merge commit and push will follow without rewriting remote history.
+
+## 2026-09-02 17:20
+- User Prompt summary: Confirm the continued GitHub publication.
+- Actions: Created merge commit `8ec116a` after integrating all concurrent remote work and pushed the complete simulator, draw-policy, configurable Elo, graphs, validation, packaging, documentation, tests, and executable update.
+- Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and executable changes are contained in merge commits `b27b5ef` and `8ec116a`.
+- Tests and verification: GitHub accepted the normal push `0000725..8ec116a`; local `HEAD` and `origin/main` both resolved to `8ec116aa3ca3635bb3fd991aa31f40664ddc5b03` immediately after the push. The verified suite and executable results remain 59/59 passing and SHA-256 `07F0D5A6206E3A016534870CAC6ECE4FDBA0C981F06AE136C0A8364BABE1978E`.
+- GitHub Timeline: Merge commit `8ec116a` is pushed to `origin/main`. This final publication record will be committed and pushed as a log-only follow-up.
+
+## 2026-09-03 08:17
+- User Prompt summary: Fix the corrupted `â€”`-style separator shown in the league heading screenshot.
+- Actions: Traced the remaining corruption to two Unicode em-dash separators in `_refresh_league_selector`; replaced the heading and window-title separators with ASCII-safe ` - ` text; added a regression test for both exact strings; scanned all Python source for non-ASCII characters; rebuilt the tracked Windows executable.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 60 unittest cases passed; all Python source files passed the ASCII-only scan; `git diff --check` passed; PyInstaller classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the executable remained running during an isolated five-second launch test; SHA-256 is `4E87C4614FFCE9B6799B5815E714538F6801CA980AC754566907D49A8CFF52C0`. Read-only process inspection showed the screenshot was produced by the older v18 executable under `C:\Code\elo_calculator`; those user-owned processes were not stopped or overwritten.
+- GitHub Timeline: Not committed or pushed yet. The user requested the fix but did not request a GitHub push; a local focused commit will follow.
+## 2026-09-02 17:25
+- User Prompt summary: Review and push; continue.
+- Actions: GitHub advanced before three attempted final pushes, so no remote history was overwritten. Created a fresh clone at current head `8c870bb`, confirmed the current architecture already contained the earlier validation, atomic replay, malformed-storage, duplicate-UI, draw-policy, configurable-Elo, and standalone-simulator fixes, then fixed the remaining deterministic simulator tie bias. Players tied on every standings tiebreaker now share title probability and average-rank credit instead of being separated by player ID. Updated documentation, regression tests, and the Windows executable.
+- Modified files: `elo_simulator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 60 tests passed. The exact three-player tie changed from title/ranks `(100%, 1), (0%, 2), (0%, 3)` to `33.333...%` and rank `2.0` for every player. `git diff --check` passed. PyInstaller 6.22.0 collected 1,003 runtime entries and the Tk runtime hook; the executable passed an isolated five-second launch check and all matching smoke-test processes were stopped. EXE SHA-256: `891F00637A324891BAE5B47030AC1E0D7ABC2494ECEB9DC666A725609E75EFC9`.
+- GitHub Timeline: latest `origin/main` is `8c870bb`; these changes are not committed or pushed yet. The user authorized a normal fast-forward push after the final remote check.
+
+## 2026-09-02 17:27
+- User Prompt summary: Complete review and push.
+- Actions: Created focused commit `805bb0f` containing the fully tied simulator fairness fix, regression test, documentation, rebuilt executable, and review record. The pre-push fetch confirmed ahead 1 / behind 0, then a normal fast-forward push completed.
+- Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and executable changes are in `805bb0f`.
+- Tests and verification: Publication validation remains 60/60 tests passing; isolated EXE smoke test passed; SHA-256 is `891F00637A324891BAE5B47030AC1E0D7ABC2494ECEB9DC666A725609E75EFC9`; `git ls-remote` returned `805bb0fd1af9ddf2bde0d4ddde93446b1f71c731`.
+- GitHub Timeline: commit `805bb0f` was pushed successfully to `origin/main`; this publication record will be pushed as a log-only follow-up commit.
+
+## 2026-09-03 08:20
+- User Prompt summary: Push the ASCII-safe league-heading fix to GitHub.
+- Actions: The initial push was rejected because `origin/main` gained the simulator tied-standings fairness update; fetched and normally merged commits `805bb0f` and `a76a43f`; preserved both the heading fix and fair shared title/rank credit; combined both regression tests; rebuilt the tracked executable from the merged source.
+- Modified files: `elo_calculator.py`; `elo_simulator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 61 unittest cases passed; Python source remains ASCII-only; conflict-marker and whitespace checks passed; PyInstaller classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the executable passed an isolated five-second launch test; the temporary process and build directories were removed by verified path; SHA-256 is `981EABEBC09E5D7F76292E5C0ABE804790688A56E9CD2E1CBA6F10DC2C37942A`.
+- GitHub Timeline: The latest remote work is merged locally but not yet committed or pushed. A normal merge commit and push will follow without force.
+
+## 2026-09-03 08:20:44 -04:00
+- User Prompt summary: Complete the requested GitHub push.
+- Actions: Created merge commit `2fbfb39` containing the ASCII-safe heading fix, simulator tied-standings fairness update, combined tests, documentation, work logs, and rebuilt executable; pushed it normally to `origin/main`.
+- Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and executable changes are contained in `2fbfb39`.
+- Tests and verification: GitHub accepted push `a76a43f..2fbfb39`; local `HEAD` and `origin/main` both resolved to `2fbfb39a3e0567c157f4a5e0bff4a63f5a5d0a27`; final verification remains 61/61 tests passed and executable SHA-256 `981EABEBC09E5D7F76292E5C0ABE804790688A56E9CD2E1CBA6F10DC2C37942A`.
+- GitHub Timeline: Merge commit `2fbfb39` is pushed to `origin/main`. This final record will be committed and pushed as a log-only follow-up.
+
+## 2026-09-03 08:34:00 -04:00
+
+- User Prompt summary: Make simulator results able to update leagues, make graphs compatible with dark mode, and push the completed update.
+- Actions: Added reproducible concrete First-to-N round-robin seasons and an **Apply One Season** action that records all simulated matches through normal league persistence, automatic backup, and audit paths; changed every graph canvas, axis, grid, label, and plot color to use the active theme palette; integrated the work on the latest `origin/main` after concurrent simulator and heading updates.
+- Modified files: `elo_simulator.py`; `elo_calculator.py`; `test_elo_model.py`; `README.md`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: Pending final compile, unittest, conflict-marker, and whitespace checks on the integrated branch.
+- GitHub Timeline: Changes are integrated on local branch `codex/simulator-dark-mode` from current `origin/main`; not yet committed or pushed. A normal fast-forward push will follow without force.
+
+## 2026-09-03 08:34:56 -04:00
+
+- User Prompt summary: Push the simulator league-update and dark-mode graph changes.
+- Actions: Created focused commit `2d238ef` from the latest remote code and pushed it normally to `origin/main`; concurrent simulator tie handling and heading fixes were preserved, and generated bytecode plus unrelated root-worktree artifacts were excluded.
+- Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation, tests, and README changes are contained in `2d238ef`.
+- Tests and verification: All 64 unit tests passed; Python compilation, conflict-marker check, and whitespace check passed; local integration `HEAD` and `origin/main` both resolved to `2d238ef6ceb34c843c1160f2f44d4c8dc44a7e4d` after the push.
+- GitHub Timeline: Commit `2d238ef` was pushed successfully to `origin/main`; this publication record will be pushed as a log-only follow-up commit.
+
+## 2026-09-03 08:36
+- User Prompt summary: Review code, fix, and commit.
+- Actions: Reviewed the current local OneDrive repository at `35e4629`. Reproduced an SB graph error: after Player 1 beats Player 2, a later Player 2 win raises Player 1's current SB, but the graph stayed stale because it sampled only matches involving Player 1. Updated the SB timeline after every league match, added a mock-canvas regression test, updated documentation, and rebuilt the tracked Windows executable.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 62 tests passed; `git diff --check`, duplicate-method AST, and ASCII-only source checks passed. PyInstaller 6.22.0 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the EXE passed an isolated five-second launch check and both exact-path processes were stopped. EXE SHA-256: `12B8A351BCD324525C36D5EBFE07C38AC211DD169DC4862B3370526ACDDE5AB5`.
+- GitHub Timeline: implementation commit `22e3d06` exists locally and has not been pushed. The user requested a commit, not a push; this publication record will be a local log-only follow-up commit.
+
+## 2026-09-03 08:41
+- User Prompt summary: Push.
+- Actions: The pre-push fetch found new remote commits `2d238ef` and `93662e0`. Normally merged their Apply One Season and dark-mode graph features while retaining the opponent-driven SB graph fix; combined tests, README, and both append-only worklogs; rebuilt the executable from the final merged source.
+- Modified files: `elo_calculator.py`; `elo_simulator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 65 merged tests passed; Python AST, conflict-marker, and `git diff --check` checks passed. PyInstaller 6.22.0 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the merged EXE passed an isolated five-second launch check and all exact-path processes were stopped. Final EXE SHA-256: `6184478E2D626B03B2F7311F2A93BD5D75519696339CF47DDCDFC86CD72A7F34`.
+- GitHub Timeline: local commits `22e3d06` and `136608a` are normally merged with current `origin/main`; the merge commit has not yet been created or pushed. The user explicitly authorized a normal push.
+
+## 2026-09-03 08:42
+- User Prompt summary: Complete the push.
+- Actions: Created normal merge commit `1777461` containing the local SB graph fix, remote Apply One Season and dark-mode graph features, combined regression tests, documentation, worklogs, and executable rebuilt from merged source. The pre-push fetch confirmed ahead 3 / behind 0, followed by a normal push.
+- Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and the merged executable are in commits `22e3d06` and `1777461`.
+- Tests and verification: Final verification remains 65/65 tests passing; merged EXE SHA-256 is `6184478E2D626B03B2F7311F2A93BD5D75519696339CF47DDCDFC86CD72A7F34`; `git ls-remote` returned `1777461873b27f2e8902768e97032616fa7e12aa`.
+- GitHub Timeline: commits `22e3d06`, `136608a`, and merge commit `1777461` were pushed successfully to `origin/main`; this publication record will be pushed as a log-only follow-up commit.
+
+## 2026-09-03 19:38
+- User Prompt summary: Build package.
+- Actions: Built the current `main` source as a clean one-file Windows executable with PyInstaller 6.22.0; updated the distribution checksum; copied the executable and README into `release/EloLeagueCalculator-v19-Windows-x64`; created the flat `release/EloLeagueCalculator-v19-Windows-x64.zip`; updated the tracked `dist/EloLeagueCalculator.exe`; and removed temporary build directories and generated bytecode changes.
+- Modified files: `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v19-Windows-x64/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v19-Windows-x64/README.txt`; `release/EloLeagueCalculator-v19-Windows-x64.zip`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 65 unit tests passed. PyInstaller classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; only expected platform-conditional modules appeared in its warning report. The executable remained running for the five-second isolated smoke test, and both exact v19 executable processes were stopped. EXE SHA-256: `27686893DBEFF3512097506016B6CDBB1871EE4564F86959B79F848DF87F2DD6`. ZIP SHA-256: `B8F9CFED8AB9A850CC6977CF74869505439B7B0990C85A236556EB5C495A3C0C`.
+- GitHub Timeline: Package changes are local and uncommitted; the user requested a build, not a commit or push.
+
+## 2026-09-03 20:07
+- User Prompt summary: Update README.
+- Actions: Updated the root README's standalone Windows package section with the v19 archive path, source commit, archive contents, extraction/start instructions, executable and ZIP SHA-256 values, and the completed test and launch validation. Preserved unrelated in-progress source and test changes already present in the worktree.
+- Modified files: `README.md`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: `git diff --check` passed for the README and work-log update. Package verification remains 65/65 unit tests passing plus a five-second isolated Windows launch test. The documented hashes match the generated v19 artifacts.
+- GitHub Timeline: README and package changes remain local and uncommitted; the user did not request a commit or push.
+
+## 2026-09-03 20:06
+- User Prompt summary: Fix standings ordering shown as Player 1, Player 10, Player 11, Player 12, Player 2.
+- Actions: Replaced the alphabetical name fallback for equal Elo and SB with stable roster-position ordering; added a 12-player GUI regression test; documented the behavior; rebuilt the tracked executable and pending v19 Windows package from the corrected source; and removed temporary build files.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v19-Windows-x64/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v19-Windows-x64/README.txt`; `release/EloLeagueCalculator-v19-Windows-x64.zip`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 66 unit tests passed, including the new Player 1 through Player 12 ordering regression; `git diff --check` and ASCII-only Python source checks passed. PyInstaller 6.22.2 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the rebuilt executable remained running during the isolated four-second smoke test. EXE SHA-256: `926AA67CC1E19FA17CA0474FC46DA1B4B63138197342736DF51AABA003434281`. ZIP SHA-256: `437A493D7402BCB4096AC54B9036FA9BBC699E0AD07C56A6D8C386C369467A73`.
+- GitHub Timeline: The ordering fix and updated v19 package are local and uncommitted; no push was requested. A focused local commit follows.
+
+## 2026-09-03 20:09
+- User Prompt summary: Update README; reconcile the documentation after a concurrent v19 rebuild.
+- Actions: Detected that commit `5b5b582` rebuilt and committed v19 with the tied-standings ordering fix while README verification was in progress. Corrected the root README to identify commit `5b5b582`, the actual rebuilt EXE and ZIP hashes, 66 passing tests, and the four-second launch check. The earlier append-only record remains as the historical state before that rebuild.
+- Modified files: `README.md`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: Confirmed both tracked executable copies have SHA-256 `926AA67CC1E19FA17CA0474FC46DA1B4B63138197342736DF51AABA003434281`; the v19 ZIP has SHA-256 `437A493D7402BCB4096AC54B9036FA9BBC699E0AD07C56A6D8C386C369467A73`; the suite contains 66 tests, reported passing by the rebuild record; and the targeted documentation diff check passed.
+- GitHub Timeline: Commit `5b5b582` exists locally and is not pushed; this README correction and its logs are also local and uncommitted.
+
+## 2026-09-03 20:10
+- User Prompt summary: Finalize the README update after the local package commit was amended concurrently.
+- Actions: Removed the mutable local commit identifier from the package description so the README remains accurate if the unpushed commit is amended again. Retained the verified v19 path, contents, hashes, and validation results.
+- Modified files: `README.md`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: The EXE and ZIP hashes remain `926AA67CC1E19FA17CA0474FC46DA1B4B63138197342736DF51AABA003434281` and `437A493D7402BCB4096AC54B9036FA9BBC699E0AD07C56A6D8C386C369467A73`; targeted `git diff --check` passed.
+- GitHub Timeline: The v19 package commit remains local and ahead of `origin/main`; the README correction and work-log entries are uncommitted and unpushed.
+
+## 2026-09-03 19:55
+- Rebuilt the EloLeagueCalculator executable to include the natural sorting and tiebreaker logic changes using PyInstaller.
+- Packaged the v19 build into release/EloLeagueCalculator-v19-Windows-x64.zip.
+- Pushed all sorting and packaging commits to origin/main.
+
+## 2026-09-03 20:02:03 -04:00
+
+- User Prompt summary: The League Settings popup does not fit on screen, as shown with a 64-player, First-to-10 league.
+- Actions: Capped the dialog's initial size to the usable screen; moved the complete settings form into one vertically scrollable area; kept Cancel and Save in a fixed footer; added mouse-wheel scrolling; removed the nested multiplier scrollbar so large First-to-N lists participate in the main form scroll.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: Python compilation passed; all 66 unit tests passed, including screen-size capping regression coverage; focused whitespace check passed.
+- GitHub Timeline: Not committed and not pushed; the user did not request publication. Existing unrelated build, release, cache, and helper-file changes were excluded.
+
+## 2026-09-03 20:04:24
+
+- User Prompt summary: Push the League Settings popup fit fix.
+- Actions: Created focused commit `f056b29` containing the screen-bounded, scrollable settings dialog, fixed action footer, regression test, and work records; pushed normally to `origin/main`. Generated build, cache, release, and helper files were excluded.
+- Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and test changes are contained in `f056b29`.
+- Tests and verification: Publication verification remains 66/66 unit tests passing; focused whitespace check passed; local `HEAD` and `origin/main` both resolved to `f056b2973c6b0a0c887e1c1f35efa5f6a99fd8b9` after the push.
+- GitHub Timeline: Commit `f056b29` was pushed successfully to `origin/main`; this publication record will be pushed as a log-only follow-up commit.
+
+## 2026-09-03 20:13
+- User Prompt summary: Push the standings-order fix and v19 package.
+- Actions: Fetched four newer `origin/main` commits; normally merged the remote natural-sort, standings-tiebreaker, package-log, and screen-bounded League Settings changes with the local ordering regression and v19 package. The merged regression exposed an incorrectly escaped digit expression in the remote natural-sort helper; corrected it to split actual numeric components. Preserved both append-only histories, rebuilt the final executable and v19 ZIP from merged source, updated package hashes, and removed temporary build files.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v19-Windows-x64/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v19-Windows-x64/README.txt`; `release/EloLeagueCalculator-v19-Windows-x64.zip`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 67 merged unit tests passed, including numeric Player 1 through Player 12 ordering and settings-window bounds; `git diff --check`, conflict-marker, and ASCII-only Python checks passed. PyInstaller 6.22.2 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the final executable passed an isolated four-second launch check and both exact-path processes were stopped. EXE SHA-256: `D45426DE2D59A38430864F54A726A91FFAC4A81D0C30B96CE1ABA43FCEE4EA05`. ZIP SHA-256: `CAA56D0A3EDC8896E0F007C1BA0D4B6E733D35713716B0F7E8139F2E9DE0255C`.
+- GitHub Timeline: The normal merge is resolved locally and awaiting its merge commit; the user explicitly requested a normal push to `origin/main`.
+
+## 2026-09-03 20:14
+- User Prompt summary: Complete the GitHub push.
+- Actions: Created merge commit `6d2aee3` for the ordering fix, final v19 package, natural-sort correction, popup-fit changes, tests, documentation, and combined append-only histories. A final fetch found remote work-log correction `4c2ed49`, which was normally merged as `e715bac`; then pushed `main` without rewriting history.
+- Modified files: This append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and package changes are contained in commits `7bc6afe`, `6d2aee3`, and `e715bac`.
+- Tests and verification: Final verification remains 67/67 tests passing; final EXE SHA-256 is `D45426DE2D59A38430864F54A726A91FFAC4A81D0C30B96CE1ABA43FCEE4EA05`; final ZIP SHA-256 is `CAA56D0A3EDC8896E0F007C1BA0D4B6E733D35713716B0F7E8139F2E9DE0255C`; `git ls-remote` returned `e715bac4f7b30be0792a297fc9d6d53eb6282a2c` after the push.
+- GitHub Timeline: Commits through `e715bac` were pushed successfully to `origin/main`; this publication record will be committed and pushed as a log-only follow-up.
+
+## 2026-09-03 20:16
+- User Prompt summary: Finish pushing after concurrent package verification changes.
+- Actions: Detected a concurrent rebuild of both tracked executable copies and the v19 ZIP after the main code push. Preserved the rebuild, verified its documented hashes against the files, corrected the validation count to the actual 68-test merged suite, and independently smoke-tested the rebuilt tracked executable.
+- Modified files: `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v19-Windows-x64/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v19-Windows-x64/README.txt`; `release/EloLeagueCalculator-v19-Windows-x64.zip`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 68 unit tests passed; `git diff --check` passed; the final tracked executable remained running during an isolated four-second launch check. Both executable copies have SHA-256 `EAAE3E046D45842B8D281FF11F76900E6C4202C1F056A116B187792EA2FD475E`; the v19 ZIP has SHA-256 `139D86ECE887C74C99247AEC356A49E53C346A5AC5ABF43D508D4C820328A10A`.
+- GitHub Timeline: Main source and merge commits through `e715bac` are already pushed; the final package refresh and publication records are local and will be committed and pushed normally.
+
+## 2026-09-03 20:18
+- User Prompt summary: Review code, patch defects, and commit both integrated feature sets.
+- Actions: Reviewed the merged natural-order/tiebreaker and screen-bounded League Settings changes. Preserved both features; verified the corrected numeric regex; fixed stale standings documentation; added regression coverage for the complete Elo, match score percentage, SB, game percentage, and natural-name tiebreak chain; synchronized the root and packaged READMEs; rebuilt v19 from the reviewed source; and removed accidentally tracked PyInstaller intermediate directories.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v19-Windows-x64/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v19-Windows-x64/README.txt`; `release/EloLeagueCalculator-v19-Windows-x64.zip`; `historyworklog.txt`; `历史工作记录.txt`. Generated `build_review_merge_final` and `dist_review_merge_final` directories are removed.
+- Tests and verification: Python compilation and all 68 unit tests passed; conflict-marker and whitespace checks passed; PyInstaller 6.22.0 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; only expected platform-conditional warnings remained. The final EXE passed an isolated five-second launch test and both exact-path processes were stopped. EXE SHA-256: `EAAE3E046D45842B8D281FF11F76900E6C4202C1F056A116B187792EA2FD475E`. ZIP SHA-256: `139D86ECE887C74C99247AEC356A49E53C346A5AC5ABF43D508D4C820328A10A`.
+- GitHub Timeline: The prior integrated merge was pushed through `e715bac`; this review/package cleanup is local and will be committed without pushing because the user requested commit only.
+
+## 2026-09-03 20:19
+- User Prompt summary: Push the reviewed code and final v19 package.
+- Actions: Fetched `origin/main`, confirmed the reviewed publication commit was already present remotely, and verified GitHub's `main` reference at the exact commit before adding this append-only publication record.
+- Modified files: `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: Publication verification remains 68/68 tests passing; EXE SHA-256 is `EAAE3E046D45842B8D281FF11F76900E6C4202C1F056A116B187792EA2FD475E`; ZIP SHA-256 is `139D86ECE887C74C99247AEC356A49E53C346A5AC5ABF43D508D4C820328A10A`; `git ls-remote` returned `d87a2c4173795604bf8ea4fa072a532fc7536ff9`.
+- GitHub Timeline: Commit `d87a2c4` is pushed to `origin/main`; this publication record will be committed and pushed as a log-only follow-up.
+
+## 2026-09-03 20:28
+- User Prompt summary: Add head-to-head as the secondary standings tiebreaker, push, and generate v20.
+- Actions: Added a reusable head-to-head match-score calculation for each equal-Elo group, counting wins as 1 point and draws as 0.5; inserted it after Elo and before overall Match %, SB, Game %, and natural player-name order; added regression coverage proving head-to-head outranks a better overall match percentage; updated documentation; built the tracked executable and a separate flat `release/EloLeagueCalculator-v20-Windows-x64.zip` while retaining v19; and removed temporary build/cache files.
+- Modified files: `elo_model.py`; `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v20-Windows-x64/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v20-Windows-x64/README.txt`; `release/EloLeagueCalculator-v20-Windows-x64.zip`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 69 unit tests passed; `git diff --check` and ASCII-only Python checks passed. PyInstaller 6.22.2 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the v20 executable passed an isolated five-second launch check. The archive contains only `EloLeagueCalculator.exe` and `README.txt`. EXE SHA-256: `4BC4C422F437503663C6D673A8F4F9CCB194AC8D70BC23815681672F03150DF6`. ZIP SHA-256: `6EBD27780D5D330D247BDA0C684F129B1764376D40B0E7CA3A1CA3B73B709554`.
+- GitHub Timeline: The head-to-head implementation and v20 package are local and uncommitted; the user explicitly requested commit and normal push to `origin/main`.
+
+## 2026-09-03 20:29
+- User Prompt summary: Complete the head-to-head v20 GitHub publication.
+- Actions: Created commit `9e94a29` containing the head-to-head secondary tiebreaker, regression test, documentation, tracked executable, and v20 archive; fetched immediately before publication, confirmed ahead 1 / behind 0, and pushed normally without rewriting history.
+- Modified files: This append-only update to `historyworklog.txt` and `历史工作记录.txt`; the implementation and v20 artifacts are in commit `9e94a29`.
+- Tests and verification: Publication verification remains 69/69 tests passing; EXE SHA-256 is `4BC4C422F437503663C6D673A8F4F9CCB194AC8D70BC23815681672F03150DF6`; ZIP SHA-256 is `6EBD27780D5D330D247BDA0C684F129B1764376D40B0E7CA3A1CA3B73B709554`; `git ls-remote` returned `9e94a29a7b8f0aafe86edabcedc6aec9a10d7c8e`.
+- GitHub Timeline: Commit `9e94a29` was pushed successfully to `origin/main`; this publication record will be committed and pushed as a log-only follow-up.
+
+## 2026-09-07 14:22
+- User Prompt summary: Review the code, patch defects, package it, and push to GitHub.
+- Actions: Reviewed model, storage, simulator, UI integration, and the recent head-to-head change. Reproduced a deterministic seven-player season where the simulator shared the title between two match-win leaders even though one defeated the other; added head-to-head scoring immediately after match wins in simulated-season ranking; added regression coverage; updated both distribution documents; built the independent v21 Windows package while retaining v20; and removed temporary build and bytecode files.
+- Modified files: `elo_simulator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v21-Windows-x64/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v21-Windows-x64/README.txt`; `release/EloLeagueCalculator-v21-Windows-x64.zip`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: Python compilation and all 70 unit tests passed; conflict-marker and whitespace checks passed. PyInstaller 6.22.0 on Python 3.12.14 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; only expected platform-conditional warnings remained. The v21 executable passed an isolated five-second launch test, and both exact-path processes were stopped. EXE SHA-256: `7C13201EE3A81D7923909A0BC6BCA4D7A720D83BCD102AF293CD3C81D3A6C994`. ZIP SHA-256: `4223B2A577BC62F0CF858EDA60E8FC2742F823B7EC83CCCE037EB8C9D3415062`.
+- GitHub Timeline: Changes are local and uncommitted; the user explicitly requested a normal push to `origin/main`.
+
+## 2026-09-07 14:24
+- User Prompt summary: Complete the reviewed v21 GitHub publication.
+- Actions: Created commit `4962704` containing the simulator head-to-head fix, regression test, updated documentation, tracked executable, and independent v21 archive; fetched immediately before publication, confirmed no divergence, and pushed normally without rewriting history.
+- Modified files: This append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and v21 artifacts are in commit `4962704`.
+- Tests and verification: Publication verification remains 70/70 tests passing; EXE SHA-256 is `7C13201EE3A81D7923909A0BC6BCA4D7A720D83BCD102AF293CD3C81D3A6C994`; ZIP SHA-256 is `4223B2A577BC62F0CF858EDA60E8FC2742F823B7EC83CCCE037EB8C9D3415062`; `git ls-remote` returned `496270466f14f5a1d6bcb7e32ea6a07b5c6a99d0`.
+- GitHub Timeline: Commit `4962704` was pushed successfully to `origin/main`; this publication record will be committed and pushed as a log-only follow-up.
+
+## 2026-09-07 16:24
+- User Prompt summary: Add game head-to-head as the third tiebreaker and push.
+- Actions: Added head-to-head game-win percentage within the relevant tied group; inserted it after Elo and H2H Match % in live standings and after match wins and H2H Match % in simulated-season ranking; added live and deterministic simulator regressions; updated both distribution documents; rebuilt the tracked executable; created independent v22 while retaining v21; restored tracked build-tool bytecode and removed temporary v22 build/cache files.
+- Modified files: `elo_model.py`; `elo_calculator.py`; `elo_simulator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v22-Windows-x64/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v22-Windows-x64/README.txt`; `release/EloLeagueCalculator-v22-Windows-x64.zip`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 72 unit tests passed; `git diff --check` and ASCII-only Python checks passed. PyInstaller 6.22.0 on Python 3.12.14 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; only expected platform-conditional warnings remained. The v22 executable passed an isolated five-second launch check, and both exact-path processes were stopped. The archive contains only the executable and README. EXE SHA-256: `7800EBB73AA42981980E03D1CFD9243542089286088576118FB6D6CBDBDF3571`. ZIP SHA-256: `FA43D2AD2AB032E82FD3B988EA5EDBF36FF7C9B6DEB3019F9D48342CE2150802`.
+- GitHub Timeline: Changes are local and uncommitted; the user explicitly requested a normal push to `origin/main`.
+## 2026-09-07 16:16:06 -04:00
+
+- User Prompt summary: Push the dynamic League Settings length fix.
+- Actions: Integrated the change onto current `origin/main` after ten newer v19-v21 commits; removed the remaining fixed 760-pixel target; made League Settings calculate size from visible content and dynamically resize/recenter when format or games-to-win changes; retained screen capping, scrolling, and fixed Save/Cancel controls.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: Python compilation and all 70 unit tests passed; focused whitespace check passed; dynamic-height and screen-cap regression coverage passed.
+- GitHub Timeline: Integrated changes are local and uncommitted on `codex/dynamic-popup`, based on current `origin/main`; the user requested a normal push.
+
+## 2026-09-07 16:17:37 -04:00
+
+- User Prompt summary: Complete the dynamic League Settings popup push.
+- Actions: Created focused commit `a662745` from the latest v21 branch and pushed it normally to `origin/main`; existing release packages and unrelated generated files were excluded.
+- Modified files: Append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and test changes are contained in `a662745`.
+- Tests and verification: Publication verification remains 70/70 tests passing; local integration `HEAD` and `origin/main` both resolved to `a662745417a5cfd4c52a49abc917402a0c2dbace` after push.
+- GitHub Timeline: Commit `a662745` was pushed successfully to `origin/main`; this publication record will be pushed as a log-only follow-up commit.
+
+## 2026-09-07 16:29
+- User Prompt summary: Complete H2H Game % integration and push after concurrent remote changes.
+- Actions: Fetched remote dynamic League Settings commits `a662745` and `4960b16`; normally merged them with local commit `6a46f57`; preserved both append-only histories; combined dynamic popup sizing with H2H Match/Game tiebreakers; reran the merged suite; rebuilt and smoke-tested v22 from the final merged source; refreshed both executable copies, archive, documentation, and hashes; restored tracked build-cache bytecode; and removed temporary merged-build files.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `README.md`; `DISTRIBUTION_README.txt`; `dist/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v22-Windows-x64/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v22-Windows-x64/README.txt`; `release/EloLeagueCalculator-v22-Windows-x64.zip`; `historyworklog.txt`; `历史工作记录.txt`. The H2H model/simulator implementation remains in local commit `6a46f57`.
+- Tests and verification: All 72 merged unit tests passed; conflict-marker, whitespace, and ASCII-only Python checks passed. PyInstaller 6.22.0 on Python 3.12.14 classified 1,003 runtime entries and included `pyi_rth__tkinter.py`; the final merged v22 executable passed an isolated five-second launch check and both exact-path processes were stopped. EXE SHA-256: `6FFF6FEE8158655F5F712C7797C8DA6F1AF282415DF82825E261000EB7160109`. ZIP SHA-256: `F23D3FC1B43B26FE0CC191CA0EA835EDBBB0D9D45B64E7135F38DCD530210D04`.
+- GitHub Timeline: The normal merge is resolved locally and awaiting its merge commit; the user explicitly requested a normal push to `origin/main`.
+
+## 2026-09-07 16:31
+- User Prompt summary: Complete H2H Game % and v22 GitHub publication.
+- Actions: Created local implementation commit `6a46f57`; normally merged remote dynamic-popup commits in `87bf2d2`; rebuilt v22 from the combined source; fetched immediately before publication, confirmed ahead 2 / behind 0, and pushed without rewriting history.
+- Modified files: This append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and v22 artifacts are in `6a46f57` and final integration is in `87bf2d2`.
+- Tests and verification: Publication verification remains 72/72 tests passing; final EXE SHA-256 is `6FFF6FEE8158655F5F712C7797C8DA6F1AF282415DF82825E261000EB7160109`; final ZIP SHA-256 is `F23D3FC1B43B26FE0CC191CA0EA835EDBBB0D9D45B64E7135F38DCD530210D04`; `git ls-remote` returned `87bf2d22911a62dcc3ce87569dd9ffef3af62688`.
+- GitHub Timeline: Commits `6a46f57` and `87bf2d2` were pushed successfully to `origin/main`; this publication record will be committed and pushed as a log-only follow-up.
+
+## 2026-09-07 19:36:26 -04:00
+
+- User Prompt summary: Patch the code-review findings and push them to GitHub.
+- Actions: Fixed the data-loss path where the first edit after an unreadable database load replaced the original file; startup now creates a byte-for-byte copy in `%LOCALAPPDATA%\EloLeagueCalculator\recovery`, blocks ordinary league saves if that copy fails, and retains an explicitly confirmed backup-restore path. Quantized the standings Elo ranking/grouping key to the league's configured decimal precision so players displaying the same Elo enter the H2H Match/Game tiebreakers consistently. Added three regression tests.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `historyworklog.txt`; `历史工作记录.txt`. The existing v22 executable/package was not rebuilt or modified.
+- Tests and verification: Five focused tests and all 75 unit tests passed; five Python files passed in-memory compilation; exact conflict-marker, Python ASCII-only, and whitespace checks passed; no bytecode or temporary build files were produced.
+- GitHub Timeline: Changes are on synchronized local `main` and are not committed yet; the user explicitly requested a normal commit and push to `origin/main`.
+
+## 2026-09-07 19:38:21 -04:00
+
+- User Prompt summary: Complete GitHub publication of the reviewed data-recovery and Elo-tie fixes.
+- Actions: Created commit `be60154` containing unreadable-database recovery/save protection, precision-normalized standings ranking, and three regression tests; fetched again before publication and confirmed ahead 1 / behind 0; verified the GitHub branch tip with `git ls-remote` after a normal push.
+- Modified files: This append-only update to `historyworklog.txt` and `历史工作记录.txt`; implementation and tests are in commit `be60154`. The existing v22 executable/package remains unchanged.
+- Tests and verification: Publication verification remains 75/75 unit tests passing; in-memory compilation, exact conflict-marker, Python ASCII-only, and whitespace checks passed; remote verification returned `be60154fff83bb6d91bd31bff1b347cad1c1707a`.
+- GitHub Timeline: Commit `be60154` was pushed successfully to `origin/main`; this publication record will be committed and pushed as a log-only follow-up.
+## 2026-09-07 16:26:06 -04:00
+
+- User Prompt summary: Standings still show W-D-L when draws are not allowed.
+- Actions: Made the standings match-record heading and row format conditional per league: draw-enabled leagues show Match W-D-L, while draw-disabled leagues show Match W-L. Existing historical draws remain preserved and continue contributing to numerical match percentages and tiebreak calculations; only the disabled-league record display omits the draw field. Updated documentation and regression coverage.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `README.md`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: Python compilation and all 71 unit tests passed; focused whitespace check passed; regression test verifies immediate W-L/W-D-L heading and row changes when the setting changes.
+- GitHub Timeline: Not committed and not pushed; the user did not request publication. Changes are isolated on local branch `codex/standings-wl` based on current `origin/main`.
+
+## 2026-09-07 19:44:18 -04:00
+
+- User Prompt summary: Merge branches.
+- Actions: Fetched the remotes and identified `origin/codex/standings-wl` as the only branch not merged into `main`; performed a normal non-fast-forward merge; resolved the source, test, footer, and append-only history conflicts; retained the branch's conditional Match W-L/Match W-D-L standings display together with the newer unreadable-database recovery guard, precision-normalized Elo tie grouping, H2H Match %, H2H Game %, simulator tiebreakers, and dynamically sized settings dialog; excluded generated `__pycache__` bytecode from the merge.
+- Modified files: `README.md`; `elo_calculator.py`; `test_elo_model.py`; `historyworklog.txt`; `历史工作记录.txt`.
+- Tests and verification: All 76 unit tests passed; exact conflict-marker, whitespace, and Python ASCII-only checks passed; generated bytecode was not included.
+- GitHub Timeline: The merge is resolved locally and awaiting its merge commit; the user requested branch merging but did not request a push.
+
+## 2026-09-08 20:41:32 -04:00
+
+- User Prompt summary: Push the completed branch merge to GitHub.
+- Actions: Verified a clean local `main`; fetched `origin`; confirmed local `main` was ahead by two commits and behind by zero; prepared the normal non-force publication of the conditional Match W-L/Match W-D-L merge and its audit record.
+- Modified files: `historyworklog.txt`; `历史工作记录.txt`. The merged implementation, tests, and documentation are in merge commit `0b84298`.
+- Tests and verification: The merged suite remains verified at 76/76 unit tests passing; pre-push ancestry check reported ahead 2 / behind 0.
+- GitHub Timeline: Merge commit `0b84298` exists locally; this publication record is awaiting its log-only commit, after which both will be pushed normally to `origin/main`.
+
+## 2026-09-08 20:42:52 -04:00
+
+- User Prompt summary: Complete and verify the GitHub push of the merged branches.
+- Actions: Committed the publication audit as `8b287a3`; fetched immediately before publication; confirmed ahead 3 / behind 0; pushed `main` normally; verified the exact remote branch tip with `git ls-remote`.
+- Modified files: This append-only update to `historyworklog.txt` and `历史工作记录.txt`; the branch merge is in `0b84298`, and the initial publication record is in `8b287a3`.
+- Tests and verification: Publication verification remains 76/76 unit tests passing; post-push worktree was clean and synchronized; remote verification returned `8b287a3607093ff86fbc5552b7200e0bd4dc56e6`.
+- GitHub Timeline: Merge commit `0b84298` and publication commit `8b287a3` were pushed successfully to `origin/main`; this final verified timeline entry will be committed and pushed as a log-only follow-up.

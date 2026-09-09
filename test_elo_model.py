@@ -613,6 +613,37 @@ class EloModelTests(unittest.TestCase):
             app.preview_var.set.call_args.args[0],
         )
 
+    def test_standings_hide_draw_column_when_draws_are_disabled(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.league = League.new(2)
+        app.league.record_draw(0, 1)
+        app.league.allow_draws = False
+        app.standings = Mock()
+        app.standings.selection.return_value = ()
+        app.standings.get_children.return_value = ()
+
+        app._refresh_standings()
+
+        app.standings.heading.assert_called_once_with(
+            "match_record", text="Match W-L"
+        )
+        self.assertEqual(
+            app.standings.insert.call_args_list[0].kwargs["values"][4], "0-0"
+        )
+
+        app.league.allow_draws = True
+        app.standings.reset_mock()
+        app.standings.selection.return_value = ()
+        app.standings.get_children.return_value = ()
+        app._refresh_standings()
+
+        app.standings.heading.assert_called_once_with(
+            "match_record", text="Match W-D-L"
+        )
+        self.assertEqual(
+            app.standings.insert.call_args_list[0].kwargs["values"][4], "0-1-0"
+        )
+
     def test_draw_moves_unequal_ratings_toward_each_other_and_is_zero_sum(self) -> None:
         league = League.new(2)
         league.player(0).rating = 1700.0
@@ -1211,7 +1242,6 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-07 19:30 America/New_York.
-# Changes: Line 14 and lines 248-271 cover precision-safe Elo ties; lines
-# 1029-1070 cover byte-for-byte unreadable-database recovery and unsafe-save
-# blocking, alongside the existing settings, H2H, simulation, and storage tests.
+# Generated: 2026-09-07 19:43 America/New_York.
+# Changes: Covers data recovery, precision-safe Elo ties, conditional W-L/W-D-L
+# standings, dynamic settings, H2H tiebreaks, simulation, persistence, and SB.
