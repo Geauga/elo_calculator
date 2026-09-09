@@ -176,7 +176,7 @@ def simulate_first_to_n_league(
         match_losses = [0] * player_count
         game_wins = [0] * player_count
         game_losses = [0] * player_count
-        winners_and_losers: list[tuple[int, int]] = []
+        season_matches: list[tuple[int, int, int, int]] = []
         season_pairings = pairings.copy()
         rng.shuffle(season_pairings)
 
@@ -205,7 +205,9 @@ def simulate_first_to_n_league(
             game_losses[first] += second_games
             game_wins[second] += second_games
             game_losses[second] += first_games
-            winners_and_losers.append((winner, loser))
+            season_matches.append(
+                (winner, loser, games_to_win, loser_games)
+            )
 
             if league.calculate_elo:
                 multiplier = league.win_condition.get_multiplier(
@@ -222,27 +224,45 @@ def simulate_first_to_n_league(
                 ratings[loser] -= change
 
         sb_scores = [0] * player_count
-        for winner, loser in winners_and_losers:
+        for winner, loser, _winner_games, _loser_games in season_matches:
             sb_scores[winner] += match_wins[loser]
 
         match_win_groups: dict[int, set[int]] = {}
         for index, wins in enumerate(match_wins):
             match_win_groups.setdefault(wins, set()).add(index)
         head_to_head_scores = [0.0] * player_count
+        head_to_head_game_wins = [0] * player_count
+        head_to_head_game_losses = [0] * player_count
         for tied_indices in match_win_groups.values():
             matches_per_player = len(tied_indices) - 1
             if matches_per_player == 0:
                 continue
-            for winner, loser in winners_and_losers:
+            for winner, loser, winner_games, loser_games in season_matches:
                 if winner in tied_indices and loser in tied_indices:
                     head_to_head_scores[winner] += 100.0 / matches_per_player
+                    head_to_head_game_wins[winner] += winner_games
+                    head_to_head_game_losses[winner] += loser_games
+                    head_to_head_game_wins[loser] += loser_games
+                    head_to_head_game_losses[loser] += winner_games
+
+        head_to_head_game_scores = [0.0] * player_count
+        for index in range(player_count):
+            games_played = (
+                head_to_head_game_wins[index]
+                + head_to_head_game_losses[index]
+            )
+            if games_played:
+                head_to_head_game_scores[index] = (
+                    100.0 * head_to_head_game_wins[index] / games_played
+                )
 
         def standing_key(
             index: int,
-        ) -> tuple[int, float, int, int, int, float]:
+        ) -> tuple[int, float, float, int, int, int, float]:
             return (
                 -match_wins[index],
                 -head_to_head_scores[index],
+                -head_to_head_game_scores[index],
                 -sb_scores[index],
                 -(game_wins[index] - game_losses[index]),
                 -game_wins[index],
@@ -312,6 +332,6 @@ def simulate_first_to_n_league(
 # Upstream: elo_model.py supplies league rules, ratings, and Elo calculations.
 # Upstream purpose: Represent validated leagues and persistent match results.
 # Environment: Python 3.10+ on Windows or any platform supported by the model.
-# Generated: 2026-09-07 14:20 America/New_York.
-# Changes: Apply head-to-head after match wins when ranking simulated seasons;
-# retain reproducible seasons and normal persistence, backup, and audit paths.
+# Generated: 2026-09-07 16:15 America/New_York.
+# Changes: Apply head-to-head match and game scores after match wins when
+# ranking simulated seasons; retain reproducibility and normal save workflows.

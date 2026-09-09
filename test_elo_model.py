@@ -11,6 +11,7 @@ from elo_calculator import (
     THEME_PALETTES,
     fit_window_to_screen,
     load_theme,
+    preserve_unreadable_database,
     save_theme,
 )
 from elo_model import (
@@ -244,6 +245,54 @@ class EloModelTests(unittest.TestCase):
         ]
         self.assertEqual(displayed_names[:2], ["Player 1", "Player 2"])
 
+    def test_display_tied_elo_uses_head_to_head_despite_float_residue(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.league = League.new(2)
+        app.league.calculate_elo = False
+        app.league.elo_decimal_places = 2
+        app.league.players[0].rating = 1503.0399999999997
+        app.league.players[1].rating = 1503.0400000000002
+        app.league.record_match(0, 1, 0)
+        app.standings = Mock()
+        app.standings.selection.return_value = ()
+        app.standings.get_children.return_value = ()
+
+        self.assertEqual(
+            app._format_elo(app.league.players[0].rating),
+            app._format_elo(app.league.players[1].rating),
+        )
+        app._refresh_standings()
+
+        displayed_names = [
+            call.kwargs["values"][1]
+            for call in app.standings.insert.call_args_list
+        ]
+        self.assertEqual(displayed_names, ["Player 1", "Player 2"])
+
+    def test_head_to_head_game_percentage_is_the_third_tiebreaker(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.league = League.new(3)
+        app.league.calculate_elo = False
+        app.league.record_match(0, 1, 0)
+        app.league.record_match(1, 2, 2)
+        app.league.record_match(2, 0, 2)
+        app.standings = Mock()
+        app.standings.selection.return_value = ()
+        app.standings.get_children.return_value = ()
+
+        head_to_head_games = app.league.head_to_head_game_percentages(
+            {0, 1, 2}
+        )
+        self.assertGreater(head_to_head_games[0], head_to_head_games[2])
+        self.assertGreater(head_to_head_games[2], head_to_head_games[1])
+        app._refresh_standings()
+
+        displayed_names = [
+            call.kwargs["values"][1]
+            for call in app.standings.insert.call_args_list
+        ]
+        self.assertEqual(displayed_names, ["Player 1", "Player 3", "Player 2"])
+
     def test_standings_apply_every_documented_tiebreaker(self) -> None:
         app = object.__new__(EloCalculatorApp)
         app.league = League.new(4)
@@ -347,6 +396,20 @@ class EloModelTests(unittest.TestCase):
         self.assertEqual(by_id[4].title_probability, 0.0)
         self.assertEqual(by_id[2].average_rank, 1.0)
         self.assertEqual(by_id[4].average_rank, 2.0)
+
+    def test_simulator_uses_head_to_head_games_as_third_tiebreaker(self) -> None:
+        league = League.new(4)
+        league.calculate_elo = False
+
+        result = simulate_first_to_n_league(league, simulations=1, seed=8)
+        by_id = {player.player_id: player for player in result.players}
+
+        for player_id in (0, 1, 2):
+            self.assertEqual(by_id[player_id].average_matches_won, 2.0)
+        self.assertEqual(by_id[1].title_probability, 100.0)
+        self.assertEqual(by_id[1].average_rank, 1.0)
+        self.assertEqual(by_id[0].average_rank, 2.0)
+        self.assertEqual(by_id[2].average_rank, 3.0)
 
     def test_custom_k_factor_and_rounding_control_transfer(self) -> None:
         self.assertEqual(
@@ -963,6 +1026,46 @@ class EloModelTests(unittest.TestCase):
         app.backups.create.assert_not_called()
         self.assertEqual(restored.active_league_id, first_id)
 
+    def test_unreadable_database_is_preserved_byte_for_byte(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            data_file = root / "elo_league_data.json"
+            original = b"\xff{damaged database"
+            data_file.write_bytes(original)
+
+            recovery_path = preserve_unreadable_database(
+                data_file, root / "recovery"
+            )
+
+            self.assertEqual(data_file.read_bytes(), original)
+            self.assertEqual(recovery_path.read_bytes(), original)
+            self.assertEqual(recovery_path.parent, root / "recovery")
+
+    def test_commit_is_blocked_when_unreadable_database_was_not_preserved(
+        self,
+    ) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.collection = LeagueCollection.new()
+        app.league = app.collection.active.league
+        app.backups = Mock()
+        app.audit_log = Mock()
+        app.data_save_block_reason = "Original database was not preserved."
+        previous_state = app.collection.to_dict()
+
+        with TemporaryDirectory() as directory:
+            data_file = Path(directory) / "leagues.json"
+            with patch("elo_calculator.DATA_FILE", data_file):
+                with self.assertRaisesRegex(ValueError, "not preserved"):
+                    app._commit_edit(
+                        previous_state,
+                        "player_renamed",
+                        "Unsafe replacement attempt.",
+                    )
+            self.assertFalse(data_file.exists())
+
+        app.backups.create.assert_not_called()
+        app.audit_log.append.assert_not_called()
+
     def test_backup_restores_all_leagues(self) -> None:
         collection = LeagueCollection.new()
         collection.active.league.rename_player(0, "Before Backup")
@@ -1108,6 +1211,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-07 16:14 America/New_York.
-# Changes: Covers dynamic screen-capped settings and the complete standings
-# tiebreak chain, simulator, themed graphs, Elo, draws, persistence, and SB.
+# Generated: 2026-09-07 19:30 America/New_York.
+# Changes: Line 14 and lines 248-271 cover precision-safe Elo ties; lines
+# 1029-1070 cover byte-for-byte unreadable-database recovery and unsafe-save
+# blocking, alongside the existing settings, H2H, simulation, and storage tests.

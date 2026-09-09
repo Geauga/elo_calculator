@@ -586,6 +586,34 @@ class League:
             for player_id in player_ids
         }
 
+    def head_to_head_game_percentages(
+        self, player_ids: set[int]
+    ) -> dict[int, float]:
+        """Return game-win percentages within the selected player group."""
+        games_won = {player_id: 0 for player_id in player_ids}
+        games_lost = {player_id: 0 for player_id in player_ids}
+        for match in self.matches:
+            if (
+                match.is_draw
+                or match.winner_id not in player_ids
+                or match.loser_id not in player_ids
+            ):
+                continue
+            games_won[match.winner_id] += match.winner_games
+            games_lost[match.winner_id] += match.loser_games
+            games_won[match.loser_id] += match.loser_games
+            games_lost[match.loser_id] += match.winner_games
+        return {
+            player_id: (
+                100.0
+                * games_won[player_id]
+                / (games_won[player_id] + games_lost[player_id])
+                if games_won[player_id] + games_lost[player_id]
+                else 0.0
+            )
+            for player_id in player_ids
+        }
+
     def statistics(self) -> dict[int, PlayerStatistics]:
         """Return match and individual-game statistics for every player."""
         statistics = {
@@ -843,8 +871,8 @@ class League:
 # Upstream: UI and storage layers provide league configuration and saved JSON data.
 # Upstream purpose: Collect user-entered results and restore persistent league state.
 # Environment: Python 3.10+ on Windows, with platform-independent model tests.
-# Generated: 2026-09-03 20:22 America/New_York.
+# Generated: 2026-09-07 16:15 America/New_York.
 # Changes: Integrated configurable Elo and draw policies with historical match
 # settings, transactional replay, W-D-L/SB statistics, validation, persistence,
-# backward-compatible schema migration, and head-to-head match-score calculation.
+# backward-compatible schema migration, and head-to-head match/game calculation.
 # Simulation remains in elo_simulator.py.
