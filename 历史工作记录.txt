@@ -449,6 +449,13 @@
 - 测试或验证结果：publication verification 保持 70/70 tests passing；EXE SHA-256 为 `7C13201EE3A81D7923909A0BC6BCA4D7A720D83BCD102AF293CD3C81D3A6C994`；ZIP SHA-256 为 `4223B2A577BC62F0CF858EDA60E8FC2742F823B7EC83CCCE037EB8C9D3415062`；`git ls-remote` 返回 `496270466f14f5a1d6bcb7e32ea6a07b5c6a99d0`。
 - GitHub Timeline：commit `4962704` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 提交并 push。
 
+## 2026-09-07 16:24:43 -04:00
+
+- 用户 Prompt 摘要：增加 game head-to-head 作为 third tiebreaker 并 push。
+- 具体动作：增加 relevant tied group 内的 head-to-head game-win percentage；在 live standings 中放到 Elo 和 H2H Match % 之后，在 simulated-season ranking 中放到 match wins 和 H2H Match % 之后；增加 live 和 deterministic simulator regressions；更新两份 distribution documents；重建 tracked executable；保留 v21 并创建独立 v22；恢复 tracked build-tool bytecode 并删除 temporary v22 build/cache files。
+- 修改文件：`elo_model.py`；`elo_calculator.py`；`elo_simulator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v22-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v22-Windows-x64/README.txt`；`release/EloLeagueCalculator-v22-Windows-x64.zip`；`historyworklog.txt`；本文件。
+- 测试或验证结果：72 项 unit tests 全部通过；`git diff --check` 和 Python ASCII-only checks 通过。PyInstaller 6.22.0 在 Python 3.12.14 上 classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；仅保留预期 platform-conditional warnings。v22 executable 通过 isolated 5-second launch check，两个 exact-path processes 均停止。Archive 仅包含 executable 和 README。EXE SHA-256 为 `7800EBB73AA42981980E03D1CFD9243542089286088576118FB6D6CBDBDF3571`；ZIP SHA-256 为 `FA43D2AD2AB032E82FD3B988EA5EDBF36FF7C9B6DEB3019F9D48342CE2150802`。
+- GitHub Timeline：changes 位于本地且尚未 commit；用户已明确要求 normal push 至 `origin/main`。
 ## 2026-09-07 16:16:06 -04:00
 
 - 用户 Prompt 摘要：push dynamic League Settings length fix。
@@ -473,3 +480,34 @@
 - 修改文件：elo_calculator.py；historyworklog.txt；本文件。
 - 测试或验证绒果：70 项单元测试全通过。
 - GitHub Timeline：仅在本地提亥 (commit)，未玨送。
+## 2026-09-07 16:29:40 -04:00
+
+- 用户 Prompt 摘要：concurrent remote changes 后完成 H2H Game % integration 并 push。
+- 具体动作：fetch remote dynamic League Settings commits `a662745` 和 `4960b16`；与 local commit `6a46f57` normal merge；保留两份 append-only histories；合并 dynamic popup sizing 与 H2H Match/Game tiebreakers；重跑 merged suite；从 final merged source 重建并 smoke-test v22；刷新两个 executable copies、archive、documentation 和 hashes；恢复 tracked build-cache bytecode；删除 temporary merged-build files。
+- 修改文件：`elo_calculator.py`；`test_elo_model.py`；`README.md`；`DISTRIBUTION_README.txt`；`dist/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v22-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v22-Windows-x64/README.txt`；`release/EloLeagueCalculator-v22-Windows-x64.zip`；`historyworklog.txt`；本文件。H2H model/simulator implementation 保留在 local commit `6a46f57`。
+- 测试或验证结果：72 项 merged unit tests 全部通过；conflict-marker、whitespace 和 Python ASCII-only checks 通过。PyInstaller 6.22.0 在 Python 3.12.14 上 classified 1,003 runtime entries 并包含 `pyi_rth__tkinter.py`；final merged v22 executable 通过 isolated 5-second launch check，两个 exact-path processes 均停止。EXE SHA-256 为 `6FFF6FEE8158655F5F712C7797C8DA6F1AF282415DF82825E261000EB7160109`；ZIP SHA-256 为 `F23D3FC1B43B26FE0CC191CA0EA835EDBBB0D9D45B64E7135F38DCD530210D04`。
+- GitHub Timeline：normal merge 已在本地完成 conflict resolution，等待 merge commit；用户已明确要求 normal push 至 `origin/main`。
+
+## 2026-09-07 16:31:31 -04:00
+
+- 用户 Prompt 摘要：完成 H2H Game % 和 v22 GitHub publication。
+- 具体动作：创建 local implementation commit `6a46f57`；在 `87bf2d2` normal merge remote dynamic-popup commits；从 combined source 重建 v22；publication 前立即 fetch，确认 ahead 2 / behind 0，并在不重写历史的情况下 push。
+- 修改文件：本次仅 append 更新 `historyworklog.txt` 和本文件；implementation 和 v22 artifacts 位于 `6a46f57`，final integration 位于 `87bf2d2`。
+- 测试或验证结果：publication verification 保持 72/72 tests passing；final EXE SHA-256 为 `6FFF6FEE8158655F5F712C7797C8DA6F1AF282415DF82825E261000EB7160109`；final ZIP SHA-256 为 `F23D3FC1B43B26FE0CC191CA0EA835EDBBB0D9D45B64E7135F38DCD530210D04`；`git ls-remote` 返回 `87bf2d22911a62dcc3ce87569dd9ffef3af62688`。
+- GitHub Timeline：commits `6a46f57` 和 `87bf2d2` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 提交并 push。
+
+## 2026-09-07 19:36:26 -04:00
+
+- 用户 Prompt 摘要：patch code-review findings 并 push 到 GitHub。
+- 具体动作：修复 unreadable database 首次编辑会覆盖原始文件的 data-loss path；加载失败时先在 `%LOCALAPPDATA%\EloLeagueCalculator\recovery` 创建 byte-for-byte recovery copy，copy 失败时阻止普通 league saves，同时保留经用户确认的 backup restore 路径；standings 使用 league configured decimal precision 对 Elo ranking/grouping key 做一致量化，使显示相同 Elo 的 players 正确进入 H2H Match/Game tiebreakers；增加三个 regression tests。
+- 修改文件：`elo_calculator.py`；`test_elo_model.py`；`historyworklog.txt`；本文件。现有 v22 executable/package 未重建或修改。
+- 测试或验证结果：5 个 focused tests 和完整 75 项 unit tests 全部通过；5 个 Python files 通过 in-memory compilation；exact conflict-marker、Python ASCII-only、whitespace checks 全部通过；worktree 未产生 bytecode 或 temporary build files。
+- GitHub Timeline：changes 当前位于 synchronized local `main` 且尚未 commit；用户已明确要求 normal commit 和 push 至 `origin/main`。
+
+## 2026-09-07 19:38:21 -04:00
+
+- 用户 Prompt 摘要：完成 reviewed data-recovery 和 Elo tie fixes 的 GitHub publication。
+- 具体动作：创建 commit `be60154`，包含 unreadable-database recovery/save guard、precision-normalized standings ranking 和三个 regression tests；push 前重新 fetch，确认 ahead 1 / behind 0；normal push 后使用 `git ls-remote` 核对 GitHub branch tip。
+- 修改文件：本次仅 append 更新 `historyworklog.txt` 和本文件；implementation 和 tests 位于 commit `be60154`。现有 v22 executable/package 保持不变。
+- 测试或验证结果：publication verification 保持 75/75 unit tests passing；in-memory compilation、exact conflict-marker、Python ASCII-only 和 whitespace checks 通过；remote verification 返回 `be60154fff83bb6d91bd31bff1b347cad1c1707a`。
+- GitHub Timeline：commit `be60154` 已成功 push 至 `origin/main`；本 publication record 将作为 log-only follow-up commit 提交并 push。
