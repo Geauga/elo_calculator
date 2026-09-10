@@ -605,3 +605,12 @@
 - Modified files: This append-only publication record; package and documentation files are in d12f8d4.
 - Tests and verification: Artifact hashes match the tested rebuild; staged whitespace checks passed; package push completed and worktree was clean. The unchanged source retains its 98 passing tests.
 - GitHub Timeline: v23 package commit d12f8d4c6493579f4049fd89e714556fd5cbf72b is pushed and verified on GitHub main. This log-only verification entry follows in a separate commit/push.
+
+## 2026-09-10 19:57:10 -04:00
+
+- 用户 Prompt 摘要：为 graphs 添加 points 并 push。
+- 实际执行位置：本地 Windows Git repository `C:\Users\danie\OneDrive\Documents\ChatGPT\elo`；publication target 为 GitHub `origin/main`。
+- 具体动作：为 multi-value Elo、match win percentage、game win percentage 和 SB line graphs 的每个 observation 添加 theme-aware circular marker；保留既有 singleton marker 和 H2H bar chart behavior；更新 documentation；扩展 SB graph regression，验证 marker count 和 exact coordinates；排除 tests 产生的 bytecode。
+- 修改文件：`elo_calculator.py`；`test_elo_model.py`；`README.md`；本文件。既有 v23 executable 和 ZIP 未重建或修改。
+- 测试或验证结果：在 real Windows Tk environment 中完整 98 项 unit tests 全部通过且无 skips；6 个 Python modules 通过 in-memory compilation；exact conflict-marker 和 whitespace checks 通过；marker regression 验证三个 observations 生成三个 centered markers。
+- GitHub Timeline：latest fetch 确认 local `main` 与 `origin/main` 均位于 `b8ab537`；changes 尚未 commit 或 push，用户已明确授权 normal push。
