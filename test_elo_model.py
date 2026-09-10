@@ -1,3 +1,5 @@
+# test_elo_model.py
+# Request: Add regressions for reviewed settings, replay, recovery, and UI defects.
 """Tests for the Elo league rules."""
 
 from pathlib import Path
@@ -8,16 +10,22 @@ from unittest.mock import Mock, patch
 from elo_calculator import (
     ApplicationInstanceLock,
     EloCalculatorApp,
+    STANDINGS_COLUMN_IDS,
     THEME_PALETTES,
+    _player_elo_history,
     fit_window_to_screen,
+    load_app_settings,
     load_theme,
+    load_visible_columns,
     preserve_unreadable_database,
     save_theme,
 )
 from elo_model import (
+    DEFAULT_TIEBREAKER_HIERARCHY,
     DEFAULT_ELO_DECIMAL_PLACES,
     INITIAL_RATING,
     K_FACTOR,
+    LEAGUE_SCHEMA_VERSION,
     MAX_CUSTOM_SCORE,
     MAX_ELO_DECIMAL_PLACES,
     MAX_K_FACTOR,
@@ -176,6 +184,18 @@ class EloModelTests(unittest.TestCase):
                 self.assertEqual(graph_colors["text"], palette["muted"])
                 self.assertEqual(graph_colors["plot"], palette["selection"])
 
+    def test_elo_history_uses_the_saved_starting_rating(self) -> None:
+        league = League.new(3)
+        league.base_elo = 1200.0
+        league.reset_standings()
+        match = league.record_match(0, 1, 0)
+
+        self.assertEqual(
+            _player_elo_history(league, 0),
+            [1200.0, 1200.0 + match.rating_change],
+        )
+        self.assertEqual(_player_elo_history(league, 2), [1200.0])
+
     def test_dynamic_settings_window_size_is_capped_to_usable_screen(self) -> None:
         self.assertEqual(fit_window_to_screen(1920, 1080, 560, 760), (560, 760))
         self.assertEqual(fit_window_to_screen(1920, 1080, 620, 1400), (620, 980))
@@ -216,6 +236,29 @@ class EloModelTests(unittest.TestCase):
         self.assertEqual(
             displayed_names,
             [f"Player {number}" for number in range(1, 13)],
+        )
+
+    def test_standings_menu_label_follows_the_draw_setting(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.league = League.new(2)
+        app.standings = Mock()
+        app.standings.selection.return_value = ()
+        app.standings.get_children.return_value = ()
+        app.settings_menu = Mock()
+        app.column_menu_indices = {"match_record": 7}
+
+        app._refresh_standings()
+        app.settings_menu.entryconfigure.assert_called_with(
+            7,
+            label="Show Match W-D-L",
+        )
+
+        app.league.allow_draws = False
+        app.settings_menu.reset_mock()
+        app._refresh_standings()
+        app.settings_menu.entryconfigure.assert_called_with(
+            7,
+            label="Show Match W-L",
         )
 
     def test_head_to_head_is_the_secondary_standings_tiebreaker(self) -> None:
@@ -452,6 +495,162 @@ class EloModelTests(unittest.TestCase):
                         1500.0,
                         decimal_places=decimal_places,
                     )
+
+    def test_configurable_league_settings_round_trip_and_validate(self) -> None:
+        league = League.new(2)
+        league.base_elo = 1200.0
+        league.k_factor_scaling = True
+        league.tiebreaker_hierarchy = list(
+            reversed(DEFAULT_TIEBREAKER_HIERARCHY)
+        )
+
+        restored = League.from_dict(league.to_dict())
+
+        self.assertEqual(restored.base_elo, 1200.0)
+        self.assertTrue(restored.k_factor_scaling)
+        self.assertEqual(
+            restored.tiebreaker_hierarchy,
+            list(reversed(DEFAULT_TIEBREAKER_HIERARCHY)),
+        )
+        self.assertEqual(restored.to_dict()["schema_version"], LEAGUE_SCHEMA_VERSION)
+
+        for invalid_base in (float("nan"), float("inf"), True, "1500", None):
+            with self.subTest(invalid_base=invalid_base):
+                data = League.new(2).to_dict()
+                data["base_elo"] = invalid_base
+                with self.assertRaisesRegex(ValueError, "invalid league settings"):
+                    League.from_dict(data)
+
+        for invalid_scaling in ("false", 0, 1, None):
+            with self.subTest(invalid_scaling=invalid_scaling):
+                data = League.new(2).to_dict()
+                data["k_factor_scaling"] = invalid_scaling
+                with self.assertRaisesRegex(ValueError, "invalid league settings"):
+                    League.from_dict(data)
+
+        invalid_hierarchies = (
+            [],
+            ["rating"] * len(DEFAULT_TIEBREAKER_HIERARCHY),
+            [*DEFAULT_TIEBREAKER_HIERARCHY[:-1], "unknown"],
+            "rating",
+        )
+        for invalid_hierarchy in invalid_hierarchies:
+            with self.subTest(invalid_hierarchy=invalid_hierarchy):
+                data = League.new(2).to_dict()
+                data["tiebreaker_hierarchy"] = invalid_hierarchy
+                with self.assertRaisesRegex(ValueError, "invalid league settings"):
+                    League.from_dict(data)
+
+    def test_schema_seven_defaults_new_settings_and_upgrades_to_eight(self) -> None:
+        data = League.new(2).to_dict()
+        data["schema_version"] = 7
+        data.pop("base_elo")
+        data.pop("k_factor_scaling")
+        data.pop("tiebreaker_hierarchy")
+
+        restored = League.from_dict(data)
+
+        self.assertEqual(restored.base_elo, INITIAL_RATING)
+        self.assertFalse(restored.k_factor_scaling)
+        self.assertEqual(
+            restored.tiebreaker_hierarchy,
+            list(DEFAULT_TIEBREAKER_HIERARCHY),
+        )
+        self.assertEqual(restored.to_dict()["schema_version"], 8)
+
+    def test_base_elo_is_used_when_roster_is_replayed(self) -> None:
+        league = League.new(3)
+        league.base_elo = 1200.0
+        league.reset_standings()
+        retained = league.record_match(0, 1, 0)
+        expected_ratings = (league.player(0).rating, league.player(1).rating)
+
+        league.resize_players(2)
+
+        self.assertEqual(
+            (league.player(0).rating, league.player(1).rating),
+            expected_ratings,
+        )
+        self.assertEqual(league.matches[0].rating_change, retained.rating_change)
+        self.assertEqual(league.matches[0].winner_rating_before, 1200.0)
+        self.assertEqual(league.matches[0].loser_rating_before, 1200.0)
+
+        established = League.new(3)
+        established.record_match(0, 1, 0)
+        original_ratings = (
+            established.player(0).rating,
+            established.player(1).rating,
+        )
+        established.base_elo = 1200.0
+        established.resize_players(2)
+        self.assertEqual(
+            (established.player(0).rating, established.player(1).rating),
+            original_ratings,
+        )
+
+    def test_k_factor_scaling_is_persisted_and_replayed(self) -> None:
+        league = League.new(3)
+        league.k_factor = MAX_K_FACTOR
+        league.k_factor_scaling = True
+
+        retained = league.record_match(0, 1, 0)
+        expected_ratings = (league.player(0).rating, league.player(1).rating)
+        restored = League.from_dict(league.to_dict())
+        restored.resize_players(2)
+
+        self.assertEqual(retained.rating_change, 650.0)
+        self.assertEqual(retained.k_factor, MAX_K_FACTOR)
+        self.assertEqual(retained.multiplier, 1.3)
+        self.assertEqual(restored.matches[0].rating_change, 650.0)
+        self.assertEqual(
+            (restored.player(0).rating, restored.player(1).rating),
+            expected_ratings,
+        )
+
+    def test_k_factor_scaling_validates_scores_before_scaling(self) -> None:
+        league = League.new(2)
+        league.k_factor_scaling = True
+        state = league.to_dict()
+
+        for winner_games, loser_games in (
+            ("3", 0),
+            (3, "0"),
+            (3, True),
+            (3, 0.5),
+        ):
+            with self.subTest(
+                winner_games=winner_games,
+                loser_games=loser_games,
+            ):
+                with self.assertRaises(ValueError):
+                    league.record_match(
+                        0,
+                        1,
+                        loser_games,
+                        winner_games=winner_games,
+                    )
+                self.assertEqual(league.to_dict(), state)
+
+    def test_simulators_apply_k_factor_scaling(self) -> None:
+        league = League.new(2)
+        league.k_factor_scaling = True
+
+        with patch("elo_simulator.rating_change", wraps=rating_change) as change:
+            season = simulate_first_to_n_season(league, seed=17)
+        self.assertEqual(change.call_count, 1)
+        expected_multiplier = league.elo_multiplier(
+            season[0].loser_games,
+            season[0].winner_games,
+        )
+        self.assertEqual(
+            change.call_args.args[2],
+            expected_multiplier,
+        )
+
+        with patch("elo_simulator.rating_change", wraps=rating_change) as change:
+            simulate_first_to_n_league(league, simulations=1, seed=17)
+        self.assertEqual(change.call_count, 1)
+        self.assertEqual(change.call_args.args[2], expected_multiplier)
 
     def test_rating_overflow_is_rejected_without_mutating_league(self) -> None:
         with self.assertRaisesRegex(ValueError, "Rating change must be finite"):
@@ -737,6 +936,28 @@ class EloModelTests(unittest.TestCase):
         self.assertEqual(league.matches, [])
         self.assertTrue(all(record == (0, 0) for record in league.records().values()))
 
+    def test_reset_messages_use_the_configured_base_elo(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.collection = LeagueCollection.new()
+        app.league = app.collection.active.league
+        app.league.base_elo = 1200.0
+        app.league.record_match(0, 1, 0)
+        app.root = Mock()
+        app.status_var = Mock()
+        app._ask_yes_no = Mock(return_value=True)
+        app._commit_edit = Mock()
+        app._refresh_all = Mock()
+        app._show_error = Mock()
+
+        app._reset_league()
+
+        self.assertIn("1200.00", app._ask_yes_no.call_args.args[1])
+        self.assertIn("1200.00", app._commit_edit.call_args.args[2])
+        self.assertIn("1200.00", app.status_var.set.call_args.args[0])
+        self.assertTrue(
+            all(player.rating == 1200.0 for player in app.league.players)
+        )
+
     def test_persistence_round_trip(self) -> None:
         league = League.new()
         league.rename_player(0, "Alice")
@@ -965,6 +1186,49 @@ class EloModelTests(unittest.TestCase):
             path.write_text('{"theme": "neon"}', encoding="utf-8")
             self.assertEqual(load_theme(path), "light")
 
+    def test_malformed_preferences_fall_back_safely(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.json"
+            path.write_bytes(b"\xff")
+            self.assertEqual(load_app_settings(path), {})
+            self.assertEqual(load_theme(path), "light")
+            self.assertEqual(
+                load_visible_columns(path),
+                list(STANDINGS_COLUMN_IDS),
+            )
+
+            path.write_text(
+                '{"theme": [], "visible_columns": [{}, "player", "player"]}',
+                encoding="utf-8",
+            )
+            self.assertEqual(load_theme(path), "light")
+            self.assertEqual(load_visible_columns(path), ["player"])
+
+    def test_column_selection_fallback_and_save_failure_are_handled(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.column_vars = {
+            column: Mock(get=Mock(return_value=False))
+            for column in STANDINGS_COLUMN_IDS
+        }
+        app.standings = Mock()
+        app.root = Mock()
+        app.status_var = Mock()
+        app._show_warning = Mock()
+
+        with patch(
+            "elo_calculator.save_visible_columns",
+            side_effect=OSError("read only"),
+        ):
+            app._update_columns()
+
+        self.assertEqual(app.visible_columns, ["player"])
+        app.column_vars["player"].set.assert_called_once_with(True)
+        app.standings.configure.assert_called_once_with(
+            displaycolumns=["player"]
+        )
+        app._show_warning.assert_called_once()
+        self.assertIn("not saved", app.status_var.set.call_args.args[0])
+
     def test_multiple_leagues_keep_independent_ratings_and_history(self) -> None:
         collection = LeagueCollection.new()
         first_id = collection.active.id
@@ -1057,6 +1321,63 @@ class EloModelTests(unittest.TestCase):
         app.backups.create.assert_not_called()
         self.assertEqual(restored.active_league_id, first_id)
 
+    def test_audit_failure_does_not_undo_a_saved_edit(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.collection = LeagueCollection.new()
+        app.league = app.collection.active.league
+        app.backups = Mock()
+        app.audit_log = Mock()
+        app.audit_log.append.side_effect = OSError("audit unavailable")
+        app.data_save_block_reason = None
+        app.root = Mock()
+        app._show_warning = Mock()
+        previous_state = app.collection.to_dict()
+        app.league.rename_player(0, "Saved Name")
+
+        with TemporaryDirectory() as directory:
+            data_file = Path(directory) / "leagues.json"
+            with patch("elo_calculator.DATA_FILE", data_file):
+                app._commit_edit(
+                    previous_state,
+                    "player_renamed",
+                    "Renamed player.",
+                )
+            restored = LeagueCollection.load(data_file)
+
+        self.assertEqual(app.league.player(0).name, "Saved Name")
+        self.assertEqual(restored.active.league.player(0).name, "Saved Name")
+        app._show_warning.assert_called_once()
+
+    def test_failed_recovery_backup_does_not_overwrite_unreadable_data(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.collection = LeagueCollection.new()
+        app.league = app.collection.active.league
+        app.backups = Mock()
+        app.backups.create.side_effect = OSError("backup unavailable")
+        app.audit_log = Mock()
+        app.data_save_block_reason = "Original database was not preserved."
+        app.root = Mock()
+        app._show_warning = Mock()
+        previous_state = app.collection.to_dict()
+        app.league.rename_player(0, "Restored Name")
+
+        with TemporaryDirectory() as directory:
+            data_file = Path(directory) / "leagues.json"
+            original = b"\xff{unreadable database"
+            data_file.write_bytes(original)
+            with patch("elo_calculator.DATA_FILE", data_file):
+                with self.assertRaisesRegex(OSError, "backup unavailable"):
+                    app._commit_edit(
+                        previous_state,
+                        "backup_restored",
+                        "Restore backup.",
+                        allow_recovery_overwrite=True,
+                    )
+            self.assertEqual(data_file.read_bytes(), original)
+
+        self.assertEqual(app.league.player(0).name, "Player 1")
+        app.audit_log.append.assert_not_called()
+
     def test_unreadable_database_is_preserved_byte_for_byte(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -1122,6 +1443,57 @@ class EloModelTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 backups.restore(backup)
 
+    def test_invalid_utf8_data_and_backups_are_handled(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            database = root / "leagues.json"
+            database.write_bytes(b"\xff")
+            with self.assertRaisesRegex(ValueError, "could not be read"):
+                LeagueCollection.load(database)
+            with self.assertRaisesRegex(ValueError, "could not be read"):
+                League.load(database)
+
+            backups = BackupManager(root / "backups")
+            backup = backups.create(LeagueCollection.new(), "manual")
+            backup.path.write_bytes(b"\xff")
+            self.assertEqual(backups.list(), [])
+            with self.assertRaisesRegex(ValueError, "could not be read"):
+                backups.restore(backup)
+
+    def test_backup_pruning_protects_new_and_selected_snapshots(self) -> None:
+        collection = LeagueCollection.new()
+        with TemporaryDirectory() as directory:
+            backups = BackupManager(Path(directory), max_backups=1)
+            future = backups.create(collection, "future")
+            future_path = future.path.with_name("99999999-future.json")
+            future.path.replace(future_path)
+
+            current = backups.create(collection, "current")
+
+            self.assertTrue(current.path.exists())
+            self.assertFalse(future_path.exists())
+
+        with TemporaryDirectory() as directory:
+            backups = BackupManager(Path(directory), max_backups=2)
+            selected = backups.create(collection, "selected")
+            selected_path = selected.path.with_name("00000000-selected.json")
+            selected.path.replace(selected_path)
+            obsolete = backups.create(collection, "obsolete")
+
+            newest = backups.create(
+                collection,
+                "newest",
+                protected_paths=(selected_path,),
+            )
+
+            self.assertTrue(selected_path.exists())
+            self.assertTrue(newest.path.exists())
+            self.assertFalse(obsolete.path.exists())
+            self.assertEqual(len(list(Path(directory).glob("*.json"))), 2)
+
+        with self.assertRaisesRegex(ValueError, "At least one backup"):
+            BackupManager(Path("unused"), max_backups=0)
+
     def test_audit_log_is_append_only_and_tracks_leagues(self) -> None:
         with TemporaryDirectory() as directory:
             log = AuditLog(Path(directory) / "audit.jsonl")
@@ -1133,6 +1505,23 @@ class EloModelTests(unittest.TestCase):
             "player_renamed", "league_reset"
         ])
         self.assertTrue(all(entry["league_name"] == "Friday" for entry in entries))
+
+    def test_audit_log_skips_invalid_utf8_and_honors_tail_limit(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "audit.jsonl"
+            log = AuditLog(path)
+            for index in range(20):
+                log.append("event", "league-1", "Friday", str(index))
+            with path.open("ab") as file:
+                file.write(b"\xff\n")
+            log.append("event", "league-1", "Friday", "last")
+
+            entries = log.read(limit=3)
+
+        self.assertEqual(
+            [entry["details"] for entry in entries],
+            ["19", "last"],
+        )
 
     def test_only_league_cannot_be_deleted(self) -> None:
         collection = LeagueCollection.new()
@@ -1231,7 +1620,10 @@ class EloModelTests(unittest.TestCase):
         upgraded = LeagueCollection.from_dict(previous_data)
 
         self.assertEqual(len(upgraded.active.league.players), 12)
-        self.assertEqual(upgraded.active.league.to_dict()["schema_version"], 7)
+        self.assertEqual(
+            upgraded.active.league.to_dict()["schema_version"],
+            LEAGUE_SCHEMA_VERSION,
+        )
 
 
 class RegressionTests(unittest.TestCase):
@@ -1244,9 +1636,9 @@ class RegressionTests(unittest.TestCase):
         # Play a match with scaling (3-0 sweep)
         match = league.record_match(0, 1, 0, 3)
 
-        # Base k_factor is 32.0, difference is 3 games. 
-        # scaled k_factor = 32.0 * (1 + 3 * 0.1) = 41.6
-        self.assertAlmostEqual(match.k_factor, 41.6)
+        # Base multiplier is 1.0, difference is 3 games. 
+        # scaled multiplier = 1.0 * (1 + 3 * 0.1) = 1.3
+        self.assertAlmostEqual(match.multiplier, 1.3)
         
         # Verify rating before resize
         p0_rating = league.player(0).rating
@@ -1271,6 +1663,11 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-07 19:43 America/New_York.
-# Changes: Covers data recovery, precision-safe Elo ties, conditional W-L/W-D-L
-# standings, dynamic settings, H2H tiebreaks, simulation, persistence, and SB.
+# Generated: 2026-09-09 07:43 America/New_York.
+# Changes: Covers schema-8 settings validation, base/scaled replay, simulator
+# scaling, recovery transaction safety, bounded/corrupt auxiliary reads, exact Elo
+# graph starts, column preferences, standings labels, and configurable reset text.
+# Changed lines: 1-28 provenance/imports; 187-198 and 241-263 graph/menu cases;
+# 499-654 settings/replay/scaling; 939-960 reset text; 1189-1231 preferences;
+# 1324-1380 save/recovery failures; 1446-1525 backup/audit cases;
+# 1623-1626 current schema assertion.
