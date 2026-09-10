@@ -561,3 +561,13 @@
 - Modified files: Append-only publication record in historyworklog.txt and 历史工作记录.txt; implementation is in a18e9c5.
 - Tests and verification: 92 unit tests passed; the settings Save callback rejected three invalid Base Elo inputs without mutation; five Python modules compiled and passed duplicate-declaration checks; whitespace and both append-only history checks passed. A diagnostic initially hit the terminal's cp1252 output encoding when printing the Chinese filename; rerunning with an ASCII result message passed. The source changes did not rebuild v22 executables.
 - GitHub Timeline: Implementation commit a18e9c5980348ccef202be79dc9544d9eef6bbae is pushed to origin/main and the worktree was clean and synchronized. This publication record will be committed and pushed as a log-only follow-up.
+
+
+## 2026-09-09 21:29:00 -04:00
+
+- User Prompt summary: Review theme compatibility; push and review the rest; additionally fix the theme.
+- Execution location: Local Windows Git repository at C:\Users\danie\OneDrive\Documents\ChatGPT\elo; GitHub target origin/main.
+- Actions: Reviewed real Tk styles and cached dropdown behavior; corrected notebook tabs, combobox hover/press and existing popdowns, head-to-head bar labels, inactive entry/spinbox selections, information headings, and scrollbar states. Added real-Tk and graph regression tests and documented source-only availability in README.
+- Modified files: elo_calculator.py; test_elo_theme.py (new); README.md; this append-only work record. No executable, build output, or bytecode was changed by this update.
+- Tests and verification: All 98 tests passed on Python 3.12 / Windows Tk 8.6.12, including 5 new theme tests with no skips. Repeated light/dark/light switching, existing/new dropdowns, graph label contrast, notebook states, selection colors, scrollbars, and disabled buttons passed. Initial sandbox Tk initialization failed; approved hidden-window diagnostics outside the sandbox succeeded. The first graph test fixture omitted app.league; the fixture was corrected and the full suite rerun successfully. git diff --check passed before provenance/log append; final checks precede commit.
+- GitHub Timeline: Initial push was rejected because another checkout advanced origin/main. Fetched and inspected incoming commits, fast-forwarded the clean checkout to bc6a46f371ed164e4de7ad83f56c055b191c34f2, then normal push returned Everything up-to-date. Theme fixes are not committed or pushed yet; commit and normal push are authorized and next.
