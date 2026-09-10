@@ -1,5 +1,5 @@
 # elo_calculator.py
-# Request: Review and patch settings validation, recovery, and display consistency.
+# Request: Patch settings/recovery defects and light/dark theme compatibility.
 """Tkinter desktop interface for the twelve-player Elo calculator."""
 
 from __future__ import annotations
@@ -96,6 +96,7 @@ THEME_PALETTES = {
         "border": "#d1d1d1",
         "selection": "#0067c0",
         "selection_text": "#ffffff",
+        "information": "#0067c0",
         "disabled": "#9b9b9b",
     },
     "dark": {
@@ -109,6 +110,7 @@ THEME_PALETTES = {
         "border": "#515151",
         "selection": "#0078d4",
         "selection_text": "#ffffff",
+        "information": "#60cdff",
         "disabled": "#858585",
     },
 }
@@ -1003,6 +1005,7 @@ class EloCalculatorApp:
             "grid": colors["button_active"],
             "text": colors["muted"],
             "plot": colors["selection"],
+            "plot_text": colors["selection_text"],
         }
 
     def _refresh_graph(self) -> None:
@@ -1134,7 +1137,7 @@ class EloCalculatorApp:
                 if bar_width > 40:
                     text_x = x2 - 5
                     text_anchor = "e"
-                    text_color = graph_colors["background"]
+                    text_color = graph_colors["plot_text"]
                 else:
                     text_x = x2 + 5
                     text_anchor = "w"
@@ -1261,8 +1264,39 @@ class EloCalculatorApp:
             darkcolor=colors["border"],
             lightcolor=colors["border"],
             troughcolor=colors["background"],
+            arrowcolor=colors["foreground"],
             font=("Segoe UI", 9),
         )
+        # Override Clam's light state colors, including unfocused selections.
+        self.style.map(
+            ".",
+            background=[("disabled", colors["background"]),
+                        ("active", colors["button_active"])],
+            foreground=[("disabled", colors["disabled"])],
+            selectbackground=[("!disabled", colors["selection"])],
+            selectforeground=[("!disabled", colors["selection_text"])],
+        )
+        self.style.configure("TNotebook", background=colors["background"])
+        self.style.configure("TNotebook.Tab", foreground=colors["foreground"])
+        self.style.map(
+            "TNotebook.Tab",
+            background=[("selected", colors["panel"]),
+                        ("active", colors["button_active"]),
+                        ("!selected", colors["button"])],
+            lightcolor=[("selected", colors["border"]),
+                        ("!selected", colors["border"])],
+        )
+        for scrollbar_style in ("Vertical.TScrollbar", "Horizontal.TScrollbar"):
+            self.style.configure(
+                scrollbar_style, background=colors["button_active"],
+                arrowcolor=colors["foreground"], troughcolor=colors["background"],
+            )
+            self.style.map(
+                scrollbar_style,
+                background=[("pressed", colors["border"]),
+                            ("active", colors["border"])],
+                arrowcolor=[("disabled", colors["disabled"])],
+            )
         self.style.configure("TFrame", background=colors["background"])
         self.style.configure("TLabel", background=colors["background"])
         self.style.configure(
@@ -1288,7 +1322,7 @@ class EloCalculatorApp:
         self.style.configure(
             "Information.TLabel",
             background=colors["background"],
-            foreground=colors["selection"],
+            foreground=colors["information"],
             font=("Segoe UI", 11, "bold"),
         )
         self.style.configure(
@@ -1359,6 +1393,8 @@ class EloCalculatorApp:
         )
         self.style.map(
             "TCombobox",
+            background=[("active", colors["button_active"]),
+                        ("pressed", colors["button_active"])],
             fieldbackground=[("readonly", colors["field"])],
             foreground=[("readonly", colors["foreground"])],
             selectbackground=[("readonly", colors["field"])],
@@ -1388,6 +1424,7 @@ class EloCalculatorApp:
             "Treeview.Heading", background=[("active", colors["button_active"])]
         )
         self.style.configure("TSeparator", background=colors["border"])
+        self._refresh_combobox_popdowns(self.root, colors)
         self._style_settings_menu()
         self.root.after_idle(lambda: self._set_title_bar_theme(self.root))
         for child in self.root.winfo_children():
@@ -1411,6 +1448,23 @@ class EloCalculatorApp:
                 )
             else:
                 self.status_var.set(f"{theme.title()} theme selected and saved.")
+
+    def _refresh_combobox_popdowns(self, parent: tk.Misc, colors: dict[str, str]) -> None:
+        """Recolor cached Tk listboxes; option_add only affects new popdowns."""
+        for widget in parent.winfo_children():
+            if isinstance(widget, ttk.Combobox):
+                listbox = f"{widget}.popdown.f.l"
+                if self.root.tk.call("winfo", "exists", listbox):
+                    self.root.tk.call(
+                        listbox, "configure",
+                        "-background", colors["field"],
+                        "-foreground", colors["foreground"],
+                        "-selectbackground", colors["selection"],
+                        "-selectforeground", colors["selection_text"],
+                    )
+                # Popdowns are Tcl-owned and cannot be traversed as Python widgets.
+                continue
+            self._refresh_combobox_popdowns(widget, colors)
 
     def _style_settings_menu(self) -> None:
         if not hasattr(self, "settings_menu"):
@@ -2965,3 +3019,9 @@ if __name__ == "__main__":
 # column setup; 1029 graph history; 1227-1238 column-save handling; 1459-1491
 # commit safety; 2131-2156 rule validation; 2388-2485 backup recovery;
 # 2563-2572 menu labels; 2890-2918 reset text.
+# Theme update: 2026-09-09 21:29 America/New_York; Python 3.12 / Windows Tk 8.6.12.
+# Purpose/upstream: Preserve the GUI's palette across Tk widget states and graphs;
+# THEME_PALETTES supplies shared colors and Tk/ttk renders controls and popdowns.
+# Changed lines: 99/113 information colors; 1008/1140 graph label contrast;
+# 1267-1300 shared state maps, tabs and scrollbars; 1325 information heading;
+# 1396-1397 combobox hover/press; 1427/1452-1467 cached dropdown refresh.

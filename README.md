@@ -62,6 +62,10 @@ with adjustable rosters.
   record match and game results.
 - The global Settings menu switches between persistent Windows-style light and
   dark themes and selects which standings columns are visible.
+- Source theme styling includes notebook tabs, dropdown hover/press states and
+  previously opened dropdown lists, scrollbars, focused/unfocused text selections,
+  information headings, and readable head-to-head bar labels. Theme changes do
+  not require restarting the app. These source fixes require a new executable build.
 - All app-owned prompts, confirmations, warnings, and management windows use
   the same theme, Segoe UI typography, spacing, control styles, centering, and
   high-DPI scaling. Supported Windows versions also match each window's title
