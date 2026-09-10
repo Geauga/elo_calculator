@@ -1,3 +1,5 @@
+# elo_model.py
+# Request: Review and patch league settings, historical replay, and persistence.
 """Core Elo rules and persistence for leagues with adjustable rosters."""
 
 from __future__ import annotations
@@ -16,7 +18,7 @@ PLAYER_COUNT = DEFAULT_PLAYER_COUNT
 LEGACY_PLAYER_COUNT = 8
 MIN_PLAYER_COUNT = 2
 MAX_PLAYER_COUNT = 64
-LEAGUE_SCHEMA_VERSION = 7
+LEAGUE_SCHEMA_VERSION = 8
 INITIAL_RATING = 1500.0
 K_FACTOR = 32.0
 MIN_K_FACTOR = 0.01
@@ -29,6 +31,13 @@ MAX_CUSTOM_SCORE = 9999
 SCORE_MODE_FIXED = "fixed_target"
 SCORE_MODE_CUSTOM = "custom"
 SCORE_MODES = (SCORE_MODE_FIXED, SCORE_MODE_CUSTOM)
+DEFAULT_TIEBREAKER_HIERARCHY = (
+    "rating",
+    "match_pct",
+    "sb_score",
+    "game_pct",
+    "name",
+)
 
 
 @dataclass
@@ -144,6 +153,30 @@ def validate_elo_decimal_places(decimal_places: int | None) -> int | None:
             f"{MAX_ELO_DECIMAL_PLACES}."
         )
     return decimal_places
+
+
+def validate_base_elo(base_elo: float) -> float:
+    if (
+        not isinstance(base_elo, (int, float))
+        or isinstance(base_elo, bool)
+        or not math.isfinite(base_elo)
+    ):
+        raise ValueError("Base Elo must be a finite number.")
+    return float(base_elo)
+
+
+def validate_tiebreaker_hierarchy(hierarchy: list[str]) -> list[str]:
+    if (
+        not isinstance(hierarchy, list)
+        or len(hierarchy) != len(DEFAULT_TIEBREAKER_HIERARCHY)
+        or any(not isinstance(item, str) for item in hierarchy)
+        or set(hierarchy) != set(DEFAULT_TIEBREAKER_HIERARCHY)
+    ):
+        raise ValueError(
+            "The tiebreaker hierarchy must contain each supported tiebreaker "
+            "exactly once."
+        )
+    return list(hierarchy)
 
 
 def expected_score(rating: float, opponent_rating: float) -> float:
@@ -266,7 +299,9 @@ class League:
     allow_draws: bool = True
     base_elo: float = INITIAL_RATING
     k_factor_scaling: bool = False
-    tiebreaker_hierarchy: list[str] = field(default_factory=lambda: ["rating", "match_pct", "sb_score", "game_pct", "name"])
+    tiebreaker_hierarchy: list[str] = field(
+        default_factory=lambda: list(DEFAULT_TIEBREAKER_HIERARCHY)
+    )
 
     def __post_init__(self) -> None:
         self.k_factor = validate_k_factor(self.k_factor)
@@ -276,6 +311,12 @@ class League:
         self.elo_decimal_places = validated_places
         if not isinstance(self.allow_draws, bool):
             raise ValueError("The allow-draws setting must be true or false.")
+        self.base_elo = validate_base_elo(self.base_elo)
+        if not isinstance(self.k_factor_scaling, bool):
+            raise ValueError("The K-factor scaling setting must be true or false.")
+        self.tiebreaker_hierarchy = validate_tiebreaker_hierarchy(
+            self.tiebreaker_hierarchy
+        )
 
     @classmethod
     def new(cls, player_count: int = DEFAULT_PLAYER_COUNT) -> "League":
@@ -293,6 +334,17 @@ class League:
                 return player
         raise ValueError(f"Unknown player ID: {player_id}")
 
+    def elo_multiplier(
+        self, loser_games: int, winner_games: int | None = None
+    ) -> float:
+        """Return the complete score and optional K-scaling multiplier."""
+        if winner_games is None:
+            winner_games = self.win_condition.games_to_win
+        multiplier = self.win_condition.get_multiplier(loser_games, winner_games)
+        if self.k_factor_scaling:
+            multiplier *= 1.0 + (winner_games - loser_games) * 0.1
+        return multiplier
+
     def preview_match(
         self,
         winner_id: int,
@@ -307,18 +359,14 @@ class League:
         loser = self.player(loser_id)
         if winner_games is None:
             winner_games = self.win_condition.games_to_win
-            
-        active_k_factor = self.k_factor
-        if self.k_factor_scaling and winner_games > loser_games:
-            active_k_factor *= (1.0 + (winner_games - loser_games) * 0.1)
-            
         multiplier = self.win_condition.get_multiplier(loser_games, winner_games)
+        elo_multiplier = self.elo_multiplier(loser_games, winner_games)
         change = (
             rating_change(
                 winner.rating,
                 loser.rating,
-                multiplier,
-                active_k_factor,
+                elo_multiplier,
+                self.k_factor,
                 self.elo_decimal_places,
             )
             if self.calculate_elo
@@ -332,6 +380,7 @@ class League:
             "winner_expected": expected_score(winner.rating, loser.rating),
             "loser_expected": expected_score(loser.rating, winner.rating),
             "multiplier": multiplier,
+            "elo_multiplier": elo_multiplier,
             "change": change,
             "winner_after": winner_after,
             "loser_after": loser_after,
@@ -360,7 +409,7 @@ class League:
             rating_change=preview["change"],
             winner_rating_before=winner.rating,
             loser_rating_before=loser.rating,
-            multiplier=preview["multiplier"],
+            multiplier=preview["elo_multiplier"],
             winner_games=winner_games,
             rated=self.calculate_elo,
             k_factor=self.k_factor,
@@ -475,9 +524,19 @@ class League:
         # replay state local so a validation failure cannot partially mutate
         # the roster, ratings, or history.
         retained_players = self.players[:player_count]
-        replayed_ratings = {
-            player.id: INITIAL_RATING for player in retained_players
-        }
+        replayed_ratings = {player.id: player.rating for player in retained_players}
+        unseen_player_ids = set(replayed_ratings)
+        for old_match in self.matches:
+            if old_match.winner_id in unseen_player_ids:
+                replayed_ratings[old_match.winner_id] = (
+                    old_match.winner_rating_before
+                )
+                unseen_player_ids.remove(old_match.winner_id)
+            if old_match.loser_id in unseen_player_ids:
+                replayed_ratings[old_match.loser_id] = old_match.loser_rating_before
+                unseen_player_ids.remove(old_match.loser_id)
+            if not unseen_player_ids:
+                break
         rebuilt_matches: list[Match] = []
         for old_match in retained_matches:
             winner_rating = replayed_ratings[old_match.winner_id]
@@ -668,7 +727,7 @@ class League:
         if not isinstance(data, dict):
             raise ValueError("The save file must contain a JSON object.")
         schema_version = data.get("schema_version")
-        if schema_version not in (1, 2, 3, 4, 5, 6, LEAGUE_SCHEMA_VERSION):
+        if schema_version not in (1, 2, 3, 4, 5, 6, 7, LEAGUE_SCHEMA_VERSION):
             raise ValueError("Unsupported save-file version.")
 
         try:
@@ -773,11 +832,21 @@ class League:
         if not isinstance(allow_draws, bool):
             raise ValueError("The allow-draws setting must be true or false.")
             
-        base_elo = float(data.get("base_elo", INITIAL_RATING))
-        k_factor_scaling = bool(data.get("k_factor_scaling", False))
-        tiebreaker_hierarchy = data.get("tiebreaker_hierarchy", ["rating", "match_pct", "sb_score", "game_pct", "name"])
-        if not isinstance(tiebreaker_hierarchy, list):
-            tiebreaker_hierarchy = ["rating", "match_pct", "sb_score", "game_pct", "name"]
+        try:
+            base_elo = validate_base_elo(data.get("base_elo", INITIAL_RATING))
+            k_factor_scaling = data.get("k_factor_scaling", False)
+            if not isinstance(k_factor_scaling, bool):
+                raise ValueError(
+                    "The K-factor scaling setting must be true or false."
+                )
+            tiebreaker_hierarchy = validate_tiebreaker_hierarchy(
+                data.get(
+                    "tiebreaker_hierarchy",
+                    list(DEFAULT_TIEBREAKER_HIERARCHY),
+                )
+            )
+        except ValueError as error:
+            raise ValueError("The save file has invalid league settings.") from error
             
         league = cls(
             players=players, 
@@ -860,7 +929,7 @@ class League:
             return cls.new()
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as error:
+        except (OSError, UnicodeError, json.JSONDecodeError) as error:
             raise ValueError("The saved league data could not be read.") from error
         if not isinstance(data, dict):
             raise ValueError("The save file must contain a JSON object.")
@@ -871,8 +940,10 @@ class League:
 # Upstream: UI and storage layers provide league configuration and saved JSON data.
 # Upstream purpose: Collect user-entered results and restore persistent league state.
 # Environment: Python 3.10+ on Windows, with platform-independent model tests.
-# Generated: 2026-09-07 16:15 America/New_York.
-# Changes: Integrated configurable Elo and draw policies with historical match
-# settings, transactional replay, W-D-L/SB statistics, validation, persistence,
-# backward-compatible schema migration, and head-to-head match/game calculation.
-# Simulation remains in elo_simulator.py.
+# Generated: 2026-09-09 07:43 America/New_York.
+# Changes: Validate and version configurable base Elo, K scaling, and tiebreaker
+# settings; persist effective scaled multipliers; replay from saved initial ratings;
+# reject unreadable UTF-8 saves; retain historical Elo and H2H behavior.
+# Changed lines: 1-40 provenance/schema/defaults; 158-181 validators; 302-319
+# initialization; 337-412 scaled transfers; 527-539 replay starting ratings;
+# 730, 835-849, 932 schema migration, settings validation, and decode handling.

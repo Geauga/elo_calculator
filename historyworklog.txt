@@ -1163,3 +1163,13 @@
 - Modified files: This append-only update to `historyworklog.txt` and `历史工作记录.txt`; the branch merge is in `0b84298`, and the initial publication record is in `8b287a3`.
 - Tests and verification: Publication verification remains 76/76 unit tests passing; post-push worktree was clean and synchronized; remote verification returned `8b287a3607093ff86fbc5552b7200e0bd4dc56e6`.
 - GitHub Timeline: Merge commit `0b84298` and publication commit `8b287a3` were pushed successfully to `origin/main`; this final verified timeline entry will be committed and pushed as a log-only follow-up.
+
+
+## 2026-09-09 07:45:00 -04:00
+
+- User Prompt summary: Review code, patch defects, push to GitHub, and continue the unfinished publication.
+- Execution location: Local Git repository at C:\Users\danie\OneDrive\Documents\ChatGPT\elo; publication target is GitHub origin/main.
+- Actions: Fast-forwarded the clean checkout from d804008 to 90d8a21. Validated configurable Base Elo, K scaling, and tiebreaker priorities; introduced league schema 8 with schema-7 migration; persisted effective scaled multipliers for newly recorded matches; applied scaling in both simulators; recovered each player's historical starting rating during roster replay; corrected Elo graphs and reset text. Handled malformed preference/backup/audit encoding and values; bounded audit tail reads; synchronized column controls; protected newly created and selected backups; removed unsafe rollback writes and reported audit failure without undoing a successful save; blocked placeholder manual backups when original data was not preserved.
+- Modified files: elo_model.py; elo_simulator.py; elo_storage.py; elo_calculator.py; test_elo_model.py; README.md; historyworklog.txt; 历史工作记录.txt.
+- Tests and verification: All 92 unit tests passed (16 added); settings Save callback checks rejected bad, nan, and inf Base Elo values without mutating state; git diff --check passed. Source compilation and final staged-file checks are performed before commit. Existing simulator season ranking is retained as documented; existing schema-7 matches without historical scaling metadata are not guessed or retroactively rewritten. Versioned v22 binaries and generated caches remain unchanged; README distinguishes current source from the older package.
+- GitHub Timeline: Not committed and not pushed yet. Latest fetch confirmed origin/main at 90d8a21; normal commit and push are authorized by the user.
