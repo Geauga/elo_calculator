@@ -1,3 +1,5 @@
+# elo_storage.py
+# Request: Preserve recovery backups and handle malformed auxiliary files safely.
 """Multiple-league persistence, backups, and append-only audit logging."""
 
 from __future__ import annotations
@@ -30,6 +32,29 @@ def _atomic_json_write(path: Path, data: dict[str, Any]) -> None:
         json.dumps(data, indent=2, allow_nan=False), encoding="utf-8"
     )
     temporary_path.replace(path)
+
+
+def _read_tail_utf8_lines(path: Path, limit: int) -> list[str]:
+    """Read at most the final JSONL records without loading an unbounded log."""
+    if limit <= 0:
+        return []
+    block_size = 8192
+    with path.open("rb") as file:
+        file.seek(0, os.SEEK_END)
+        position = file.tell()
+        buffer = b""
+        while position > 0 and buffer.count(b"\n") <= limit:
+            read_size = min(block_size, position)
+            position -= read_size
+            file.seek(position)
+            buffer = file.read(read_size) + buffer
+    lines: list[str] = []
+    for raw_line in buffer.splitlines()[-limit:]:
+        try:
+            lines.append(raw_line.decode("utf-8"))
+        except UnicodeError:
+            continue
+    return lines
 
 
 def validate_league_name(name: str) -> str:
@@ -212,7 +237,7 @@ class LeagueCollection:
             return cls.new()
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as error:
+        except (OSError, UnicodeError, json.JSONDecodeError) as error:
             raise ValueError("The saved league database could not be read.") from error
         if not isinstance(data, dict):
             raise ValueError("The league database must contain a JSON object.")
@@ -228,10 +253,21 @@ class BackupInfo:
 
 class BackupManager:
     def __init__(self, directory: Path, max_backups: int = MAX_BACKUPS) -> None:
+        if (
+            not isinstance(max_backups, int)
+            or isinstance(max_backups, bool)
+            or max_backups < 1
+        ):
+            raise ValueError("At least one backup must be retained.")
         self.directory = directory
         self.max_backups = max_backups
 
-    def create(self, collection: LeagueCollection, reason: str) -> BackupInfo:
+    def create(
+        self,
+        collection: LeagueCollection,
+        reason: str,
+        protected_paths: tuple[Path, ...] = (),
+    ) -> BackupInfo:
         self.directory.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now().astimezone()
         safe_reason = re.sub(r"[^A-Za-z0-9_-]+", "-", reason).strip("-")[:40]
@@ -245,7 +281,9 @@ class BackupManager:
             "database": collection.to_dict(),
         }
         _atomic_json_write(path, payload)
-        self._prune()
+        self._prune((path, *protected_paths))
+        if not path.exists():
+            raise OSError("The newly created backup was not retained.")
         return BackupInfo(path=path, created_at=payload["created_at"], reason=reason)
 
     def list(self) -> list[BackupInfo]:
@@ -267,7 +305,13 @@ class BackupManager:
                         reason=str(data["reason"]),
                     )
                 )
-            except (OSError, KeyError, json.JSONDecodeError, TypeError):
+            except (
+                OSError,
+                UnicodeError,
+                KeyError,
+                json.JSONDecodeError,
+                TypeError,
+            ):
                 continue
         return backups
 
@@ -278,7 +322,7 @@ class BackupManager:
             raise ValueError("The selected backup is outside the backup directory.")
         try:
             data = json.loads(resolved_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as error:
+        except (OSError, UnicodeError, json.JSONDecodeError) as error:
             raise ValueError("The backup could not be read.") from error
         if not isinstance(data, dict):
             raise ValueError("The backup is malformed.")
@@ -289,10 +333,22 @@ class BackupManager:
             raise ValueError("The backup is malformed.")
         return LeagueCollection.from_dict(database)
 
-    def _prune(self) -> None:
+    def _prune(self, protected_paths: tuple[Path, ...] = ()) -> None:
         paths = sorted(self.directory.glob("*.json"), reverse=True)
-        for old_path in paths[self.max_backups :]:
-            old_path.unlink(missing_ok=True)
+        protected = {path.resolve() for path in protected_paths}
+        existing_protected = {
+            path.resolve() for path in paths if path.resolve() in protected
+        }
+        keep = set(existing_protected)
+        for path in paths:
+            resolved = path.resolve()
+            if resolved in keep:
+                continue
+            if len(keep) < self.max_backups:
+                keep.add(resolved)
+        for old_path in paths:
+            if old_path.resolve() not in keep:
+                old_path.unlink(missing_ok=True)
 
 
 class AuditLog:
@@ -326,11 +382,11 @@ class AuditLog:
         if not self.path.exists():
             return []
         try:
-            lines = self.path.read_text(encoding="utf-8").splitlines()
+            lines = _read_tail_utf8_lines(self.path, limit)
         except OSError:
             return []
         entries: list[dict[str, Any]] = []
-        for line in lines[-limit:]:
+        for line in lines:
             try:
                 entry = json.loads(line)
             except json.JSONDecodeError:
@@ -344,5 +400,10 @@ class AuditLog:
 # Upstream: elo_model.py supplies validated league state and serialization.
 # Upstream purpose: Model league rules, matches, ratings, and migrations.
 # Environment: Python 3.10+ on Windows with platform-independent storage tests.
-# Generated: 2026-08-31 19:44 America/New_York.
-# Changes: Reject non-object collection input with the public ValueError contract.
+# Generated: 2026-09-09 07:43 America/New_York.
+# Changes: Treat invalid UTF-8 as malformed auxiliary data, bound audit-log reads,
+# protect newly created/selected recovery snapshots during pruning, and retain
+# the public collection-validation contracts.
+# Changed lines: 1-2 provenance; 37-59 tail reader; 240, 308-325 decode handling;
+# 256-286 retention validation/protected snapshots; 336-351 pruning;
+# 385-389 bounded audit reading.

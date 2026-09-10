@@ -1,3 +1,5 @@
+# elo_calculator.py
+# Request: Review and patch settings validation, recovery, and display consistency.
 """Tkinter desktop interface for the twelve-player Elo calculator."""
 
 from __future__ import annotations
@@ -12,7 +14,6 @@ from tkinter import messagebox, ttk
 
 from elo_model import (
     DEFAULT_PLAYER_COUNT,
-    INITIAL_RATING,
     MAX_CUSTOM_SCORE,
     MAX_ELO_DECIMAL_PLACES,
     MAX_GAMES_TO_WIN,
@@ -22,9 +23,12 @@ from elo_model import (
     MIN_PLAYER_COUNT,
     SCORE_MODE_CUSTOM,
     SCORE_MODE_FIXED,
+    League,
     WinCondition,
+    validate_base_elo,
     validate_elo_decimal_places,
     validate_k_factor,
+    validate_tiebreaker_hierarchy,
 )
 from elo_simulator import (
     simulate_first_to_n_league,
@@ -37,6 +41,47 @@ import re
 
 def _natural_sort_key(s: str) -> list:
     return [int(t) if t.isdigit() else t.casefold() for t in re.split(r"(\d+)", s)]
+
+
+STANDINGS_COLUMN_IDS = (
+    "rank",
+    "player",
+    "rating",
+    "sb_score",
+    "match_record",
+    "match_pct",
+    "game_record",
+    "game_pct",
+)
+
+
+def _player_elo_history(league: League, player_id: int) -> list[float]:
+    """Return exact saved Elo history for one player, including its true start."""
+    player = league.player(player_id)
+    first_match = next(
+        (
+            match
+            for match in league.matches
+            if player_id in (match.winner_id, match.loser_id)
+        ),
+        None,
+    )
+    if first_match is None:
+        return [player.rating]
+    current_elo = (
+        first_match.winner_rating_before
+        if first_match.winner_id == player_id
+        else first_match.loser_rating_before
+    )
+    values = [current_elo]
+    for match in league.matches:
+        if match.winner_id == player_id:
+            current_elo += match.rating_change
+            values.append(current_elo)
+        elif match.loser_id == player_id:
+            current_elo -= match.rating_change
+            values.append(current_elo)
+    return values
 
 
 THEME_PALETTES = {
@@ -84,7 +129,7 @@ def load_app_settings(path: Path) -> dict:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
         return data if isinstance(data, dict) else {}
-    except (OSError, json.JSONDecodeError):
+    except (OSError, UnicodeError, json.JSONDecodeError):
         return {}
 
 def save_app_settings(path: Path, settings: dict) -> None:
@@ -95,7 +140,11 @@ def save_app_settings(path: Path, settings: dict) -> None:
 
 def load_theme(path: Path) -> str:
     theme = load_app_settings(path).get("theme")
-    return theme if theme in THEME_PALETTES else "light"
+    return (
+        theme
+        if isinstance(theme, str) and theme in THEME_PALETTES
+        else "light"
+    )
 
 def save_theme(path: Path, theme: str) -> None:
     if theme not in THEME_PALETTES:
@@ -106,13 +155,25 @@ def save_theme(path: Path, theme: str) -> None:
     
 def load_visible_columns(path: Path) -> list[str]:
     cols = load_app_settings(path).get("visible_columns")
-    if cols is None or not isinstance(cols, list):
-        return ["rank", "player", "rating", "sb_score", "match_record", "match_pct", "game_record", "game_pct"]
-    return cols
+    if not isinstance(cols, list):
+        return list(STANDINGS_COLUMN_IDS)
+    visible: list[str] = []
+    for column in cols:
+        if (
+            isinstance(column, str)
+            and column in STANDINGS_COLUMN_IDS
+            and column not in visible
+        ):
+            visible.append(column)
+    return visible or list(STANDINGS_COLUMN_IDS)
 
 def save_visible_columns(path: Path, columns: list[str]) -> None:
     settings = load_app_settings(path)
-    settings["visible_columns"] = columns
+    settings["visible_columns"] = [
+        column
+        for column in STANDINGS_COLUMN_IDS
+        if column in columns
+    ]
     save_app_settings(path, settings)
 
 
@@ -702,12 +763,9 @@ class EloCalculatorApp:
         )
 
         self.settings_menu.add_separator()
-        self.visible_columns = [
-            c for c in load_visible_columns(SETTINGS_FILE) if c in headings
-        ]
-        if not self.visible_columns:
-            self.visible_columns = ["rank", "player", "rating", "sb_score", "match_record", "match_pct", "game_record", "game_pct"]
+        self.visible_columns = load_visible_columns(SETTINGS_FILE)
         self.column_vars = {}
+        self.column_menu_indices = {}
         for col_id, (label, _, _) in headings.items():
             var = tk.BooleanVar(value=col_id in self.visible_columns)
             self.column_vars[col_id] = var
@@ -716,6 +774,7 @@ class EloCalculatorApp:
                 variable=var,
                 command=self._update_columns
             )
+            self.column_menu_indices[col_id] = self.settings_menu.index("end")
         self.standings.configure(displaycolumns=self.visible_columns)
 
         standings_buttons = ttk.Frame(standings_frame)
@@ -967,15 +1026,7 @@ class EloCalculatorApp:
 
         y_values = []
         if metric == "elo":
-            current_elo = 1500.0
-            y_values.append(current_elo)
-            for m in matches:
-                if m.winner_id == player_id:
-                    current_elo += m.rating_change
-                    y_values.append(current_elo)
-                elif m.loser_id == player_id:
-                    current_elo -= m.rating_change
-                    y_values.append(current_elo)
+            y_values = _player_elo_history(self.league, player_id)
         elif metric == "match_pct":
             match_points = 0.0
             total = 0
@@ -1173,8 +1224,18 @@ class EloCalculatorApp:
         ]
         if not self.visible_columns:
             self.visible_columns = ["player"]
+            self.column_vars["player"].set(True)
         self.standings.configure(displaycolumns=self.visible_columns)
-        save_visible_columns(SETTINGS_FILE, self.visible_columns)
+        try:
+            save_visible_columns(SETTINGS_FILE, self.visible_columns)
+        except (OSError, ValueError) as error:
+            self._show_warning(
+                "Column selection not saved",
+                "The columns changed for this session but could not be saved."
+                f"\n\n{error}",
+                parent=self.root,
+            )
+            self.status_var.set("Column selection changed for this session; not saved.")
 
     def _apply_theme(self, theme: str, save: bool = True) -> None:
         if theme not in THEME_PALETTES:
@@ -1395,6 +1456,7 @@ class EloCalculatorApp:
         league_name: str | None = None,
         create_backup: bool = True,
         allow_recovery_overwrite: bool = False,
+        protected_backup_paths: tuple[Path, ...] = (),
     ) -> None:
         """Save a mutation, optionally backing up its prior state, and audit it."""
         block_reason = getattr(self, "data_save_block_reason", None)
@@ -1403,22 +1465,30 @@ class EloCalculatorApp:
         previous = LeagueCollection.from_dict(previous_state)
         try:
             if create_backup:
-                self.backups.create(previous, f"before-{action}")
+                self.backups.create(
+                    previous,
+                    f"before-{action}",
+                    protected_paths=protected_backup_paths,
+                )
             self.collection.save(DATA_FILE)
-            current = self.collection.active
+        except (OSError, ValueError):
+            self._restore_collection(previous_state)
+            raise
+        current = self.collection.active
+        try:
             self.audit_log.append(
                 action,
                 league_id if league_id is not None else current.id,
                 league_name if league_name is not None else current.name,
                 details,
             )
-        except (OSError, ValueError):
-            self._restore_collection(previous_state)
-            try:
-                self.collection.save(DATA_FILE)
-            except OSError:
-                pass
-            raise
+        except OSError as error:
+            self._show_warning(
+                "Activity not logged",
+                "The change was saved, but the activity log could not be updated."
+                f"\n\n{error}",
+                parent=self.root,
+            )
 
     def _refresh_league_selector(self) -> None:
         names = [item.name for item in self.collection.leagues]
@@ -2058,6 +2128,7 @@ class EloCalculatorApp:
                         score_mode=score_mode,
                     )
                 new_k_factor = validate_k_factor(float(k_factor_var.get()))
+                new_base_elo = validate_base_elo(float(base_elo_var.get()))
                 new_decimal_places = validate_elo_decimal_places(
                     decimal_places_var.get()
                 )
@@ -2065,6 +2136,12 @@ class EloCalculatorApp:
                     raise ValueError(
                         "League Elo decimal places cannot be unlimited."
                     )
+                new_hierarchy = validate_tiebreaker_hierarchy(
+                    [
+                        reverse_tb_map.get(tiebreaker_listbox.get(index), "")
+                        for index in range(tiebreaker_listbox.size())
+                    ]
+                )
             except (ValueError, tk.TclError) as error:
                 self._show_error("Invalid input", str(error), parent=dialog)
                 return
@@ -2072,16 +2149,11 @@ class EloCalculatorApp:
             previous_state = self.collection.to_dict()
             self.league.win_condition = new_rules
             self.league.calculate_elo = calc_elo_var.get()
-            self.league.base_elo = float(base_elo_var.get())
+            self.league.base_elo = new_base_elo
             self.league.k_factor = new_k_factor
             self.league.k_factor_scaling = k_factor_scaling_var.get()
             self.league.elo_decimal_places = new_decimal_places
             self.league.allow_draws = allow_draws_var.get()
-            
-            new_hierarchy = []
-            for i in range(tiebreaker_listbox.size()):
-                val = tiebreaker_listbox.get(i)
-                new_hierarchy.append(reverse_tb_map.get(val, val))
             self.league.tiebreaker_hierarchy = new_hierarchy
             
             try:
@@ -2313,6 +2385,16 @@ class EloCalculatorApp:
                 )
 
         def create_now() -> None:
+            if self.data_save_block_reason:
+                self._show_error(
+                    "Backup not created",
+                    "The temporary new league cannot be backed up while the "
+                    "original unreadable database has not been preserved. "
+                    "Restore an existing backup or correct the file-access "
+                    "problem and restart the application.",
+                    parent=window,
+                )
+                return
             try:
                 backup = self.backups.create(self.collection, "manual-backup")
             except OSError as error:
@@ -2345,11 +2427,27 @@ class EloCalculatorApp:
                 )
                 return
             backup = backup_items[selection[0]]
+            if self.data_save_block_reason:
+                restore_effect = (
+                    "The unreadable current database could not be preserved and "
+                    "will be overwritten by the selected backup. No placeholder "
+                    "backup will be created."
+                )
+            elif self.opened_new_league_after_load_failure:
+                restore_effect = (
+                    "The unreadable database already has a recovery copy. The "
+                    "selected backup will replace it, and no placeholder backup "
+                    "will be created."
+                )
+            else:
+                restore_effect = (
+                    "All leagues will return to that snapshot. The current "
+                    "database will be backed up first, and the activity log will "
+                    "remain."
+                )
             if not self._ask_yes_no(
                 "Restore backup",
-                f"Restore {backup.path.name}?\n\n"
-                "All leagues will return to that snapshot. The current database "
-                "will be backed up first, and the activity log will remain.",
+                f"Restore {backup.path.name}?\n\n{restore_effect}",
                 parent=window,
             ):
                 return
@@ -2362,7 +2460,9 @@ class EloCalculatorApp:
                     previous_state,
                     "backup_restored",
                     f"Restored all leagues from {backup.path.name}.",
+                    create_backup=not self.opened_new_league_after_load_failure,
                     allow_recovery_overwrite=True,
+                    protected_backup_paths=(backup.path,),
                 )
             except (OSError, ValueError) as error:
                 self._restore_collection(previous_state)
@@ -2377,9 +2477,12 @@ class EloCalculatorApp:
 
         buttons = ttk.Frame(frame)
         buttons.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(10, 0))
-        ttk.Button(buttons, text="Create backup now", command=create_now).pack(
-            side="left"
-        )
+        ttk.Button(
+            buttons,
+            text="Create backup now",
+            command=create_now,
+            state="disabled" if self.data_save_block_reason else "normal",
+        ).pack(side="left")
         ttk.Button(buttons, text="Restore selected", command=restore_selected).pack(
             side="right"
         )
@@ -2457,10 +2560,16 @@ class EloCalculatorApp:
         selected = self.standings.selection()
         selected_id = int(selected[0]) if selected else None
         show_draws = self.league.allow_draws
+        match_record_heading = "Match W-D-L" if show_draws else "Match W-L"
         self.standings.heading(
             "match_record",
-            text="Match W-D-L" if show_draws else "Match W-L",
+            text=match_record_heading,
         )
+        if hasattr(self, "column_menu_indices"):
+            self.settings_menu.entryconfigure(
+                self.column_menu_indices["match_record"],
+                label=f"Show {match_record_heading}",
+            )
         self.standings.delete(*self.standings.get_children())
         statistics = self.league.statistics()
         ranking_ratings = {
@@ -2778,7 +2887,7 @@ class EloCalculatorApp:
     def _reset_league(self) -> None:
         if not self._ask_yes_no(
             "Reset league",
-            f"Reset all ratings to {self._format_elo(INITIAL_RATING)} and "
+            f"Reset all ratings to {self._format_elo(self.league.base_elo)} and "
             "permanently clear every match "
             "result?\n\nPlayer names and the selected theme will be preserved.",
             parent=self.root,
@@ -2793,7 +2902,7 @@ class EloCalculatorApp:
             self._commit_edit(
                 previous_state,
                 "league_reset",
-                f"Reset all ratings to {self._format_elo(INITIAL_RATING)} and "
+                f"Reset all ratings to {self._format_elo(self.league.base_elo)} and "
                 f"cleared {cleared_matches} matches.",
                 current.id,
                 current.name,
@@ -2806,7 +2915,7 @@ class EloCalculatorApp:
 
         self.status_var.set(
             "League reset: all ratings are "
-            f"{self._format_elo(INITIAL_RATING)} and match history is empty."
+            f"{self._format_elo(self.league.base_elo)} and match history is empty."
         )
         self._refresh_all()
 
@@ -2847,6 +2956,12 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-09-07 19:43 America/New_York.
-# Changes: Preserve unreadable databases, quantize Elo ties consistently, and
-# show Match W-L or Match W-D-L according to the active league's draw setting.
+# Generated: 2026-09-09 07:43 America/New_York.
+# Changes: Validate new league/preferences settings, preserve recovery data,
+# keep saved edits authoritative when audit logging fails, synchronize standings
+# menus and configurable-base messaging, graph exact saved Elo history, and show
+# Match W-L or Match W-D-L according to the active league's draw setting.
+# Changed lines: 1-31 provenance/imports; 46-176 history/preferences; 766-777
+# column setup; 1029 graph history; 1227-1238 column-save handling; 1459-1491
+# commit safety; 2131-2156 rule validation; 2388-2485 backup recovery;
+# 2563-2572 menu labels; 2890-2918 reset text.

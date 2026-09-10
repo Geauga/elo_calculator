@@ -542,3 +542,13 @@
 - 修改文件：本次 append-only 更新 `historyworklog.txt` 和本文件；branch merge 位于 `0b84298`，initial publication record 位于 `8b287a3`。
 - 测试或验证结果：publication verification 保持 76/76 unit tests passing；push 后 worktree clean 且 synchronized；remote verification 返回 `8b287a3607093ff86fbc5552b7200e0bd4dc56e6`。
 - GitHub Timeline：merge commit `0b84298` 和 publication commit `8b287a3` 已成功 push 至 `origin/main`；本 final verified timeline entry 将作为 log-only follow-up commit 提交并 push。
+
+
+## 2026-09-09 07:45:00 -04:00
+
+- User Prompt summary: Review code, patch defects, push to GitHub, and continue the unfinished publication.
+- Execution location: Local Git repository at C:\Users\danie\OneDrive\Documents\ChatGPT\elo; publication target is GitHub origin/main.
+- Actions: Fast-forwarded the clean checkout from d804008 to 90d8a21. Validated configurable Base Elo, K scaling, and tiebreaker priorities; introduced league schema 8 with schema-7 migration; persisted effective scaled multipliers for newly recorded matches; applied scaling in both simulators; recovered each player's historical starting rating during roster replay; corrected Elo graphs and reset text. Handled malformed preference/backup/audit encoding and values; bounded audit tail reads; synchronized column controls; protected newly created and selected backups; removed unsafe rollback writes and reported audit failure without undoing a successful save; blocked placeholder manual backups when original data was not preserved.
+- Modified files: elo_model.py; elo_simulator.py; elo_storage.py; elo_calculator.py; test_elo_model.py; README.md; historyworklog.txt; 历史工作记录.txt.
+- Tests and verification: All 92 unit tests passed (16 added); settings Save callback checks rejected bad, nan, and inf Base Elo values without mutating state; git diff --check passed. Source compilation and final staged-file checks are performed before commit. Existing simulator season ranking is retained as documented; existing schema-7 matches without historical scaling metadata are not guessed or retroactively rewritten. Versioned v22 binaries and generated caches remain unchanged; README distinguishes current source from the older package.
+- GitHub Timeline: Not committed and not pushed yet. Latest fetch confirmed origin/main at 90d8a21; normal commit and push are authorized by the user.
