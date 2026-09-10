@@ -1,3 +1,5 @@
+# elo_simulator.py
+# Request: Apply the active league's victory-margin scaling during simulation.
 """Read-only Monte Carlo simulation for First-to-N Elo leagues."""
 
 from __future__ import annotations
@@ -113,9 +115,7 @@ def simulate_first_to_n_season(
         )
 
         if league.calculate_elo:
-            multiplier = league.win_condition.get_multiplier(
-                loser_games, games_to_win
-            )
+            multiplier = league.elo_multiplier(loser_games, games_to_win)
             change = rating_change(
                 ratings[winner],
                 ratings[loser],
@@ -210,9 +210,7 @@ def simulate_first_to_n_league(
             )
 
             if league.calculate_elo:
-                multiplier = league.win_condition.get_multiplier(
-                    loser_games, games_to_win
-                )
+                multiplier = league.elo_multiplier(loser_games, games_to_win)
                 change = rating_change(
                     ratings[winner],
                     ratings[loser],
@@ -332,6 +330,8 @@ def simulate_first_to_n_league(
 # Upstream: elo_model.py supplies league rules, ratings, and Elo calculations.
 # Upstream purpose: Represent validated leagues and persistent match results.
 # Environment: Python 3.10+ on Windows or any platform supported by the model.
-# Generated: 2026-09-07 16:15 America/New_York.
-# Changes: Apply head-to-head match and game scores after match wins when
-# ranking simulated seasons; retain reproducibility and normal save workflows.
+# Generated: 2026-09-09 07:43 America/New_York.
+# Changes: Apply the league's complete score/K-scaling multiplier in both
+# simulation paths while retaining seeded, read-only season generation and the
+# established simulated-season tiebreak order.
+# Changed lines: 1-2 provenance; 118 and 213 use the shared scaled multiplier.

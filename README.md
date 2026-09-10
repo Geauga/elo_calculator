@@ -6,25 +6,33 @@ with adjustable rosters.
 ## Rules
 
 - New leagues default to 12 players, and each league can independently use
-  between 2 and 64 players. Every added player begins at `1500.00` Elo.
+  between 2 and 64 players. Every added player begins at that league's Base
+  Elo, which defaults to `1500.00`.
 - Reducing a roster removes players from its end, drops their matches, and
   recalculates retained results. A confirmation and automatic backup protect
   the change.
-- League Settings sets a separate K-factor and Elo rounding precision for each
-  league. New leagues default to K `32` and two decimal places; K can be
-  `0.01` through `1000`, and precision can be zero through six places.
-- Each match stores the K-factor and rounding used for its Elo transfer, so
-  later rule changes do not alter its calculation during roster replay.
+- League Settings sets a separate Base Elo, K-factor, optional victory-margin
+  K scaling, Elo rounding precision, and standings priority for each league.
+  New leagues default to Base Elo `1500`, K `32`, and two decimal places; K can
+  be `0.01` through `1000`, and precision can be zero through six places. Base
+  Elo controls later resets and added players without retroactively shifting
+  existing results.
+- Each match stores the K-factor, effective score/scaling multiplier, and
+  rounding used for its Elo transfer, so later rule changes do not alter its
+  calculation during roster replay.
 - A draw gives each player a 0.5 Elo result, updates both ratings, and contributes
   half of the opponent's match score to each player's SB score. Draws can be
   enabled or disabled independently for each league in League Settings.
 - Standings show match W-D-L when draws are enabled and W-L when draws are
   disabled, plus match score percentage, individual game wins and losses, game
-  win percentage, and a Sonneborn-Berger (SB) score. Elo
-  remains the primary ranking key. Among players tied on Elo, head-to-head match
+  win percentage, and a Sonneborn-Berger (SB) score. By default, Elo
+  is the primary ranking key. Among players tied on Elo, head-to-head match
   score percentage is the secondary tiebreaker and head-to-head game percentage
   is third, followed by overall match score percentage, SB, overall game win
-  percentage, and a natural player-name order.
+  percentage, and a natural player-name order. League Settings can reorder the
+  top-level Rating, Match %, SB, Game %, and Name priorities; head-to-head
+  comparisons remain attached to Rating for players tied at the displayed Elo
+  precision.
 - New leagues use first-to-three rules: 3-2 applies 50%, 3-1 applies 75%, and
   3-0 applies 100% of the normal Elo change.
 - The Simulator button runs a read-only Monte Carlo single round-robin for the
@@ -39,10 +47,11 @@ with adjustable rosters.
   Season** records one concrete simulated round robin in the active league,
   with confirmation and an automatic backup before ratings and history are
   updated.
-- The Graphs tab plots Elo, match score percentage, and SB history for the
-  selected player, including draw-aware calculations and SB changes caused by
-  later results from prior opponents. Its background, axes, grid, labels, and
-  plot line follow the active theme.
+- The Graphs tab plots Elo, match score percentage, game win percentage, SB
+  history, and head-to-head records for the selected player. Elo plots begin at
+  the player's actual saved starting rating; percentage calculations are
+  draw-aware, and SB history reflects later results from prior opponents. Its
+  background, axes, grid, labels, and plot line follow the active theme.
 - The league Settings button selects a separate match format for each league.
   First-to-N mode sets the games needed to win and the Elo multiplier for every
   possible losing score. Custom-score mode accepts any whole-number result
@@ -51,14 +60,15 @@ with adjustable rosters.
   closest possible win applies 50%; intermediate margins scale proportionally.
   Either format can disable automatic Elo calculation while continuing to
   record match and game results.
-- The global Settings menu switches between persistent Windows-style light and dark
-  themes.
+- The global Settings menu switches between persistent Windows-style light and
+  dark themes and selects which standings columns are visible.
 - All app-owned prompts, confirmations, warnings, and management windows use
   the same theme, Segoe UI typography, spacing, control styles, centering, and
   high-DPI scaling. Supported Windows versions also match each window's title
   bar to the selected light or dark theme.
-- The Reset league button restores every rating to 1500.00 and clears match
-  records after confirmation, while keeping player names and the chosen theme.
+- The Reset league button restores every rating to the league's configured Base
+  Elo and clears match records after confirmation, while keeping player names
+  and the chosen theme.
 - Create, rename, switch between, and delete independent leagues from the top
   toolbar. Each league has its own players, ratings, standings, and history.
 - An automatic backup is created before every saved edit. The Backups window
@@ -83,12 +93,19 @@ automatically by retaining the original league and adding Players 9 through 12.
 The previous single-league database is also upgraded automatically to
 `League 1`, preserving its standings and match history.
 
+League schema 8 stores Base Elo, victory-margin K scaling, and standings
+priority explicitly. Schema-7 and older saves are upgraded with compatible
+defaults. Older executables reject schema 8 instead of silently discarding the
+new settings.
+
 ## Standalone Windows package
 
 The current packaged release is
 `release/EloLeagueCalculator-v22-Windows-x64.zip`.
 It contains `EloLeagueCalculator.exe` and `README.txt`; Python does not need to
 be installed. Extract the ZIP, then double-click the executable to start it.
+Version 22 predates the schema-8 source fixes described above. Run the current
+Python source to use those fixes; the versioned executable has not been rebuilt.
 
 Package verification:
 
@@ -104,3 +121,5 @@ Package verification:
 ```powershell
 python -m unittest -v
 ```
+
+Current source validation: 92 unit tests.
