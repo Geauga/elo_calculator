@@ -614,3 +614,11 @@
 - 修改文件：`elo_calculator.py`；`test_elo_model.py`；`README.md`；本文件。既有 v23 executable 和 ZIP 未重建或修改。
 - 测试或验证结果：在 real Windows Tk environment 中完整 98 项 unit tests 全部通过且无 skips；6 个 Python modules 通过 in-memory compilation；exact conflict-marker 和 whitespace checks 通过；marker regression 验证三个 observations 生成三个 centered markers。
 - GitHub Timeline：latest fetch 确认 local `main` 与 `origin/main` 均位于 `b8ab537`；changes 尚未 commit 或 push，用户已明确授权 normal push。
+
+## 2026-09-10 19:58:35 -04:00
+
+- 用户 Prompt 摘要：完成 graph point markers 的 GitHub publication。
+- 具体动作：将 implementation、regression、README 和 initial work record commit 为 `3865cd7`；push 前立即 fetch 并确认 ahead 1、behind 0；normal push `main`；使用 `git ls-remote` 验证 exact GitHub branch tip。
+- 修改文件：本次仅 append 更新本文件；implementation files 位于 commit `3865cd7`。既有 v23 executable/package 保持不变。
+- 测试或验证结果：publication verification 保持 98/98 tests passing 且无 skips；6-module compilation、exact conflict-marker、whitespace 和 generated-bytecode exclusion checks 通过；push 后 worktree clean 且 synchronized。
+- GitHub Timeline：commit `3865cd70bbf1a6cc9a9c73575bb59c02e2c477b2` 已成功 push 至 `origin/main` 并通过 remote hash 验证；本 final verification entry 将作为 log-only follow-up commit 提交并 push。
