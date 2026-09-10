@@ -571,3 +571,11 @@
 - Modified files: elo_calculator.py; test_elo_theme.py (new); README.md; this append-only work record. No executable, build output, or bytecode was changed by this update.
 - Tests and verification: All 98 tests passed on Python 3.12 / Windows Tk 8.6.12, including 5 new theme tests with no skips. Repeated light/dark/light switching, existing/new dropdowns, graph label contrast, notebook states, selection colors, scrollbars, and disabled buttons passed. Initial sandbox Tk initialization failed; approved hidden-window diagnostics outside the sandbox succeeded. The first graph test fixture omitted app.league; the fixture was corrected and the full suite rerun successfully. git diff --check passed before provenance/log append; final checks precede commit.
 - GitHub Timeline: Initial push was rejected because another checkout advanced origin/main. Fetched and inspected incoming commits, fast-forwarded the clean checkout to bc6a46f371ed164e4de7ad83f56c055b191c34f2, then normal push returned Everything up-to-date. Theme fixes are not committed or pushed yet; commit and normal push are authorized and next.
+
+## 2026-09-09 21:30:20 -04:00
+
+- User Prompt summary: Fix reviewed theme defects and push to GitHub.
+- Actions: Committed source theme fixes, regression tests, README, and the work record as c909cff; pushed normally and verified the exact GitHub main tip. Execution remained in the local Windows Git repository.
+- Modified files: This append-only publication record; implementation files are recorded in the preceding entry.
+- Tests and verification: 98 tests passed, including real Windows Tk checks with no skips; staged whitespace checks passed; no build outputs or bytecode staged; worktree clean after implementation push.
+- GitHub Timeline: Theme implementation c909cffa2c0c77649a42d9413ce53e3b4a24db1b is pushed to origin/main, verified by git ls-remote. This log-only publication record is pending its follow-up commit/push; executable packages were not rebuilt.
