@@ -1163,3 +1163,5 @@
 - Modified files: This append-only update to `historyworklog.txt` and `历史工作记录.txt`; the branch merge is in `0b84298`, and the initial publication record is in `8b287a3`.
 - Tests and verification: Publication verification remains 76/76 unit tests passing; post-push worktree was clean and synchronized; remote verification returned `8b287a3607093ff86fbc5552b7200e0bd4dc56e6`.
 - GitHub Timeline: Merge commit `0b84298` and publication commit `8b287a3` were pushed successfully to `origin/main`; this final verified timeline entry will be committed and pushed as a log-only follow-up.
+-   F i x e d   d a t a - l o s s   b u g   d u r i n g   r o s t e r   r e s i z i n g   w h e r e   t h e   r e p l a y e d   m a t c h e s   l o s t   t h e i r   s c a l e d   k - f a c t o r s   a n d   r e v e r t e d   r e t a i n e d   p l a y e r s '   r a t i n g s   t o   t h e   h a r d c o d e d   I N I T I A L _ R A T I N G   r a t h e r   t h a n   t h e   a c t i v e   b a s e _ e l o .   A l s o   a d d e d   r e g r e s s i o n   t e s t s   t o   v e r i f y .  
+ 

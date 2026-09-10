@@ -335,6 +335,7 @@ class League:
             "change": change,
             "winner_after": winner_after,
             "loser_after": loser_after,
+            "active_k_factor": active_k_factor,
         }
 
     def record_match(
@@ -363,7 +364,7 @@ class League:
             multiplier=preview["multiplier"],
             winner_games=winner_games,
             rated=self.calculate_elo,
-            k_factor=self.k_factor,
+            k_factor=preview["active_k_factor"],
             elo_decimal_places=self.elo_decimal_places,
         )
         winner.rating = preview["winner_after"]
@@ -399,6 +400,7 @@ class League:
             "change": change,
             "player_one_after": player_one_after,
             "player_two_after": player_two_after,
+            "active_k_factor": self.k_factor,
         }
 
     def record_draw(self, player_one_id: int, player_two_id: int) -> Match:
@@ -416,7 +418,7 @@ class League:
             multiplier=1.0,
             winner_games=0,
             rated=self.calculate_elo,
-            k_factor=self.k_factor,
+            k_factor=preview["active_k_factor"],
             elo_decimal_places=self.elo_decimal_places,
             is_draw=True,
         )
@@ -476,7 +478,7 @@ class League:
         # the roster, ratings, or history.
         retained_players = self.players[:player_count]
         replayed_ratings = {
-            player.id: INITIAL_RATING for player in retained_players
+            player.id: self.base_elo for player in retained_players
         }
         rebuilt_matches: list[Match] = []
         for old_match in retained_matches:
