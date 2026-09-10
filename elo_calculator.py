@@ -1220,6 +1220,11 @@ class EloCalculatorApp:
             self.graph_canvas.create_line(
                 points, fill=graph_colors["plot"], width=2
             )
+            for x, y in zip(points[::2], points[1::2]):
+                self.graph_canvas.create_oval(
+                    x - 3, y - 3, x + 3, y + 3,
+                    fill=graph_colors["plot"], outline=graph_colors["plot"],
+                )
 
     def _update_columns(self) -> None:
         self.visible_columns = [
@@ -3010,7 +3015,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-09-09 07:43 America/New_York.
+# Generated: 2026-09-10 19:54 America/New_York.
 # Changes: Validate new league/preferences settings, preserve recovery data,
 # keep saved edits authoritative when audit logging fails, synchronize standings
 # menus and configurable-base messaging, graph exact saved Elo history, and show
@@ -3025,3 +3030,5 @@ if __name__ == "__main__":
 # Changed lines: 99/113 information colors; 1008/1140 graph label contrast;
 # 1267-1300 shared state maps, tabs and scrollbars; 1325 information heading;
 # 1396-1397 combobox hover/press; 1427/1452-1467 cached dropdown refresh.
+# Graph point update: Draw a theme-aware circular marker at every observation on
+# multi-value Elo, match percentage, game percentage, and SB line graphs.
