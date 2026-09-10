@@ -1234,6 +1234,35 @@ class EloModelTests(unittest.TestCase):
         self.assertEqual(upgraded.active.league.to_dict()["schema_version"], 7)
 
 
+class RegressionTests(unittest.TestCase):
+    def test_resize_players_retains_scaled_k_factor_and_base_elo(self) -> None:
+        league = League.new(3)
+        league.base_elo = 1000.0
+        league.k_factor_scaling = True
+        league.reset_standings()
+
+        # Play a match with scaling (3-0 sweep)
+        match = league.record_match(0, 1, 0, 3)
+
+        # Base k_factor is 32.0, difference is 3 games. 
+        # scaled k_factor = 32.0 * (1 + 3 * 0.1) = 41.6
+        self.assertAlmostEqual(match.k_factor, 41.6)
+        
+        # Verify rating before resize
+        p0_rating = league.player(0).rating
+        p1_rating = league.player(1).rating
+        self.assertAlmostEqual(p0_rating, 1020.8)
+        self.assertAlmostEqual(p1_rating, 979.2)
+
+        # Resize to trigger replay
+        league.resize_players(2)
+
+        # Verify ratings remained stable and didn't shift to INITIAL_RATING
+        # or lose the scaling multiplier.
+        self.assertAlmostEqual(league.player(0).rating, p0_rating)
+        self.assertAlmostEqual(league.player(1).rating, p1_rating)
+
+
 if __name__ == "__main__":
     unittest.main()
 
