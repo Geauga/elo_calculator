@@ -597,3 +597,11 @@
 - Modified files: release/EloLeagueCalculator-v23-Windows-x64/EloLeagueCalculator.exe; release/EloLeagueCalculator-v23-Windows-x64/README.txt; release/EloLeagueCalculator-v23-Windows-x64.zip; README.md; this work record.
 - Tests and verification: Existing 98-test passing result and isolated startup verification apply to unchanged source. Both artifact hashes match; git diff --check passed. No caches, unrelated build outputs, or personal data are being staged.
 - GitHub Timeline: Not committed and not pushed yet; normal commit and push to origin/main are explicitly authorized and next. Incoming GitHub history was preserved without force-pushing.
+
+## 2026-09-10 19:48:45 -04:00
+
+- User Prompt summary: Push the rebuilt v23 package.
+- Actions: Committed the five release/documentation files as d12f8d4 and pushed normally to origin/main; verified GitHub's exact commit with git ls-remote.
+- Modified files: This append-only publication record; package and documentation files are in d12f8d4.
+- Tests and verification: Artifact hashes match the tested rebuild; staged whitespace checks passed; package push completed and worktree was clean. The unchanged source retains its 98 passing tests.
+- GitHub Timeline: v23 package commit d12f8d4c6493579f4049fd89e714556fd5cbf72b is pushed and verified on GitHub main. This log-only verification entry follows in a separate commit/push.
