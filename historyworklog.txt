@@ -1173,3 +1173,12 @@
 - Modified files: elo_model.py; elo_simulator.py; elo_storage.py; elo_calculator.py; test_elo_model.py; README.md; historyworklog.txt; 历史工作记录.txt.
 - Tests and verification: All 92 unit tests passed (16 added); settings Save callback checks rejected bad, nan, and inf Base Elo values without mutating state; git diff --check passed. Source compilation and final staged-file checks are performed before commit. Existing simulator season ranking is retained as documented; existing schema-7 matches without historical scaling metadata are not guessed or retroactively rewritten. Versioned v22 binaries and generated caches remain unchanged; README distinguishes current source from the older package.
 - GitHub Timeline: Not committed and not pushed yet. Latest fetch confirmed origin/main at 90d8a21; normal commit and push are authorized by the user.
+
+
+## 2026-09-09 21:16:43 -04:00
+
+- User Prompt summary: Continue the reviewed bug-fix publication to GitHub.
+- Actions: Committed the reviewed source, tests, README, and work records as a18e9c5; pushed main successfully; verified GitHub's exact branch tip with git ls-remote. Validation ran in the local Windows Git repository.
+- Modified files: Append-only publication record in historyworklog.txt and 历史工作记录.txt; implementation is in a18e9c5.
+- Tests and verification: 92 unit tests passed; the settings Save callback rejected three invalid Base Elo inputs without mutation; five Python modules compiled and passed duplicate-declaration checks; whitespace and both append-only history checks passed. A diagnostic initially hit the terminal's cp1252 output encoding when printing the Chinese filename; rerunning with an ASCII result message passed. The source changes did not rebuild v22 executables.
+- GitHub Timeline: Implementation commit a18e9c5980348ccef202be79dc9544d9eef6bbae is pushed to origin/main and the worktree was clean and synchronized. This publication record will be committed and pushed as a log-only follow-up.
