@@ -579,3 +579,21 @@
 - Modified files: This append-only publication record; implementation files are recorded in the preceding entry.
 - Tests and verification: 98 tests passed, including real Windows Tk checks with no skips; staged whitespace checks passed; no build outputs or bytecode staged; worktree clean after implementation push.
 - GitHub Timeline: Theme implementation c909cffa2c0c77649a42d9413ce53e3b4a24db1b is pushed to origin/main, verified by git ls-remote. This log-only publication record is pending its follow-up commit/push; executable packages were not rebuilt.
+
+## 2026-09-10 19:41:52 -04:00
+
+- User Prompt summary: Rebuild the executable with the reviewed theme fixes.
+- Execution location: Local Windows Git repository at C:\Users\danie\OneDrive\Documents\ChatGPT\elo.
+- Actions: Built a separate v23 Windows x64 executable from source commit 230f4029f72e6257baed4c6af97cb832165f0af1 using the existing spec/hooks, Python 3.12.14, and PyInstaller 6.22.0. Packaged the executable and new README.txt in a ZIP. Preserved older releases, tracked build outputs, and bytecode. Updated README version, hashes, and validation notes.
+- Modified files: release/EloLeagueCalculator-v23-Windows-x64/EloLeagueCalculator.exe; release/EloLeagueCalculator-v23-Windows-x64/README.txt; release/EloLeagueCalculator-v23-Windows-x64.zip; README.md; this append-only record.
+- Tests and verification: 98 tests passed with no skips, including real Tk theme tests. Confirmed bundled python312.dll, _tkinter.pyd, Tcl/Tk DLLs and script libraries, and updated theme bytecode. The packaged process reached GUI input idle using an isolated temporary LOCALAPPDATA; only smoke-test processes were stopped. No real league data was accessed. This startup check is not full manual UI acceptance. Build warnings were optional/platform-specific imports. Executable SHA-256: 3C628ABDDFB679929DFA0A59890E046CB05AAC9329DD3F565F029962A7697058. ZIP SHA-256: 00013EF7BA06EF5EE3CBFAAF4B0EF6BF77A31BB13A7394D38A37E519E2D2BB92.
+- Diagnostic paths: Build report under C:\Users\danie\AppData\Local\Temp\elo-v23-build-0aa3fbff5d7946eb9d5e4b1eebb8a964\EloLeagueCalculator; isolated smoke data under C:\Users\danie\AppData\Local\Temp\elo-v23-smoke-f529d4ca52ff4cbc98734fbd9fe9efa2. No temporary directories were recursively deleted.
+- GitHub Timeline: Rebuild artifacts and documentation are not committed and not pushed. This request was a local rebuild; no remote publication was performed.
+
+## 2026-09-10 19:47:23 -04:00
+
+- User Prompt summary: Push the rebuilt v23 Windows package to GitHub.
+- Actions: Verified executable and ZIP hashes against the rebuild record; fetched GitHub and fast-forwarded non-overlapping updates to b11fc02. Confirmed application source, tests, spec, and packaging hooks remain identical to the tested build source. Prepared only the v23 executable, package README, ZIP, main README, and this append-only log for publication from the local Windows repository.
+- Modified files: release/EloLeagueCalculator-v23-Windows-x64/EloLeagueCalculator.exe; release/EloLeagueCalculator-v23-Windows-x64/README.txt; release/EloLeagueCalculator-v23-Windows-x64.zip; README.md; this work record.
+- Tests and verification: Existing 98-test passing result and isolated startup verification apply to unchanged source. Both artifact hashes match; git diff --check passed. No caches, unrelated build outputs, or personal data are being staged.
+- GitHub Timeline: Not committed and not pushed yet; normal commit and push to origin/main are explicitly authorized and next. Incoming GitHub history was preserved without force-pushing.

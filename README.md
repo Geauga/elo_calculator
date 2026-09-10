@@ -65,7 +65,7 @@ with adjustable rosters.
 - Source theme styling includes notebook tabs, dropdown hover/press states and
   previously opened dropdown lists, scrollbars, focused/unfocused text selections,
   information headings, and readable head-to-head bar labels. Theme changes do
-  not require restarting the app. These source fixes require a new executable build.
+  not require restarting the app. These fixes are included in the v23 executable.
 - All app-owned prompts, confirmations, warnings, and management windows use
   the same theme, Segoe UI typography, spacing, control styles, centering, and
   high-DPI scaling. Supported Windows versions also match each window's title
@@ -105,20 +105,23 @@ new settings.
 ## Standalone Windows package
 
 The current packaged release is
-`release/EloLeagueCalculator-v22-Windows-x64.zip`.
+`release/EloLeagueCalculator-v23-Windows-x64.zip`.
 It contains `EloLeagueCalculator.exe` and `README.txt`; Python does not need to
 be installed. Extract the ZIP, then double-click the executable to start it.
-Version 22 predates the schema-8 source fixes described above. Run the current
-Python source to use those fixes; the versioned executable has not been rebuilt.
+Version 23 includes the schema-8 and theme fixes described above, built from
+source commit `230f4029f72e6257baed4c6af97cb832165f0af1` on September 10, 2026.
+Older releases are preserved. Back up your application data before upgrading;
+older executables cannot read schema-8 saves.
 
 Package verification:
 
 - Executable SHA-256:
-  `6FFF6FEE8158655F5F712C7797C8DA6F1AF282415DF82825E261000EB7160109`
+  `3C628ABDDFB679929DFA0A59890E046CB05AAC9329DD3F565F029962A7697058`
 - ZIP SHA-256:
-  `F23D3FC1B43B26FE0CC191CA0EA835EDBBB0D9D45B64E7135F38DCD530210D04`
-- Validation: 72 unit tests passed, followed by an isolated Windows
-  launch test.
+  `00013EF7BA06EF5EE3CBFAAF4B0EF6BF77A31BB13A7394D38A37E519E2D2BB92`
+- Validation: 98 tests passed, including real Tk theme checks. The executable's
+  bundled runtime and theme bytecode were verified; an isolated Windows startup
+  check reached GUI input idle. This is not a full manual UI acceptance test.
 
 ## Test
 
@@ -126,4 +129,4 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation: 92 unit tests.
+Current source validation: 98 tests.
