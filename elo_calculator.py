@@ -84,6 +84,76 @@ def _player_elo_history(league: League, player_id: int) -> list[float]:
     return values
 
 
+def _player_rank_history(league: League, player_id: int) -> list[int]:
+    """Return historical position in the standings for a player."""
+    sim = League.new(len(league.players))
+    sim.tiebreaker_hierarchy = league.tiebreaker_hierarchy
+    sim.elo_decimal_places = league.elo_decimal_places
+    sim.base_elo = league.base_elo
+    
+    for p_sim, p_orig in zip(sim.players, league.players):
+        p_sim.name = p_orig.name
+        p_sim.id = p_orig.id
+        
+    unseen = set(p.id for p in sim.players)
+    for m in league.matches:
+        if m.winner_id in unseen:
+            sim.player(m.winner_id).rating = m.winner_rating_before
+            unseen.remove(m.winner_id)
+        if m.loser_id in unseen:
+            sim.player(m.loser_id).rating = m.loser_rating_before
+            unseen.remove(m.loser_id)
+        if not unseen: break
+        
+    def get_rank():
+        stats = sim.statistics()
+        ranking_ratings = {
+            p.id: round(p.rating, sim.elo_decimal_places)
+            for p in sim.players
+        }
+        rating_groups: dict[float, set[int]] = {}
+        for p in sim.players:
+            rating_groups.setdefault(ranking_ratings[p.id], set()).add(p.id)
+            
+        h2h = {}
+        h2h_g = {}
+        for pids in rating_groups.values():
+            h2h.update(sim.head_to_head_percentages(pids))
+            h2h_g.update(sim.head_to_head_game_percentages(pids))
+            
+        def get_metric(p, m_name):
+            st = stats[p.id]
+            if m_name == "rating":
+                return -ranking_ratings[p.id], -h2h.get(p.id, 0.0), -h2h_g.get(p.id, 0.0)
+            elif m_name == "match_pct":
+                return -st.match_win_percentage
+            elif m_name == "sb_score":
+                return -st.sb_score
+            elif m_name == "game_pct":
+                return -st.game_win_percentage
+            elif m_name == "name":
+                return _natural_sort_key(p.name)
+            return 0
+            
+        ranked_players = sorted(
+            sim.players,
+            key=lambda p: tuple(get_metric(p, m) for m in sim.tiebreaker_hierarchy)
+        )
+        for i, p in enumerate(ranked_players):
+            if p.id == player_id:
+                return i + 1
+        return 1
+        
+    ranks = [get_rank()]
+    for m in league.matches:
+        sim.player(m.winner_id).rating += m.rating_change
+        sim.player(m.loser_id).rating -= m.rating_change
+        sim.matches.append(m)
+        ranks.append(get_rank())
+        
+    return ranks
+
+
 THEME_PALETTES = {
     "light": {
         "background": "#f3f3f3",
@@ -965,6 +1035,7 @@ class EloCalculatorApp:
         
         metrics = {
             "elo": "Elo Rating",
+            "rank": "League Rank",
             "match_pct": "Match Win %",
             "game_pct": "Game Win %",
             "sb": "SB Score",
@@ -1030,6 +1101,8 @@ class EloCalculatorApp:
         y_values = []
         if metric == "elo":
             y_values = _player_elo_history(self.league, player_id)
+        elif metric == "rank":
+            y_values = _player_rank_history(self.league, player_id)
         elif metric == "match_pct":
             match_points = 0.0
             total = 0
@@ -1192,7 +1265,13 @@ class EloCalculatorApp:
             fill=graph_colors["axis"],
         )
 
+        if metric == "rank":
+            min_y = 1
+            max_y = max(2, len(self.league.players))
+
         for i in range(5):
+            if metric == "rank":
+                continue # Rank uses discrete gridlines below
             y_pos = margin_y + i * (height - 2 * margin_y) / 4
             val = max_y - i * (max_y - min_y) / 4
             self.graph_canvas.create_line(
@@ -1203,10 +1282,25 @@ class EloCalculatorApp:
                 margin_x - 5, y_pos, text=f"{val:.1f}", anchor="e",
                 font=("Segoe UI", 8), fill=graph_colors["text"],
             )
+            
+        if metric == "rank":
+            for val in range(min_y, max_y + 1):
+                y_pos = margin_y + (val - min_y) / (max_y - min_y) * (height - 2 * margin_y)
+                self.graph_canvas.create_line(
+                    margin_x, y_pos, width, y_pos,
+                    fill=graph_colors["grid"], dash=(4, 4),
+                )
+                self.graph_canvas.create_text(
+                    margin_x - 5, y_pos, text=f"{val}", anchor="e",
+                    font=("Segoe UI", 8), fill=graph_colors["text"],
+                )
 
         if len(y_values) == 1:
             x = margin_x + (width - margin_x) / 2
-            y = margin_y + (max_y - y_values[0]) / (max_y - min_y) * (height - 2 * margin_y)
+            if metric == "rank":
+                y = margin_y + (y_values[0] - min_y) / (max_y - min_y) * (height - 2 * margin_y)
+            else:
+                y = margin_y + (max_y - y_values[0]) / (max_y - min_y) * (height - 2 * margin_y)
             self.graph_canvas.create_oval(
                 x - 3, y - 3, x + 3, y + 3,
                 fill=graph_colors["plot"], outline=graph_colors["plot"],
@@ -1215,7 +1309,10 @@ class EloCalculatorApp:
             points = []
             for i, val in enumerate(y_values):
                 x = margin_x + (i / (len(y_values) - 1)) * (width - margin_x - 10)
-                y = margin_y + (max_y - val) / (max_y - min_y) * (height - 2 * margin_y)
+                if metric == "rank":
+                    y = margin_y + (val - min_y) / (max_y - min_y) * (height - 2 * margin_y)
+                else:
+                    y = margin_y + (max_y - val) / (max_y - min_y) * (height - 2 * margin_y)
                 points.extend([x, y])
             self.graph_canvas.create_line(
                 points, fill=graph_colors["plot"], width=2

@@ -1671,3 +1671,30 @@ if __name__ == "__main__":
 # 499-654 settings/replay/scaling; 939-960 reset text; 1189-1231 preferences;
 # 1324-1380 save/recovery failures; 1446-1525 backup/audit cases;
 # 1623-1626 current schema assertion.
+
+class RankHistoryTests(unittest.TestCase):
+    def test_player_rank_history_evaluates_historical_tiebreakers(self) -> None:
+        from elo_calculator import _player_rank_history
+        league = League.new(3)
+        league.player(0).name = 'Alice'
+        league.player(1).name = 'Bob'
+        league.player(2).name = 'Charlie'
+        
+        # Initial: All 1500. Alphabetical tiebreaker means Alice(1), Bob(2), Charlie(3)
+        
+        # Match 1: Alice sweeps Bob 3-0. 
+        # Alice 1 (+), Bob 3 (-), Charlie 2
+        league.record_match(0, 1, 0, 3)
+        
+        # Match 2: Charlie sweeps Alice 3-0.
+        # Charlie goes way up. Alice goes down. 
+        league.record_match(2, 0, 0, 3)
+        
+        alice_ranks = _player_rank_history(league, 0)
+        bob_ranks = _player_rank_history(league, 1)
+        charlie_ranks = _player_rank_history(league, 2)
+        
+        self.assertEqual(alice_ranks, [1, 1, 2])
+        self.assertEqual(bob_ranks, [2, 3, 3])
+        self.assertEqual(charlie_ranks, [3, 2, 1])
+
