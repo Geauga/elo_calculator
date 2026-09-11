@@ -1,5 +1,5 @@
 # test_elo_model.py
-# Request: Add regressions for reviewed settings, replay, recovery, and UI defects.
+# Request: Test SB scores in activity log and match history.
 """Tests for the Elo league rules."""
 
 from pathlib import Path
@@ -12,6 +12,7 @@ from elo_calculator import (
     EloCalculatorApp,
     STANDINGS_COLUMN_IDS,
     THEME_PALETTES,
+    _match_sb_history,
     _player_elo_history,
     fit_window_to_screen,
     load_app_settings,
@@ -719,6 +720,17 @@ class EloModelTests(unittest.TestCase):
         self.assertEqual(stats[0].sb_score, 3.0)
         self.assertEqual(stats[1].sb_score, 0.0)
         self.assertEqual(stats[2].sb_score, 0.0)
+
+    def test_match_sb_history_uses_post_match_scores(self) -> None:
+        league = League.new(4)
+        league.record_match(0, 1, 0)
+        league.record_match(1, 2, 0)
+        league.record_draw(0, 2)
+
+        self.assertEqual(
+            _match_sb_history(league),
+            [(0.0, 0.0), (0.0, 0.0), (1.25, 0.75)],
+        )
 
     def test_statistics_follow_undo_and_reset(self) -> None:
         league = League.new(3)
@@ -1505,13 +1517,59 @@ class EloModelTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             log = AuditLog(Path(directory) / "audit.jsonl")
             log.append("player_renamed", "league-1", "Friday", "A to Alice")
-            log.append("league_reset", "league-1", "Friday", "Cleared 4 matches")
+            log.append(
+                "match_recorded",
+                "league-1",
+                "Friday",
+                "Alice defeated Bob",
+                "Alice: 2.0; Bob: 0.0",
+            )
             entries = log.read()
 
         self.assertEqual([entry["action"] for entry in entries], [
-            "player_renamed", "league_reset"
+            "player_renamed", "match_recorded"
         ])
         self.assertTrue(all(entry["league_name"] == "Friday" for entry in entries))
+        self.assertEqual(entries[0]["sb_scores"], "")
+        self.assertEqual(entries[1]["sb_scores"], "Alice: 2.0; Bob: 0.0")
+
+    def test_history_refresh_displays_post_match_sb_scores(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.league = League.new(3)
+        app.league.rename_player(0, "Alice")
+        app.league.rename_player(1, "Bob")
+        app.league.rename_player(2, "Cara")
+        app.league.record_match(0, 1, 0)
+        app.league.record_match(1, 2, 0)
+        app.league.record_draw(0, 2)
+        app.history = Mock()
+        app.history.get_children.return_value = ()
+
+        app._refresh_history()
+
+        newest_values = app.history.insert.call_args_list[0].kwargs["values"]
+        self.assertEqual(newest_values[1], "Alice drew with Cara")
+        self.assertEqual(newest_values[3], "Alice: 1.2; Cara: 0.8")
+
+    def test_activity_refresh_displays_structured_sb_scores(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.activity_log = Mock()
+        app.activity_log.get_children.return_value = ()
+        app.audit_log = Mock()
+        app.audit_log.read.return_value = [
+            {
+                "timestamp": "2026-09-10T20:00:00-04:00",
+                "league_name": "Friday",
+                "action": "match_recorded",
+                "details": "Alice defeated Bob.",
+                "sb_scores": "Alice: 2.0; Bob: 0.0",
+            }
+        ]
+
+        app._refresh_activity_log()
+
+        values = app.activity_log.insert.call_args.kwargs["values"]
+        self.assertEqual(values[4], "Alice: 2.0; Bob: 0.0")
 
     def test_audit_log_skips_invalid_utf8_and_honors_tail_limit(self) -> None:
         with TemporaryDirectory() as directory:
@@ -1666,7 +1724,7 @@ class RegressionTests(unittest.TestCase):
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-10 19:54 America/New_York.
+# Generated: 2026-09-10 20:19 America/New_York.
 # Changes: Covers schema-8 settings validation, base/scaled replay, simulator
 # scaling, recovery transaction safety, bounded/corrupt auxiliary reads, exact Elo
 # graph starts, column preferences, standings labels, and configurable reset text.
@@ -1794,3 +1852,5 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_calculator.py; upstream purpose: validate and display leagues.
 # Changed lines: Removed committed merge markers; retained RankHistoryTests at 1678;
 # 1707-1784 add rank, score, ID, and numeric-overflow cases; 1787-1788 run all test classes.
+# SB log update: Import the history helper; validate exact post-match SB snapshots,
+# structured audit persistence, Match history rendering, and Activity log rendering.

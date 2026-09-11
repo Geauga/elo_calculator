@@ -1,5 +1,5 @@
 # elo_calculator.py
-# Request: Patch settings/recovery defects and light/dark theme compatibility.
+# Request: Add explicit SB scores to activity log and match history.
 """Tkinter desktop interface for the twelve-player Elo calculator."""
 
 from __future__ import annotations
@@ -155,6 +155,44 @@ def _player_rank_history(league: League, player_id: int) -> list[int]:
         ranks.append(get_rank())
         
     return ranks
+
+
+def _match_sb_history(league: League) -> list[tuple[float, float]]:
+    """Return both participants' SB scores after each recorded match."""
+    match_points = {player.id: 0.0 for player in league.players}
+    sb_scores = {player.id: 0.0 for player in league.players}
+    dependents: dict[int, dict[int, float]] = {
+        player.id: {} for player in league.players
+    }
+    values: list[tuple[float, float]] = []
+    for match in league.matches:
+        point_changes = (
+            ((match.winner_id, 0.5), (match.loser_id, 0.5))
+            if match.is_draw
+            else ((match.winner_id, 1.0),)
+        )
+        for player_id, point_change in point_changes:
+            match_points[player_id] += point_change
+            for beneficiary_id, weight in dependents[player_id].items():
+                sb_scores[beneficiary_id] += weight * point_change
+
+        if match.is_draw:
+            sb_scores[match.winner_id] += 0.5 * match_points[match.loser_id]
+            sb_scores[match.loser_id] += 0.5 * match_points[match.winner_id]
+            dependents[match.loser_id][match.winner_id] = (
+                dependents[match.loser_id].get(match.winner_id, 0.0) + 0.5
+            )
+            dependents[match.winner_id][match.loser_id] = (
+                dependents[match.winner_id].get(match.loser_id, 0.0) + 0.5
+            )
+        else:
+            sb_scores[match.winner_id] += match_points[match.loser_id]
+            dependents[match.loser_id][match.winner_id] = (
+                dependents[match.loser_id].get(match.winner_id, 0.0) + 1.0
+            )
+
+        values.append((sb_scores[match.winner_id], sb_scores[match.loser_id]))
+    return values
 
 
 THEME_PALETTES = {
@@ -971,15 +1009,17 @@ class EloCalculatorApp:
         history_frame.columnconfigure(0, weight=1)
         self.history = ttk.Treeview(
             history_frame,
-            columns=("time", "result", "change"),
+            columns=("time", "result", "change", "sb_scores"),
             show="headings",
         )
         self.history.heading("time", text="Time")
         self.history.heading("result", text="Result")
         self.history.heading("change", text="Elo")
+        self.history.heading("sb_scores", text="SB scores")
         self.history.column("time", width=115, anchor="w")
         self.history.column("result", width=150, anchor="w")
         self.history.column("change", width=75, anchor="e")
+        self.history.column("sb_scores", width=180, anchor="w")
         self.history.grid(row=0, column=0, sticky="nsew")
         history_scroll = ttk.Scrollbar(
             history_frame, orient="vertical", command=self.history.yview
@@ -991,7 +1031,7 @@ class EloCalculatorApp:
         log_frame.columnconfigure(0, weight=1)
         self.activity_log = ttk.Treeview(
             log_frame,
-            columns=("time", "league", "action", "details"),
+            columns=("time", "league", "action", "details", "sb_scores"),
             show="headings",
         )
         for column, label, width in (
@@ -999,6 +1039,7 @@ class EloCalculatorApp:
             ("league", "League", 110),
             ("action", "Action", 100),
             ("details", "Details", 260),
+            ("sb_scores", "SB scores", 180),
         ):
             self.activity_log.heading(column, text=label)
             self.activity_log.column(column, width=width, anchor="w")
@@ -1616,6 +1657,7 @@ class EloCalculatorApp:
         create_backup: bool = True,
         allow_recovery_overwrite: bool = False,
         protected_backup_paths: tuple[Path, ...] = (),
+        sb_scores: str = "",
     ) -> None:
         """Save a mutation, optionally backing up its prior state, and audit it."""
         block_reason = getattr(self, "data_save_block_reason", None)
@@ -1640,6 +1682,7 @@ class EloCalculatorApp:
                 league_id if league_id is not None else current.id,
                 league_name if league_name is not None else current.name,
                 details,
+                sb_scores,
             )
         except OSError as error:
             self._show_warning(
@@ -1687,6 +1730,7 @@ class EloCalculatorApp:
                     entry.get("league_name") or "All leagues",
                     str(entry.get("action", "")).replace("_", " ").title(),
                     entry.get("details", ""),
+                    entry.get("sb_scores", ""),
                 ),
             )
 
@@ -2795,7 +2839,10 @@ class EloCalculatorApp:
 
     def _refresh_history(self) -> None:
         self.history.delete(*self.history.get_children())
-        for match in reversed(self.league.matches):
+        sb_history = _match_sb_history(self.league)
+        for match, (winner_sb, loser_sb) in reversed(
+            list(zip(self.league.matches, sb_history))
+        ):
             winner = self.league.player(match.winner_id).name
             loser = self.league.player(match.loser_id).name
             try:
@@ -2820,6 +2867,7 @@ class EloCalculatorApp:
                     timestamp,
                     result,
                     elo_change,
+                    f"{winner}: {winner_sb:.1f}; {loser}: {loser_sb:.1f}",
                 ),
             )
 
@@ -2913,10 +2961,10 @@ class EloCalculatorApp:
                 "match_recorded",
                 f"{winner} defeated {loser} "
                 f"{match.winner_games}-{loser_games}; transferred "
-                f"{self._format_elo(match.rating_change)} Elo "
-                f"(SB: {winner} {winner_sb:.1f}, {loser} {loser_sb:.1f}).",
+                f"{self._format_elo(match.rating_change)} Elo.",
                 current.id,
                 current.name,
+                sb_scores=f"{winner}: {winner_sb:.1f}; {loser}: {loser_sb:.1f}",
             )
         except (OSError, ValueError) as error:
             self._restore_collection(previous_state)
@@ -2947,11 +2995,13 @@ class EloCalculatorApp:
                 f"Elo changes: {player_one} "
                 f"{self._format_signed_elo(match.rating_change)}, "
                 f"{player_two} "
-                f"{self._format_signed_elo(-match.rating_change)} "
-                f"(SB: {player_one} {stats[match.winner_id].sb_score:.1f}, "
-                f"{player_two} {stats[match.loser_id].sb_score:.1f}).",
+                f"{self._format_signed_elo(-match.rating_change)}.",
                 current.id,
                 current.name,
+                sb_scores=(
+                    f"{player_one}: {stats[match.winner_id].sb_score:.1f}; "
+                    f"{player_two}: {stats[match.loser_id].sb_score:.1f}"
+                ),
             )
         except (OSError, ValueError) as error:
             self._restore_collection(previous_state)
@@ -2993,10 +3043,10 @@ class EloCalculatorApp:
             self._commit_edit(
                 previous_state,
                 "match_undone",
-                f"Undid {result}; restored the prior ratings "
-                f"(SB: {winner} {winner_sb:.1f}, {loser} {loser_sb:.1f}).",
+                f"Undid {result}; restored the prior ratings.",
                 current.id,
                 current.name,
+                sb_scores=f"{winner}: {winner_sb:.1f}; {loser}: {loser_sb:.1f}",
             )
         except (OSError, ValueError) as error:
             self._restore_collection(previous_state)
@@ -3115,7 +3165,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-09-10 19:54 America/New_York.
+# Generated: 2026-09-10 20:19 America/New_York.
 # Changes: Validate new league/preferences settings, preserve recovery data,
 # keep saved edits authoritative when audit logging fails, synchronize standings
 # menus and configurable-base messaging, graph exact saved Elo history, and show
@@ -3137,3 +3187,5 @@ if __name__ == "__main__":
 # Upstream: League supplies current roster and saved match starting ratings.
 # Upstream purpose: Preserve league state and match history; environment: Python 3.12 / Windows.
 # Changed lines: 89 validates requested player; 98-99 retain actual rating before replay.
+# SB log update: Show structured post-match SB scores in match history and the
+# append-only activity log while retaining compatibility with older log entries.
