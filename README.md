@@ -115,24 +115,24 @@ new settings.
 ## Standalone Windows package
 
 The current packaged release is
-`release/EloLeagueCalculator-v23-Windows-x64.zip`.
+`release/EloLeagueCalculator-v24-Windows-x64.zip`.
 It contains `EloLeagueCalculator.exe` and `README.txt`; Python does not need to
 be installed. Extract the ZIP, then double-click the executable to start it.
-Version 23 includes the schema-8 and theme fixes described above, built from
-source commit `230f4029f72e6257baed4c6af97cb832165f0af1` on September 10, 2026.
+Version 24 includes the season-document export, structured SB history columns,
+line-graph points, League Rank history, validation fixes, schema-8 settings, and
+theme fixes described above. It was built from source commit
+`7d015441b7166193cbc7fb7045ed0483e33bb0c3` on September 11, 2026.
 Older releases are preserved. Back up your application data before upgrading;
 older executables cannot read schema-8 saves.
-The current source additionally includes line-graph points, League Rank history,
-and stricter numeric/score/ID validation. These later changes are not in v23.
 
 Package verification:
 
 - Executable SHA-256:
-  `3C628ABDDFB679929DFA0A59890E046CB05AAC9329DD3F565F029962A7697058`
+  `0303D109B0B4CAD0200518A96E08C15B346AC3D39A0DD4BCD183CB72A9DE898C`
 - ZIP SHA-256:
-  `00013EF7BA06EF5EE3CBFAAF4B0EF6BF77A31BB13A7394D38A37E519E2D2BB92`
-- Validation: 98 tests passed, including real Tk theme checks. The executable's
-  bundled runtime and theme bytecode were verified; an isolated Windows startup
+  `3D186803AE74850547C8CBF2C7EFEC54FABF1323CDFB7E0948CB63039DD4D6B8`
+- Validation: 111 tests passed with no skips, including real Tk theme checks.
+  The executable's bundled runtime was verified; an isolated Windows startup
   check reached GUI input idle. This is not a full manual UI acceptance test.
 
 ## Test
@@ -141,5 +141,5 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation: 108 tests, including numeric validation, historical
-rank regressions, and real Tk theme checks.
+Current source validation: 111 tests, including season-report, SB-history,
+numeric-validation, historical-rank, and real Tk theme checks.
