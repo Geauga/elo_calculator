@@ -684,3 +684,13 @@
 - 修改文件：merge 包含 `.github/workflows/codeql.yml`、`SECURITY.md`、`elo_storage.py`、`historyworklog.txt`、双方对 `README.md`、`elo_calculator.py`、`test_elo_model.py` 和本文件的更新。
 - 测试或验证结果：combined full suite 共 111 项 tests，在 real Windows Tk environment 全部通过且无 skips；season export、SB history/activity、ranking、security-adjacent existing behavior 均保留；exact conflict-marker、compile 和 whitespace final checks 在 merge commit 前执行。
 - GitHub Timeline：local season-export commit `bd88881` 尚未 push；incoming GitHub history 已保留于正在进行的 normal merge；merge resolved 并等待 commit，用户已明确授权 normal push 和 subsequent v24 package publication。
+
+## 2026-09-11 16:57:42 -04:00
+
+- 用户 Prompt 摘要：完成 season export push，并 build/publish next Windows package。
+- 实际执行位置：本地 Windows Git repository `C:\Users\danie\OneDrive\Documents\ChatGPT\elo`；build 和 smoke verification 使用 Windows temporary directories；publication target 为 GitHub `origin/main`。
+- 具体动作：将 season export 与 incoming SB/security changes normal merge 为 source commit `7d01544`；从该 exact commit 使用 existing spec/hooks、Python 3.12.14 和 PyInstaller 6.22.2 构建 v24 one-file Windows x64 executable；创建 versioned release folder、README 和 ZIP；保留 older releases；更新 main README version、features、validation 和 hashes；恢复 tracked hook bytecode，不将 generated caches 纳入 release commit。
+- 修改文件：`README.md`；`release/EloLeagueCalculator-v24-Windows-x64/EloLeagueCalculator.exe`；`release/EloLeagueCalculator-v24-Windows-x64/README.txt`；`release/EloLeagueCalculator-v24-Windows-x64.zip`；本文件。
+- 测试或验证结果：combined 111 tests 在 real Windows Tk environment 全部通过且无 skips；PyInstaller classified 1,003 entries 并包含 `pyi_rth__tkinter.py`；build warnings 仅为 optional/platform-specific imports；raw build executable 与 ZIP-extracted executable SHA-256 均为 `0303D109B0B4CAD0200518A96E08C15B346AC3D39A0DD4BCD183CB72A9DE898C`；两次 isolated startup checks 均达到 GUI input idle，且只停止各自 test process；ZIP 仅含 executable 和 README，SHA-256 为 `3D186803AE74850547C8CBF2C7EFEC54FABF1323CDFB7E0948CB63039DD4D6B8`。
+- Diagnostic paths：build root `C:\Users\danie\AppData\Local\Temp\elo-v24-build-d2feeaa0e9864c86964f239fd9deebfc`；raw smoke data `C:\Users\danie\AppData\Local\Temp\EloLeagueCalculator-v24-smoke-6d58310349744796a7389588d9f0a120`；package extract `C:\Users\danie\AppData\Local\Temp\EloLeagueCalculator-v24-package-422cd9ac91ae4de18bfb3fe4e6878c77`；ZIP smoke data `C:\Users\danie\AppData\Local\Temp\EloLeagueCalculator-v24-zip-smoke-a4ba1ee06f284d0da253ae06a51f4639`。未 recursive delete temporary directories。
+- GitHub Timeline：source merge commit `7d015441b7166193cbc7fb7045ed0483e33bb0c3` 已位于并验证于 `origin/main`；v24 artifacts、README 和本 build record 尚未 commit/push，用户已明确授权 normal publication。
