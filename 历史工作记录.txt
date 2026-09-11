@@ -694,3 +694,11 @@
 - 测试或验证结果：combined 111 tests 在 real Windows Tk environment 全部通过且无 skips；PyInstaller classified 1,003 entries 并包含 `pyi_rth__tkinter.py`；build warnings 仅为 optional/platform-specific imports；raw build executable 与 ZIP-extracted executable SHA-256 均为 `0303D109B0B4CAD0200518A96E08C15B346AC3D39A0DD4BCD183CB72A9DE898C`；两次 isolated startup checks 均达到 GUI input idle，且只停止各自 test process；ZIP 仅含 executable 和 README，SHA-256 为 `3D186803AE74850547C8CBF2C7EFEC54FABF1323CDFB7E0948CB63039DD4D6B8`。
 - Diagnostic paths：build root `C:\Users\danie\AppData\Local\Temp\elo-v24-build-d2feeaa0e9864c86964f239fd9deebfc`；raw smoke data `C:\Users\danie\AppData\Local\Temp\EloLeagueCalculator-v24-smoke-6d58310349744796a7389588d9f0a120`；package extract `C:\Users\danie\AppData\Local\Temp\EloLeagueCalculator-v24-package-422cd9ac91ae4de18bfb3fe4e6878c77`；ZIP smoke data `C:\Users\danie\AppData\Local\Temp\EloLeagueCalculator-v24-zip-smoke-a4ba1ee06f284d0da253ae06a51f4639`。未 recursive delete temporary directories。
 - GitHub Timeline：source merge commit `7d015441b7166193cbc7fb7045ed0483e33bb0c3` 已位于并验证于 `origin/main`；v24 artifacts、README 和本 build record 尚未 commit/push，用户已明确授权 normal publication。
+
+## 2026-09-11 16:59:28 -04:00
+
+- 用户 Prompt 摘要：完成 v24 build 和 GitHub publication。
+- 具体动作：将 v24 executable、release README、ZIP、main README 和 build record commit 为 `80ce947`；publication 前 fetch 并确认 ahead 1、behind 0；normal push `main`；使用 `git ls-remote` 验证 exact remote branch tip。
+- 修改文件：本次仅 append 更新本文件；v24 package/documentation files 位于 commit `80ce947`，combined source 位于 merge commit `7d01544`。
+- 测试或验证结果：publication verification 保持 111/111 tests passing 且无 skips；EXE SHA-256 为 `0303D109B0B4CAD0200518A96E08C15B346AC3D39A0DD4BCD183CB72A9DE898C`；ZIP SHA-256 为 `3D186803AE74850547C8CBF2C7EFEC54FABF1323CDFB7E0948CB63039DD4D6B8`；raw 和 ZIP-extracted executable 均通过 isolated startup；push 后 worktree clean 且 synchronized。
+- GitHub Timeline：v24 package commit `80ce947019613fee269f6d7c41599ea2aec3632a` 已成功 push 至 `origin/main` 并通过 remote hash 验证；本 final publication record 将作为 log-only follow-up commit 提交并 push。
