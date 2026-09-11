@@ -1,5 +1,5 @@
 # elo_calculator.py
-# Request: Patch settings/recovery defects and light/dark theme compatibility.
+# Request: Add a button that exports a season and its history to a document.
 """Tkinter desktop interface for the twelve-player Elo calculator."""
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 import shutil
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import filedialog, messagebox, ttk
 
 from elo_model import (
     DEFAULT_PLAYER_COUNT,
@@ -53,6 +53,51 @@ STANDINGS_COLUMN_IDS = (
     "game_record",
     "game_pct",
 )
+
+
+def _ranked_players(league: League) -> list:
+    """Return players in the same order used by the standings display."""
+    statistics = league.statistics()
+    ranking_ratings = {
+        player.id: round(player.rating, league.elo_decimal_places)
+        for player in league.players
+    }
+    rating_groups: dict[float, set[int]] = {}
+    for player in league.players:
+        rating_groups.setdefault(ranking_ratings[player.id], set()).add(player.id)
+
+    head_to_head = {}
+    head_to_head_games = {}
+    for player_ids in rating_groups.values():
+        head_to_head.update(league.head_to_head_percentages(player_ids))
+        head_to_head_games.update(
+            league.head_to_head_game_percentages(player_ids)
+        )
+
+    def metric(player, metric_name):
+        stats = statistics[player.id]
+        if metric_name == "rating":
+            return (
+                -ranking_ratings[player.id],
+                -head_to_head.get(player.id, 0.0),
+                -head_to_head_games.get(player.id, 0.0),
+            )
+        if metric_name == "match_pct":
+            return -stats.match_win_percentage
+        if metric_name == "sb_score":
+            return -stats.sb_score
+        if metric_name == "game_pct":
+            return -stats.game_win_percentage
+        if metric_name == "name":
+            return _natural_sort_key(player.name)
+        return 0
+
+    return sorted(
+        league.players,
+        key=lambda player: tuple(
+            metric(player, name) for name in league.tiebreaker_hierarchy
+        ),
+    )
 
 
 def _player_elo_history(league: League, player_id: int) -> list[float]:
@@ -109,39 +154,7 @@ def _player_rank_history(league: League, player_id: int) -> list[int]:
         if not unseen: break
         
     def get_rank():
-        stats = sim.statistics()
-        ranking_ratings = {
-            p.id: round(p.rating, sim.elo_decimal_places)
-            for p in sim.players
-        }
-        rating_groups: dict[float, set[int]] = {}
-        for p in sim.players:
-            rating_groups.setdefault(ranking_ratings[p.id], set()).add(p.id)
-            
-        h2h = {}
-        h2h_g = {}
-        for pids in rating_groups.values():
-            h2h.update(sim.head_to_head_percentages(pids))
-            h2h_g.update(sim.head_to_head_game_percentages(pids))
-            
-        def get_metric(p, m_name):
-            st = stats[p.id]
-            if m_name == "rating":
-                return -ranking_ratings[p.id], -h2h.get(p.id, 0.0), -h2h_g.get(p.id, 0.0)
-            elif m_name == "match_pct":
-                return -st.match_win_percentage
-            elif m_name == "sb_score":
-                return -st.sb_score
-            elif m_name == "game_pct":
-                return -st.game_win_percentage
-            elif m_name == "name":
-                return _natural_sort_key(p.name)
-            return 0
-            
-        ranked_players = sorted(
-            sim.players,
-            key=lambda p: tuple(get_metric(p, m) for m in sim.tiebreaker_hierarchy)
-        )
+        ranked_players = _ranked_players(sim)
         for i, p in enumerate(ranked_players):
             if p.id == player_id:
                 return i + 1
@@ -155,6 +168,108 @@ def _player_rank_history(league: League, player_id: int) -> list[int]:
         ranks.append(get_rank())
         
     return ranks
+
+
+def _build_season_report(
+    league_name: str,
+    created_at: str,
+    league: League,
+    generated_at: str | None = None,
+) -> str:
+    """Build a readable snapshot of one league season and its match history."""
+    generated_at = generated_at or datetime.now().astimezone().isoformat(
+        timespec="seconds"
+    )
+    decimals = league.elo_decimal_places
+    statistics = league.statistics()
+    ranked_players = _ranked_players(league)
+    format_name = (
+        "Custom scores"
+        if league.win_condition.score_mode == SCORE_MODE_CUSTOM
+        else f"First to {league.win_condition.games_to_win}"
+    )
+    match_record_heading = "Match W-D-L" if league.allow_draws else "Match W-L"
+    lines = [
+        f"{league_name} - Season Report",
+        "=" * (len(league_name) + 16),
+        f"Generated: {generated_at}",
+        f"League created: {created_at}",
+        f"Players: {len(league.players)}",
+        f"Matches recorded: {len(league.matches)}",
+        "",
+        "Rules",
+        "-----",
+        f"Format: {format_name}",
+        f"Base Elo: {league.base_elo:.{decimals}f}",
+        f"K-factor: {league.k_factor:g}",
+        f"Victory-margin K scaling: {'Enabled' if league.k_factor_scaling else 'Disabled'}",
+        f"Elo rounding: {decimals} decimal place{'s' if decimals != 1 else ''}",
+        f"Automatic Elo: {'Enabled' if league.calculate_elo else 'Disabled'}",
+        f"Draws: {'Enabled' if league.allow_draws else 'Disabled'}",
+        "Standings priorities: " + " > ".join(league.tiebreaker_hierarchy),
+    ]
+    if league.win_condition.score_mode == SCORE_MODE_FIXED:
+        lines.append("Score multipliers:")
+        for losing_score, multiplier in sorted(
+            league.win_condition.score_multipliers.items()
+        ):
+            lines.append(f"  Losing score {losing_score}: {multiplier:.1%}")
+
+    lines.extend(
+        [
+            "",
+            "Final Standings",
+            "---------------",
+            f"Rank | Player | Elo | SB | {match_record_heading} | Match % | Game W-L | Game %",
+        ]
+    )
+    for rank, player in enumerate(ranked_players, start=1):
+        stats = statistics[player.id]
+        match_record = (
+            f"{stats.matches_won}-{stats.matches_drawn}-{stats.matches_lost}"
+            if league.allow_draws
+            else f"{stats.matches_won}-{stats.matches_lost}"
+        )
+        lines.append(
+            f"{rank} | {player.name} | {player.rating:.{decimals}f} | "
+            f"{stats.sb_score:.1f} | {match_record} | "
+            f"{stats.match_win_percentage:.1f}% | "
+            f"{stats.games_won}-{stats.games_lost} | "
+            f"{stats.game_win_percentage:.1f}%"
+        )
+
+    lines.extend(["", "Match History", "-------------"])
+    if not league.matches:
+        lines.append("No matches recorded.")
+    for number, match in enumerate(league.matches, start=1):
+        winner = league.player(match.winner_id).name
+        loser = league.player(match.loser_id).name
+        result = (
+            f"{winner} drew with {loser}"
+            if match.is_draw
+            else f"{winner} {match.winner_games}-{match.loser_games} {loser}"
+        )
+        match_decimals = (
+            match.elo_decimal_places
+            if match.elo_decimal_places is not None
+            else decimals
+        )
+        winner_after = match.winner_rating_before + match.rating_change
+        loser_after = match.loser_rating_before - match.rating_change
+        lines.extend(
+            [
+                f"{number}. {match.timestamp} | {result}",
+                f"   Elo: {winner} {match.winner_rating_before:.{match_decimals}f} -> "
+                f"{winner_after:.{match_decimals}f}; {loser} "
+                f"{match.loser_rating_before:.{match_decimals}f} -> "
+                f"{loser_after:.{match_decimals}f}",
+                f"   Transfer: {match.rating_change:+.{match_decimals}f} / "
+                f"{-match.rating_change:+.{match_decimals}f}; "
+                f"K-factor: {match.k_factor:g}; multiplier: {match.multiplier:.1%}; "
+                f"rated: {'Yes' if match.rated else 'No'}",
+            ]
+        )
+    return "\n".join(lines) + "\n"
 
 
 THEME_PALETTES = {
@@ -783,6 +898,9 @@ class EloCalculatorApp:
         ttk.Button(
             league_tools, text="Simulator", command=self._open_simulator
         ).grid(row=0, column=7, padx=3)
+        ttk.Button(
+            league_tools, text="Export Season", command=self._export_season
+        ).grid(row=0, column=8, padx=3)
 
         standings_frame = ttk.LabelFrame(outer, text="Standings", padding=10)
         standings_frame.grid(
@@ -2487,6 +2605,63 @@ class EloCalculatorApp:
         )
         self._refresh_all()
 
+    def _export_season(self) -> None:
+        active = self.collection.active
+        safe_name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", active.name).strip(" .")
+        if not safe_name:
+            safe_name = "League"
+        target_text = filedialog.asksaveasfilename(
+            parent=self.root,
+            title="Export season report",
+            defaultextension=".txt",
+            filetypes=(("Text documents", "*.txt"), ("All files", "*.*")),
+            initialfile=(
+                f"{safe_name}-season-"
+                f"{datetime.now().astimezone().date().isoformat()}.txt"
+            ),
+        )
+        if not target_text:
+            return
+
+        target = Path(target_text)
+        try:
+            report = _build_season_report(
+                active.name,
+                active.created_at,
+                active.league,
+            )
+            target.write_text(report, encoding="utf-8")
+        except (OSError, UnicodeError, ValueError) as error:
+            self._show_error(
+                "Season not exported",
+                f"The season document could not be saved.\n\n{error}",
+                parent=self.root,
+            )
+            return
+
+        try:
+            self.audit_log.append(
+                "season_exported",
+                active.id,
+                active.name,
+                f"Exported season report to {target.name}.",
+            )
+        except OSError as error:
+            self._show_warning(
+                "Season exported; activity not logged",
+                f"The document was saved to:\n{target}\n\n"
+                f"The activity log could not be updated.\n\n{error}",
+                parent=self.root,
+            )
+        else:
+            self._show_info(
+                "Season exported",
+                f"The season document was saved to:\n{target}",
+                parent=self.root,
+            )
+        self.status_var.set(f"Season report exported to {target.name}.")
+        self._refresh_activity_log()
+
     def _open_backups(self) -> None:
         window = tk.Toplevel(self.root)
         window.title("Backups")
@@ -2731,43 +2906,7 @@ class EloCalculatorApp:
             )
         self.standings.delete(*self.standings.get_children())
         statistics = self.league.statistics()
-        ranking_ratings = {
-            player.id: round(player.rating, self.league.elo_decimal_places)
-            for player in self.league.players
-        }
-        rating_groups: dict[float, set[int]] = {}
-        for player in self.league.players:
-            rating_groups.setdefault(ranking_ratings[player.id], set()).add(
-                player.id
-            )
-        head_to_head = {}
-        head_to_head_games = {}
-        for player_ids in rating_groups.values():
-            head_to_head.update(
-                self.league.head_to_head_percentages(player_ids)
-            )
-            head_to_head_games.update(
-                self.league.head_to_head_game_percentages(player_ids)
-            )
-            
-        def get_metric(player, metric_name):
-            stats = statistics[player.id]
-            if metric_name == "rating":
-                return -ranking_ratings[player.id], -head_to_head.get(player.id, 0.0), -head_to_head_games.get(player.id, 0.0)
-            elif metric_name == "match_pct":
-                return -stats.match_win_percentage
-            elif metric_name == "sb_score":
-                return -stats.sb_score
-            elif metric_name == "game_pct":
-                return -stats.game_win_percentage
-            elif metric_name == "name":
-                return _natural_sort_key(player.name)
-            return 0
-            
-        ranked_players = sorted(
-            self.league.players,
-            key=lambda player: tuple(get_metric(player, m) for m in self.league.tiebreaker_hierarchy)
-        )
+        ranked_players = _ranked_players(self.league)
         for rank, player in enumerate(ranked_players, start=1):
             stats = statistics[player.id]
             match_record = (
@@ -3115,7 +3254,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_storage.py provide rules, persistence, and backups.
 # Upstream purpose: Validate league data and preserve user changes safely.
 # Environment: Python 3.10+ with Tkinter on Windows.
-# Generated: 2026-09-10 19:54 America/New_York.
+# Generated: 2026-09-11 16:47 America/New_York.
 # Changes: Validate new league/preferences settings, preserve recovery data,
 # keep saved edits authoritative when audit logging fails, synchronize standings
 # menus and configurable-base messaging, graph exact saved Elo history, and show
@@ -3137,3 +3276,6 @@ if __name__ == "__main__":
 # Upstream: League supplies current roster and saved match starting ratings.
 # Upstream purpose: Preserve league state and match history; environment: Python 3.12 / Windows.
 # Changed lines: 89 validates requested player; 98-99 retain actual rating before replay.
+# Season export update: Lines 58-100 centralize standings ordering; 173-280 build
+# the UTF-8 season report; 901-903 add the toolbar button; 2608-2663 save and audit
+# the report; 2893 uses the shared ranking helper without changing standings order.
