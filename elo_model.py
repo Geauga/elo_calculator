@@ -40,6 +40,16 @@ DEFAULT_TIEBREAKER_HIERARCHY = (
 )
 
 
+def _is_finite_number(value: Any) -> bool:
+    """Reject non-numbers and integers too large for Elo's float arithmetic."""
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
 @dataclass
 class WinCondition:
     games_to_win: int = 3
@@ -66,7 +76,7 @@ class WinCondition:
             if (
                 not isinstance(multiplier, (int, float))
                 or isinstance(multiplier, bool)
-                or not math.isfinite(multiplier)
+                or not _is_finite_number(multiplier)
                 or multiplier < 0
             ):
                 raise ValueError(
@@ -87,6 +97,8 @@ class WinCondition:
     ) -> float:
         if winner_games is None:
             winner_games = self.games_to_win
+        if not isinstance(winner_games, int) or isinstance(winner_games, bool):
+            raise ValueError("Final scores must be whole numbers.")
         if self.score_mode == SCORE_MODE_CUSTOM:
             validate_custom_score(winner_games, loser_games)
             if winner_games == 1:
@@ -130,7 +142,7 @@ def validate_k_factor(k_factor: float) -> float:
     if (
         not isinstance(k_factor, (int, float))
         or isinstance(k_factor, bool)
-        or not math.isfinite(k_factor)
+        or not _is_finite_number(k_factor)
         or not MIN_K_FACTOR <= k_factor <= MAX_K_FACTOR
     ):
         raise ValueError(
@@ -159,7 +171,7 @@ def validate_base_elo(base_elo: float) -> float:
     if (
         not isinstance(base_elo, (int, float))
         or isinstance(base_elo, bool)
-        or not math.isfinite(base_elo)
+        or not _is_finite_number(base_elo)
     ):
         raise ValueError("Base Elo must be a finite number.")
     return float(base_elo)
@@ -184,7 +196,7 @@ def expected_score(rating: float, opponent_rating: float) -> float:
     if any(
         not isinstance(value, (int, float))
         or isinstance(value, bool)
-        or not math.isfinite(value)
+        or not _is_finite_number(value)
         for value in (rating, opponent_rating)
     ):
         raise ValueError("Ratings must be finite numbers.")
@@ -203,7 +215,7 @@ def rating_change(
     if (
         not isinstance(multiplier, (int, float))
         or isinstance(multiplier, bool)
-        or not math.isfinite(multiplier)
+        or not _is_finite_number(multiplier)
         or multiplier < 0
     ):
         raise ValueError("Multiplier must be a finite, nonnegative number.")
@@ -329,6 +341,8 @@ class League:
         )
 
     def player(self, player_id: int) -> Player:
+        if not isinstance(player_id, int) or isinstance(player_id, bool):
+            raise ValueError("Player ID must be a whole number.")
         for player in self.players:
             if player.id == player_id:
                 return player
@@ -795,7 +809,7 @@ class League:
         if any(
             not isinstance(player.rating, (int, float))
             or isinstance(player.rating, bool)
-            or not math.isfinite(player.rating)
+            or not _is_finite_number(player.rating)
             for player in players
         ):
             raise ValueError("Every saved rating must be a finite number.")
@@ -873,20 +887,20 @@ class League:
                 or match.loser_games < 0
                 or not isinstance(match.rating_change, (int, float))
                 or isinstance(match.rating_change, bool)
-                or not math.isfinite(match.rating_change)
+                or not _is_finite_number(match.rating_change)
                 or (match.rating_change < 0 and not match.is_draw)
                 or not isinstance(match.winner_rating_before, (int, float))
                 or isinstance(match.winner_rating_before, bool)
-                or not math.isfinite(match.winner_rating_before)
+                or not _is_finite_number(match.winner_rating_before)
                 or not isinstance(match.loser_rating_before, (int, float))
                 or isinstance(match.loser_rating_before, bool)
-                or not math.isfinite(match.loser_rating_before)
+                or not _is_finite_number(match.loser_rating_before)
                 or match.winner_id not in valid_ids
                 or match.loser_id not in valid_ids
                 or match.winner_id == match.loser_id
                 or not isinstance(match.multiplier, (int, float))
                 or isinstance(match.multiplier, bool)
-                or not math.isfinite(match.multiplier)
+                or not _is_finite_number(match.multiplier)
                 or match.multiplier < 0
                 or not isinstance(match.winner_games, int)
                 or isinstance(match.winner_games, bool)
@@ -900,7 +914,7 @@ class League:
                 or not isinstance(match.rated, bool)
                 or not isinstance(match.k_factor, (int, float))
                 or isinstance(match.k_factor, bool)
-                or not math.isfinite(match.k_factor)
+                or not _is_finite_number(match.k_factor)
                 or not MIN_K_FACTOR <= match.k_factor <= MAX_K_FACTOR
                 or validate_elo_decimal_places(match.elo_decimal_places)
                 != match.elo_decimal_places
@@ -947,3 +961,8 @@ class League:
 # Changed lines: 1-40 provenance/schema/defaults; 158-181 validators; 302-319
 # initialization; 337-412 scaled transfers; 527-539 replay starting ratings;
 # 730, 835-849, 932 schema migration, settings validation, and decode handling.
+# Review update: 2026-09-10 20:13 America/New_York; Python 3.12 / Windows.
+# Purpose: Reject unsavable scores/IDs and normalize numeric overflow to validation errors.
+# Upstream: UI/API inputs and JSON save files; upstream purpose: persist valid match data.
+# Changed lines: 43-50 finite-number guard; 79/145/174/199/218 numeric validators;
+# 100-101 fixed-target score type; 344-345 player ID type; 812 and 890-917 saved numbers.
