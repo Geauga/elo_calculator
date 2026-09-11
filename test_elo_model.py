@@ -1,5 +1,5 @@
 # test_elo_model.py
-# Request: Add regressions for reviewed settings, replay, recovery, and UI defects.
+# Request: Add regression coverage for season-document generation and export.
 """Tests for the Elo league rules."""
 
 from pathlib import Path
@@ -12,6 +12,7 @@ from elo_calculator import (
     EloCalculatorApp,
     STANDINGS_COLUMN_IDS,
     THEME_PALETTES,
+    _build_season_report,
     _player_elo_history,
     fit_window_to_screen,
     load_app_settings,
@@ -410,6 +411,83 @@ class EloModelTests(unittest.TestCase):
             points[1::2],
         ):
             self.assertEqual(marker_call.args, (x - 3, y - 3, x + 3, y + 3))
+
+    def test_season_report_contains_rules_standings_and_match_history(self) -> None:
+        league = League.new(2)
+        league.rename_player(0, "Alice")
+        league.rename_player(1, "Bob")
+        match = league.record_match(0, 1, 1)
+
+        report = _build_season_report(
+            "Autumn League",
+            "2026-09-01T10:00:00-04:00",
+            league,
+            generated_at="2026-09-11T16:41:18-04:00",
+        )
+
+        self.assertIn("Autumn League - Season Report", report)
+        self.assertIn("Generated: 2026-09-11T16:41:18-04:00", report)
+        self.assertIn("Format: First to 3", report)
+        self.assertIn("Losing score 1: 75.0%", report)
+        self.assertIn("Rank | Player | Elo | SB | Match W-D-L", report)
+        self.assertIn("1 | Alice | 1512.00", report)
+        self.assertIn("Alice 3-1 Bob", report)
+        self.assertIn(f"K-factor: {match.k_factor:g}; multiplier: 75.0%", report)
+
+    def test_export_season_button_writes_report_and_logs_activity(self) -> None:
+        with TemporaryDirectory() as directory:
+            target = Path(directory) / "season.txt"
+            app = object.__new__(EloCalculatorApp)
+            app.collection = LeagueCollection.new()
+            app.collection.active.league.resize_players(2)
+            app.root = Mock()
+            app.audit_log = Mock()
+            app.status_var = Mock()
+            app._show_error = Mock()
+            app._show_warning = Mock()
+            app._show_info = Mock()
+            app._refresh_activity_log = Mock()
+
+            with patch(
+                "elo_calculator.filedialog.asksaveasfilename",
+                return_value=str(target),
+            ):
+                app._export_season()
+
+            report = target.read_text(encoding="utf-8")
+            self.assertIn("League 1 - Season Report", report)
+            self.assertIn("No matches recorded.", report)
+            app.audit_log.append.assert_called_once_with(
+                "season_exported",
+                app.collection.active.id,
+                "League 1",
+                "Exported season report to season.txt.",
+            )
+            app._show_error.assert_not_called()
+            app._show_info.assert_called_once()
+            app._refresh_activity_log.assert_called_once()
+
+    def test_season_report_supports_custom_scores_without_draws(self) -> None:
+        league = League.new(2)
+        league.win_condition = WinCondition(
+            games_to_win=3,
+            score_multipliers={},
+            score_mode=SCORE_MODE_CUSTOM,
+        )
+        league.allow_draws = False
+        league.record_match(0, 1, 2, winner_games=5)
+
+        report = _build_season_report(
+            "Custom League",
+            "2026-09-01T10:00:00-04:00",
+            league,
+            generated_at="2026-09-11T16:41:18-04:00",
+        )
+
+        self.assertIn("Format: Custom scores", report)
+        self.assertIn("Rank | Player | Elo | SB | Match W-L", report)
+        self.assertIn("Player 1 5-2 Player 2", report)
+        self.assertNotIn("Score multipliers:", report)
 
     def test_first_to_n_simulator_shares_fully_tied_title_and_rank(self) -> None:
         league = League.new(3)
@@ -1666,7 +1744,7 @@ class RegressionTests(unittest.TestCase):
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-10 19:54 America/New_York.
+# Generated: 2026-09-11 16:47 America/New_York.
 # Changes: Covers schema-8 settings validation, base/scaled replay, simulator
 # scaling, recovery transaction safety, bounded/corrupt auxiliary reads, exact Elo
 # graph starts, column preferences, standings labels, and configurable reset text.
@@ -1794,3 +1872,5 @@ if __name__ == "__main__":
 # Upstream: elo_model.py and elo_calculator.py; upstream purpose: validate and display leagues.
 # Changed lines: Removed committed merge markers; retained RankHistoryTests at 1678;
 # 1707-1784 add rank, score, ID, and numeric-overflow cases; 1787-1788 run all test classes.
+# Season export update: Lines 415-489 verify both match formats, standings,
+# history, UTF-8 file output, audit logging, and the successful dialog workflow.

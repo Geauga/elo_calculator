@@ -78,6 +78,9 @@ with adjustable rosters.
   and the chosen theme.
 - Create, rename, switch between, and delete independent leagues from the top
   toolbar. Each league has its own players, ratings, standings, and history.
+- The Export Season button saves the active league as a UTF-8 text document with
+  its rules, final standings, player statistics, and complete chronological match
+  history, including scores, Elo changes, K-factors, and margin multipliers.
 - An automatic backup is created before every saved edit. The Backups window
   also supports manual snapshots and restoring any of the newest 50 backups.
 - The Activity log tab keeps an append-only record of match entries (including SB scores), undo,
