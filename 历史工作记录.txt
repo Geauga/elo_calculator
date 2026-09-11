@@ -639,3 +639,22 @@
 - Modified files: This append-only publication record; implementation is in 39c761a.
 - Tests and verification: 105 tests passed with no skips; direct model test execution passed 100 tests; six modules passed in-memory compilation, conflict-marker, and duplicate-declaration checks; staged whitespace checks passed. No generated build files or bytecode were staged. Worktree was clean and synchronized after implementation push.
 - GitHub Timeline: Fix commit 39c761af49be4bfb395114de15a0cf53da47ec64 is pushed to GitHub main and verified by git ls-remote. This log-only verification record follows in a separate commit/push. The v23 executable is unchanged.
+
+## 2026-09-10 20:19:47 -04:00
+
+- User Prompt summary: Add SB scores to the activity log and match history.
+- Execution location: Isolated local Windows Git worktree `C:\Code\elo_calculator\.codex-sb-log-history`, branch `codex/sb-log-history`, based on published `origin/main` commit `d6b41c5`. The isolated worktree was required because another process changed the original checkout during validation.
+- Actions: Added dedicated `SB scores` columns to Match history and Activity log. Match history reconstructs both participants' exact post-match SB values incrementally from saved results. New match, draw, and undo audit entries persist structured SB text; older JSONL records remain compatible and display a blank SB field. Preserved the rank, validation, security, and logging fixes already present on the latest remote base.
+- Modified files: `elo_calculator.py`; `elo_storage.py`; `test_elo_model.py`; `README.md`; `历史工作记录.txt`. No executable, ZIP, cache, generated build output, or files in the divergent original checkout were modified by this isolated reapplication.
+- Tests and verification: Validation is pending after reapplication. Regressions cover exact win/draw SB snapshots, structured audit persistence, Match history rendering, and Activity log rendering.
+- GitHub Timeline: Changes are not committed and not pushed. The isolated branch tracks `origin/main`; the user has not requested publication in this turn.
+
+## 2026-09-10 20:22:21 -04:00
+
+- User Prompt summary: Complete and verify the SB-score activity/history implementation.
+- Actions: Validated the isolated implementation after the concurrent repository update. Confirmed the subsequent remote commit `9dea765` changes only security workflow/policy files and the auxiliary English work log, so it does not overlap the SB implementation.
+- Modified files: This append-only verification record only; implementation files are listed in the preceding entry.
+- Tests and verification: All 108 discovered tests passed; four existing real-Tk theme tests were skipped because the bundled Python runtime cannot locate `init.tcl`. The three new tests passed for numerical SB snapshots and both UI refresh paths. `git diff --check` passed and no unresolved Python conflict markers remain. No tracked or untracked bytecode was produced during the final run.
+- GitHub Timeline: The changes remain uncommitted and unpushed on local branch `codex/sb-log-history`. The branch is one non-overlapping security-only commit behind current `origin/main`; no force operation or remote mutation was performed.
+
+- Verification wording correction: 108 tests were discovered; 104 executed tests passed and four real-Tk theme tests were skipped because `init.tcl` is unavailable in the bundled runtime. The suite result was `OK (skipped=4)`.
