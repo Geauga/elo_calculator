@@ -51,7 +51,8 @@ with adjustable rosters.
   history, and head-to-head records for the selected player. Elo plots begin at
   the player's actual saved starting rating; percentage calculations are
   draw-aware, and SB history reflects later results from prior opponents. Its
-  background, axes, grid, labels, and plot line follow the active theme.
+  background, axes, grid, labels, plot line, and point markers follow the active
+  theme. Every observation on a line graph is marked with a visible point.
 - The league Settings button selects a separate match format for each league.
   First-to-N mode sets the games needed to win and the Elo multiplier for every
   possible losing score. Custom-score mode accepts any whole-number result
