@@ -631,3 +631,11 @@
 - Modified files: elo_calculator.py; elo_model.py; test_elo_model.py; README.md; this append-only work record. No executable, ZIP, cache, or generated build output was modified by this review.
 - Tests and verification: Before fixes, discovery failed on test-file merge markers; a 1000-Base-Elo league incorrectly ranked its unplayed player first; scores 3.0 and True were accepted but rejected on reload; 401-digit numeric settings raised OverflowError. After fixes, all 105 tests passed with real Windows Tk and no skips, and direct test_elo_model.py execution passed all 100 tests. Six new tests cover rank baselines/no-history/read-only behavior, score/ID rejection without mutation, oversized stored numeric fields, and public numeric validators. Initial sandbox-only run skipped Tk checks; approved full-runtime rerun passed. Final whitespace, conflict-marker, source-compilation, and staged-file checks precede commit.
 - GitHub Timeline: Not committed and not pushed yet. User authorized normal publication to origin/main; incoming history preserved by fast-forward. Existing v23 packages remain unchanged and do not include these source fixes.
+
+## 2026-09-10 20:14:53 -04:00
+
+- User Prompt summary: Complete reviewed fixes and GitHub push.
+- Actions: Committed the five reviewed source/test/documentation files as 39c761a, pushed normally to origin/main, and verified the exact remote commit from the local Windows repository.
+- Modified files: This append-only publication record; implementation is in 39c761a.
+- Tests and verification: 105 tests passed with no skips; direct model test execution passed 100 tests; six modules passed in-memory compilation, conflict-marker, and duplicate-declaration checks; staged whitespace checks passed. No generated build files or bytecode were staged. Worktree was clean and synchronized after implementation push.
+- GitHub Timeline: Fix commit 39c761af49be4bfb395114de15a0cf53da47ec64 is pushed to GitHub main and verified by git ls-remote. This log-only verification record follows in a separate commit/push. The v23 executable is unchanged.
