@@ -1,5 +1,5 @@
 # elo_storage.py
-# Request: Preserve recovery backups and handle malformed auxiliary files safely.
+# Request: Persist explicit SB scores for match-related activity entries.
 """Multiple-league persistence, backups, and append-only audit logging."""
 
 from __future__ import annotations
@@ -363,6 +363,7 @@ class AuditLog:
         league_id: str | None,
         league_name: str | None,
         details: str,
+        sb_scores: str = "",
     ) -> dict[str, Any]:
         entry = {
             "timestamp": now_iso(),
@@ -370,6 +371,7 @@ class AuditLog:
             "league_id": league_id,
             "league_name": league_name,
             "details": details,
+            "sb_scores": sb_scores,
         }
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.path.open("a", encoding="utf-8") as file:
@@ -400,10 +402,10 @@ class AuditLog:
 # Upstream: elo_model.py supplies validated league state and serialization.
 # Upstream purpose: Model league rules, matches, ratings, and migrations.
 # Environment: Python 3.10+ on Windows with platform-independent storage tests.
-# Generated: 2026-09-09 07:43 America/New_York.
+# Generated: 2026-09-10 20:19 America/New_York.
 # Changes: Treat invalid UTF-8 as malformed auxiliary data, bound audit-log reads,
 # protect newly created/selected recovery snapshots during pruning, and retain
 # the public collection-validation contracts.
 # Changed lines: 1-2 provenance; 37-59 tail reader; 240, 308-325 decode handling;
 # 256-286 retention validation/protected snapshots; 336-351 pruning;
-# 385-389 bounded audit reading.
+# 360-380 optional structured SB-score audit field; 387-391 bounded audit reading.
