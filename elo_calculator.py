@@ -86,6 +86,7 @@ def _player_elo_history(league: League, player_id: int) -> list[float]:
 
 def _player_rank_history(league: League, player_id: int) -> list[int]:
     """Return historical position in the standings for a player."""
+    league.player(player_id)
     sim = League.new(len(league.players))
     sim.tiebreaker_hierarchy = league.tiebreaker_hierarchy
     sim.elo_decimal_places = league.elo_decimal_places
@@ -94,6 +95,8 @@ def _player_rank_history(league: League, player_id: int) -> list[int]:
     for p_sim, p_orig in zip(sim.players, league.players):
         p_sim.name = p_orig.name
         p_sim.id = p_orig.id
+        # Players without any matches retain their actual rating, not 1500.
+        p_sim.rating = p_orig.rating
         
     unseen = set(p.id for p in sim.players)
     for m in league.matches:
@@ -3129,3 +3132,8 @@ if __name__ == "__main__":
 # 1396-1397 combobox hover/press; 1427/1452-1467 cached dropdown refresh.
 # Graph point update: Draw a theme-aware circular marker at every observation on
 # multi-value Elo, match percentage, game percentage, and SB line graphs.
+# Review update: 2026-09-10 20:13 America/New_York.
+# Purpose: Keep rank history consistent with actual unplayed-player ratings.
+# Upstream: League supplies current roster and saved match starting ratings.
+# Upstream purpose: Preserve league state and match history; environment: Python 3.12 / Windows.
+# Changed lines: 89 validates requested player; 98-99 retain actual rating before replay.

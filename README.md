@@ -47,12 +47,14 @@ with adjustable rosters.
   Season** records one concrete simulated round robin in the active league,
   with confirmation and an automatic backup before ratings and history are
   updated.
-- The Graphs tab plots Elo, match score percentage, game win percentage, SB
+- The Graphs tab plots Elo, league rank, match score percentage, game win percentage, SB
   history, and head-to-head records for the selected player. Elo plots begin at
   the player's actual saved starting rating; percentage calculations are
   draw-aware, and SB history reflects later results from prior opponents. Its
   background, axes, grid, labels, plot line, and point markers follow the active
   theme. Every observation on a line graph is marked with a visible point.
+  League Rank replays saved results for the current roster using current ranking
+  priorities and names; unplayed players retain their actual ratings.
 - The league Settings button selects a separate match format for each league.
   First-to-N mode sets the games needed to win and the Elo multiplier for every
   possible losing score. Custom-score mode accepts any whole-number result
@@ -113,6 +115,8 @@ Version 23 includes the schema-8 and theme fixes described above, built from
 source commit `230f4029f72e6257baed4c6af97cb832165f0af1` on September 10, 2026.
 Older releases are preserved. Back up your application data before upgrading;
 older executables cannot read schema-8 saves.
+The current source additionally includes line-graph points, League Rank history,
+and stricter numeric/score/ID validation. These later changes are not in v23.
 
 Package verification:
 
@@ -130,4 +134,5 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation: 98 tests.
+Current source validation: 105 tests, including numeric validation, historical
+rank regressions, and real Tk theme checks.

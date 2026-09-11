@@ -1662,10 +1662,6 @@ class RegressionTests(unittest.TestCase):
         self.assertAlmostEqual(league.player(1).rating, p1_rating)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 # Purpose: Regression tests for Elo rules, persistence, storage, and migrations.
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
@@ -1678,7 +1674,6 @@ if __name__ == "__main__":
 # 499-654 settings/replay/scaling; 939-960 reset text; 1189-1231 preferences;
 # 1324-1380 save/recovery failures; 1446-1525 backup/audit cases;
 # 1623-1626 current schema assertion.
-<<<<<<< HEAD
 
 class RankHistoryTests(unittest.TestCase):
     def test_player_rank_history_evaluates_historical_tiebreakers(self) -> None:
@@ -1706,7 +1701,96 @@ class RankHistoryTests(unittest.TestCase):
         self.assertEqual(bob_ranks, [2, 3, 3])
         self.assertEqual(charlie_ranks, [3, 2, 1])
 
-=======
+    def test_rank_history_preserves_unplayed_players_actual_ratings(self) -> None:
+        from elo_calculator import _player_rank_history
+        league = League.new(3)
+        league.base_elo = 1000.0
+        league.reset_standings()
+        league.record_match(0, 1, 0)
+        # Changing the base later must not alter historical or unplayed ratings.
+        league.base_elo = 1800.0
+        before = league.to_dict()
+        self.assertEqual(_player_rank_history(league, 0), [1, 1])
+        self.assertEqual(_player_rank_history(league, 1), [2, 3])
+        self.assertEqual(_player_rank_history(league, 2), [3, 2])
+        self.assertEqual(league.to_dict(), before)
+
+    def test_rank_history_without_matches_uses_current_ratings(self) -> None:
+        from elo_calculator import _player_rank_history
+        league = League.new(2)
+        league.player(1).rating = 1700.0
+        self.assertEqual(_player_rank_history(league, 0), [2])
+        self.assertEqual(_player_rank_history(league, 1), [1])
+        with self.assertRaises(ValueError):
+            _player_rank_history(league, 99)
+
+
+class PersistenceBoundaryTests(unittest.TestCase):
+    def test_fixed_target_rejects_non_integer_scores_without_mutation(self) -> None:
+        for target, invalid_scores in ((3, (3.0, "3")), (1, (True, 1.0))):
+            league = League.new(2)
+            league.win_condition = WinCondition(target, {0: 1.0})
+            before = league.to_dict()
+            for score in invalid_scores:
+                with self.subTest(target=target, score=score):
+                    with self.assertRaisesRegex(ValueError, "whole numbers"):
+                        league.record_match(0, 1, 0, score)
+                    self.assertEqual(league.to_dict(), before)
+            league.record_match(0, 1, 0, target)
+            self.assertEqual(League.from_dict(league.to_dict()).to_dict(), league.to_dict())
+
+    def test_non_integer_player_ids_cannot_create_unreadable_matches(self) -> None:
+        league = League.new(2)
+        before = league.to_dict()
+        for invalid_id in (False, 0.0, "0"):
+            with self.subTest(player_id=invalid_id):
+                with self.assertRaises(ValueError):
+                    league.record_match(invalid_id, 1, 0)
+                with self.assertRaises(ValueError):
+                    league.record_draw(invalid_id, 1)
+                self.assertEqual(league.to_dict(), before)
+
+    def test_oversized_saved_numbers_raise_validation_errors(self) -> None:
+        huge = 10 ** 400
+        for field in ("base_elo", "k_factor"):
+            data = League.new(2).to_dict()
+            data[field] = huge
+            with self.subTest(setting=field), self.assertRaises(ValueError):
+                League.from_dict(data)
+        data = League.new(2).to_dict()
+        data["players"][0]["rating"] = huge
+        with self.assertRaises(ValueError):
+            League.from_dict(data)
+        for field in ("rating_change", "winner_rating_before", "loser_rating_before",
+                      "multiplier", "k_factor"):
+            league = League.new(2)
+            league.record_match(0, 1, 0)
+            data = league.to_dict()
+            data["matches"][0][field] = huge
+            with self.subTest(match_field=field), self.assertRaises(ValueError):
+                League.from_dict(data)
+
+    def test_oversized_numbers_are_rejected_by_public_elo_functions(self) -> None:
+        from elo_model import validate_base_elo, validate_k_factor
+        huge = 10 ** 400
+        for function in (validate_base_elo, validate_k_factor):
+            with self.subTest(function=function.__name__), self.assertRaises(ValueError):
+                function(huge)
+        with self.assertRaises(ValueError):
+            expected_score(huge, 1500.0)
+        with self.assertRaises(ValueError):
+            rating_change(1500.0, 1500.0, huge)
+        with self.assertRaises(ValueError):
+            WinCondition(3, {0: huge})
+
+
+if __name__ == "__main__":
+    unittest.main()
+
 # Graph point update: The SB history regression verifies one marker per plotted
 # observation and exact marker centering on the line coordinates.
->>>>>>> 9d2f129fa677b5632a827b6ed48b358e9163ba37
+# Review update: 2026-09-10 20:13 America/New_York; Python 3.12 / Windows.
+# Purpose: Restore executable test coverage and guard rank/persistence regressions.
+# Upstream: elo_model.py and elo_calculator.py; upstream purpose: validate and display leagues.
+# Changed lines: Removed committed merge markers; retained RankHistoryTests at 1678;
+# 1707-1784 add rank, score, ID, and numeric-overflow cases; 1787-1788 run all test classes.

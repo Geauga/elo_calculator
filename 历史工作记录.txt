@@ -622,3 +622,12 @@
 - 修改文件：本次仅 append 更新本文件；implementation files 位于 commit `3865cd7`。既有 v23 executable/package 保持不变。
 - 测试或验证结果：publication verification 保持 98/98 tests passing 且无 skips；6-module compilation、exact conflict-marker、whitespace 和 generated-bytecode exclusion checks 通过；push 后 worktree clean 且 synchronized。
 - GitHub Timeline：commit `3865cd70bbf1a6cc9a9c73575bb59c02e2c477b2` 已成功 push 至 `origin/main` 并通过 remote hash 验证；本 final verification entry 将作为 log-only follow-up commit 提交并 push。
+
+## 2026-09-10 20:13:14 -04:00
+
+- User Prompt summary: Review code, fix defects, and push.
+- Execution location: Local Windows Git repository at C:\Users\danie\OneDrive\Documents\ChatGPT\elo; publication target origin/main.
+- Actions: Fast-forwarded clean checkout to cb38045, including the incoming League Rank feature. Reproduced a SyntaxError from committed merge markers in test_elo_model.py; resolved markers while preserving both contributions and moved unittest.main after all test classes. Corrected unplayed-player rank baselines and invalid rank player lookup. Rejected non-integer fixed-target winner scores and player IDs before mutation, preventing matches that could be saved but not reloaded. Converted oversized numeric inputs into ValueError validation failures instead of uncaught OverflowError. Added six regressions and updated source/package documentation.
+- Modified files: elo_calculator.py; elo_model.py; test_elo_model.py; README.md; this append-only work record. No executable, ZIP, cache, or generated build output was modified by this review.
+- Tests and verification: Before fixes, discovery failed on test-file merge markers; a 1000-Base-Elo league incorrectly ranked its unplayed player first; scores 3.0 and True were accepted but rejected on reload; 401-digit numeric settings raised OverflowError. After fixes, all 105 tests passed with real Windows Tk and no skips, and direct test_elo_model.py execution passed all 100 tests. Six new tests cover rank baselines/no-history/read-only behavior, score/ID rejection without mutation, oversized stored numeric fields, and public numeric validators. Initial sandbox-only run skipped Tk checks; approved full-runtime rerun passed. Final whitespace, conflict-marker, source-compilation, and staged-file checks precede commit.
+- GitHub Timeline: Not committed and not pushed yet. User authorized normal publication to origin/main; incoming history preserved by fast-forward. Existing v23 packages remain unchanged and do not include these source fixes.
