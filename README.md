@@ -80,11 +80,15 @@ with adjustable rosters.
   toolbar. Each league has its own players, ratings, standings, and history.
 - The Export Season button saves the active league as a UTF-8 text document with
   its rules, final standings, player statistics, and complete chronological match
-  history, including scores, Elo changes, K-factors, and margin multipliers.
+  history, including scores, Elo changes, K-factors, margin multipliers, and
+  both participants' post-match SB scores.
 - An automatic backup is created before every saved edit. The Backups window
   also supports manual snapshots and restoring any of the newest 50 backups.
-- The Activity log tab keeps an append-only record of match entries (including SB scores), undo,
-  renames, resets, league management, theme changes, and backup actions. It features a horizontal scrollbar to prevent truncation.
+- Match history includes both participants' post-match SB scores for every
+  recorded result. The Activity log keeps an append-only record of match
+  entries and undo actions with SB scores in a dedicated column, plus renames,
+  resets, league management, theme changes, and backup actions. Older activity
+  records remain compatible, and the activity view has a horizontal scrollbar.
 
 ## Run
 
@@ -137,5 +141,5 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation: 105 tests, including numeric validation, historical
+Current source validation: 108 tests, including numeric validation, historical
 rank regressions, and real Tk theme checks.
