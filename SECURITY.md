@@ -2,20 +2,22 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+Currently, only the latest release of the Elo League Calculator is supported with security updates.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+| Latest  | :white_check_mark: |
+| Older   | :x:                |
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+We take the security of this project seriously. If you discover a security vulnerability within this project, please report it privately.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+**Do not file a public issue.** Instead, please send an email to the repository maintainer or use the GitHub Security Advisories feature to privately report the vulnerability.
+
+Please include the following in your report:
+- A description of the vulnerability.
+- Steps to reproduce the issue.
+- Potential impact and any suggested mitigations.
+
+We will acknowledge receipt of your vulnerability report as soon as possible and strive to send you regular updates about our progress. If the vulnerability is accepted, we will coordinate a public disclosure with you once a patch is available.
