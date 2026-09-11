@@ -403,6 +403,13 @@ class EloModelTests(unittest.TestCase):
         points = graph_lines[0].args[0]
         self.assertEqual(len(points), 6)
         self.assertLess(points[-1], points[-3])
+        self.assertEqual(app.graph_canvas.create_oval.call_count, 3)
+        for marker_call, x, y in zip(
+            app.graph_canvas.create_oval.call_args_list,
+            points[::2],
+            points[1::2],
+        ):
+            self.assertEqual(marker_call.args, (x - 3, y - 3, x + 3, y + 3))
 
     def test_first_to_n_simulator_shares_fully_tied_title_and_rank(self) -> None:
         league = League.new(3)
@@ -1663,7 +1670,7 @@ if __name__ == "__main__":
 # Upstream: elo_model.py, elo_storage.py, and selected application helpers.
 # Upstream purpose: Implement the desktop league calculator and durable data model.
 # Environment: Python 3.10+ unittest suite on Windows.
-# Generated: 2026-09-09 07:43 America/New_York.
+# Generated: 2026-09-10 19:54 America/New_York.
 # Changes: Covers schema-8 settings validation, base/scaled replay, simulator
 # scaling, recovery transaction safety, bounded/corrupt auxiliary reads, exact Elo
 # graph starts, column preferences, standings labels, and configurable reset text.
@@ -1671,6 +1678,7 @@ if __name__ == "__main__":
 # 499-654 settings/replay/scaling; 939-960 reset text; 1189-1231 preferences;
 # 1324-1380 save/recovery failures; 1446-1525 backup/audit cases;
 # 1623-1626 current schema assertion.
+<<<<<<< HEAD
 
 class RankHistoryTests(unittest.TestCase):
     def test_player_rank_history_evaluates_historical_tiebreakers(self) -> None:
@@ -1698,3 +1706,7 @@ class RankHistoryTests(unittest.TestCase):
         self.assertEqual(bob_ranks, [2, 3, 3])
         self.assertEqual(charlie_ranks, [3, 2, 1])
 
+=======
+# Graph point update: The SB history regression verifies one marker per plotted
+# observation and exact marker centering on the line coordinates.
+>>>>>>> 9d2f129fa677b5632a827b6ed48b358e9163ba37
