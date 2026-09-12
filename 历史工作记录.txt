@@ -702,3 +702,12 @@
 - 修改文件：本次仅 append 更新本文件；v24 package/documentation files 位于 commit `80ce947`，combined source 位于 merge commit `7d01544`。
 - 测试或验证结果：publication verification 保持 111/111 tests passing 且无 skips；EXE SHA-256 为 `0303D109B0B4CAD0200518A96E08C15B346AC3D39A0DD4BCD183CB72A9DE898C`；ZIP SHA-256 为 `3D186803AE74850547C8CBF2C7EFEC54FABF1323CDFB7E0948CB63039DD4D6B8`；raw 和 ZIP-extracted executable 均通过 isolated startup；push 后 worktree clean 且 synchronized。
 - GitHub Timeline：v24 package commit `80ce947019613fee269f6d7c41599ea2aec3632a` 已成功 push 至 `origin/main` 并通过 remote hash 验证；本 final publication record 将作为 log-only follow-up commit 提交并 push。
+
+## 2026-09-12 18:36:23 -04:00
+
+- User Prompt summary: Make graph points show their results.
+- Execution location: Isolated local Windows Git worktree `C:\Code\elo_calculator\.codex-graph-point-results`, branch `codex/graph-point-results`, based on `origin/main` commit `15df83c`. The isolated worktree preserves extensive unrelated build-output changes in the original checkout.
+- Actions: Added a metric-aware label beside every point on Elo, League Rank, Match Win %, Game Win %, and SB line graphs. Labels show configured-precision Elo, `#rank`, one-decimal percentages, or one-decimal SB. Top-edge labels move below their point and left/right-edge labels anchor inward; label colors reuse the active theme palette. Existing point markers, lines, axes, H2H bars, calculations, and debug output remain unchanged.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `README.md`; `历史工作记录.txt`. No executable, ZIP, build output, cache, or original-checkout dirty file was modified.
+- Tests and verification: 112 tests discovered; 108 executed tests passed and four existing real-Tk theme tests were skipped because the bundled Python runtime cannot locate `init.tcl`. New coverage validates every metric's label format, one label per SB observation, marker coordinates, edge/top placement, and theme-aware label color. `git diff --check` passed and no unresolved Python conflict markers were found. Final validation follows after this append-only record.
+- GitHub Timeline: Changes are not committed and not pushed. The isolated branch is synchronized with `origin/main`; the user has not requested publication in this turn.

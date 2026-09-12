@@ -1,5 +1,5 @@
 # elo_calculator.py
-# Request: Add season export and explicit SB scores to history views.
+# Request: Show the result value at every line-graph point.
 """Tkinter desktop interface for the twelve-player Elo calculator."""
 
 from __future__ import annotations
@@ -1246,6 +1246,52 @@ class EloCalculatorApp:
             "plot_text": colors["selection_text"],
         }
 
+    def _format_graph_value(self, metric: str, value: float) -> str:
+        if metric == "elo":
+            return self._format_elo(value)
+        if metric == "rank":
+            return f"#{int(value)}"
+        if metric in ("match_pct", "game_pct"):
+            return f"{value:.1f}%"
+        return f"{value:.1f}"
+
+    def _draw_graph_point(
+        self,
+        x: float,
+        y: float,
+        value: float,
+        metric: str,
+        width: int,
+        margin_x: int,
+        margin_y: int,
+        graph_colors: dict[str, str],
+    ) -> None:
+        self.graph_canvas.create_oval(
+            x - 3,
+            y - 3,
+            x + 3,
+            y + 3,
+            fill=graph_colors["plot"],
+            outline=graph_colors["plot"],
+        )
+        label_below = y < margin_y + 16
+        label_y = y + 7 if label_below else y - 7
+        vertical_anchor = "n" if label_below else "s"
+        if x < margin_x + 30:
+            anchor = f"{vertical_anchor}w"
+        elif x > width - 30:
+            anchor = f"{vertical_anchor}e"
+        else:
+            anchor = vertical_anchor
+        self.graph_canvas.create_text(
+            x,
+            label_y,
+            text=self._format_graph_value(metric, value),
+            anchor=anchor,
+            font=("Segoe UI", 8, "bold"),
+            fill=graph_colors["text"],
+        )
+
     def _refresh_graph(self) -> None:
         if not hasattr(self, "graph_canvas"): return
         graph_colors = self._graph_colors()
@@ -1468,9 +1514,8 @@ class EloCalculatorApp:
                 y = margin_y + (y_values[0] - min_y) / (max_y - min_y) * (height - 2 * margin_y)
             else:
                 y = margin_y + (max_y - y_values[0]) / (max_y - min_y) * (height - 2 * margin_y)
-            self.graph_canvas.create_oval(
-                x - 3, y - 3, x + 3, y + 3,
-                fill=graph_colors["plot"], outline=graph_colors["plot"],
+            self._draw_graph_point(
+                x, y, y_values[0], metric, width, margin_x, margin_y, graph_colors
             )
         else:
             points = []
@@ -1484,10 +1529,9 @@ class EloCalculatorApp:
             self.graph_canvas.create_line(
                 points, fill=graph_colors["plot"], width=2
             )
-            for x, y in zip(points[::2], points[1::2]):
-                self.graph_canvas.create_oval(
-                    x - 3, y - 3, x + 3, y + 3,
-                    fill=graph_colors["plot"], outline=graph_colors["plot"],
+            for x, y, value in zip(points[::2], points[1::2], y_values):
+                self._draw_graph_point(
+                    x, y, value, metric, width, margin_x, margin_y, graph_colors
                 )
 
     def _update_columns(self) -> None:
@@ -3336,3 +3380,6 @@ if __name__ == "__main__":
 # the report; 2893 uses the shared ranking helper without changing standings order.
 # SB log update: Show structured post-match SB scores in match history and the
 # append-only activity log while retaining compatibility with older log entries.
+# Graph result update: 2026-09-12 18:33 America/New_York. Format and draw a
+# theme-aware result label beside every point on each line graph; edge labels
+# use inward anchors and top-edge labels move below their point to remain visible.
