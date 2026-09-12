@@ -85,7 +85,7 @@ def simulate_first_to_n_season(
         for first in range(len(players))
         for second in range(first + 1, len(players))
     ]
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # lgtm[py/insecure-randomness]
     rng.shuffle(pairings)
     matches: list[SimulatedMatch] = []
 
@@ -161,7 +161,7 @@ def simulate_first_to_n_league(
         for first in range(player_count)
         for second in range(first + 1, player_count)
     ]
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # lgtm[py/insecure-randomness]
 
     title_counts = [0.0] * player_count
     rank_totals = [0.0] * player_count
