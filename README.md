@@ -54,6 +54,7 @@ with adjustable rosters.
   background, axes, grid, labels, plot line, and point markers follow the active
   theme. Every observation on a line graph is marked with a visible point and
   its exact result: configured-precision Elo, league rank, percentage, or SB.
+  Click any post-match point to open and select its source in Match History.
   League Rank replays saved results for the current roster using current ranking
   priorities and names; unplayed players retain their actual ratings.
 - The league Settings button selects a separate match format for each league.
@@ -142,5 +143,5 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation: 112 tests, including graph-result, season-report, SB-history,
+Current source validation: 114 tests, including graph-result, graph-trace, season-report, SB-history,
 numeric-validation, historical-rank, and real Tk theme checks.

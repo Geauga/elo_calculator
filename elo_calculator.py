@@ -1120,14 +1120,15 @@ class EloCalculatorApp:
             widget.bind("<KeyRelease>", lambda _event: self._update_preview())
             widget.bind("<FocusOut>", lambda _event: self._update_preview())
 
-        activity_notebook = ttk.Notebook(outer)
-        activity_notebook.grid(row=2, column=1, sticky="nsew", pady=(12, 0))
-        history_frame = ttk.Frame(activity_notebook, padding=8)
-        log_frame = ttk.Frame(activity_notebook, padding=8)
-        graphs_frame = ttk.Frame(activity_notebook, padding=8)
-        activity_notebook.add(history_frame, text="Match history")
-        activity_notebook.add(graphs_frame, text="Graphs")
-        activity_notebook.add(log_frame, text="Activity log")
+        self.activity_notebook = ttk.Notebook(outer)
+        self.activity_notebook.grid(row=2, column=1, sticky="nsew", pady=(12, 0))
+        self.history_frame = ttk.Frame(self.activity_notebook, padding=8)
+        log_frame = ttk.Frame(self.activity_notebook, padding=8)
+        graphs_frame = ttk.Frame(self.activity_notebook, padding=8)
+        self.activity_notebook.add(self.history_frame, text="Match history")
+        self.activity_notebook.add(graphs_frame, text="Graphs")
+        self.activity_notebook.add(log_frame, text="Activity log")
+        history_frame = self.history_frame
         history_frame.rowconfigure(0, weight=1)
         history_frame.columnconfigure(0, weight=1)
         self.history = ttk.Treeview(
@@ -1219,6 +1220,9 @@ class EloCalculatorApp:
             width=15
         )
         self.graph_metric_combo.pack(side="left", padx=4)
+        ttk.Label(controls, text="Click a point to show its match.").pack(
+            side="left", padx=(12, 0)
+        )
         
         def on_metric_change(*args):
             self.graph_metric_var.set(self.reverse_metrics[self.graph_metric_combo_var.get()])
@@ -1265,8 +1269,9 @@ class EloCalculatorApp:
         margin_x: int,
         margin_y: int,
         graph_colors: dict[str, str],
+        match_index: int | None,
     ) -> None:
-        self.graph_canvas.create_oval(
+        marker_id = self.graph_canvas.create_oval(
             x - 3,
             y - 3,
             x + 3,
@@ -1274,6 +1279,12 @@ class EloCalculatorApp:
             fill=graph_colors["plot"],
             outline=graph_colors["plot"],
         )
+        if match_index is not None:
+            self.graph_canvas.tag_bind(
+                marker_id,
+                "<Button-1>",
+                lambda _event, index=match_index: self._show_match_from_graph(index),
+            )
         label_below = y < margin_y + 16
         label_y = y + 7 if label_below else y - 7
         vertical_anchor = "n" if label_below else "s"
@@ -1312,15 +1323,22 @@ class EloCalculatorApp:
         matches = self.league.matches
 
         y_values = []
+        match_indices: list[int | None] = [None]
         if metric == "elo":
             y_values = _player_elo_history(self.league, player_id)
+            match_indices.extend(
+                index
+                for index, match in enumerate(matches)
+                if player_id in (match.winner_id, match.loser_id)
+            )
         elif metric == "rank":
             y_values = _player_rank_history(self.league, player_id)
+            match_indices.extend(range(len(matches)))
         elif metric == "match_pct":
             match_points = 0.0
             total = 0
             y_values.append(0.0)
-            for m in matches:
+            for match_index, m in enumerate(matches):
                 if m.winner_id == player_id or m.loser_id == player_id:
                     total += 1
                     if m.is_draw:
@@ -1328,11 +1346,12 @@ class EloCalculatorApp:
                     elif m.winner_id == player_id:
                         match_points += 1.0
                     y_values.append((match_points / total) * 100)
+                    match_indices.append(match_index)
         elif metric == "game_pct":
             games_won = 0.0
             total_games = 0.0
             y_values.append(0.0)
-            for m in matches:
+            for match_index, m in enumerate(matches):
                 if m.winner_id == player_id or m.loser_id == player_id:
                     total_games += m.winner_games + m.loser_games
                     if m.winner_id == player_id:
@@ -1340,6 +1359,7 @@ class EloCalculatorApp:
                     elif m.loser_id == player_id:
                         games_won += m.loser_games
                     y_values.append((games_won / total_games) * 100 if total_games else 0.0)
+                    match_indices.append(match_index)
         elif metric == "h2h":
             h2h_stats = {}
             for m in matches:
@@ -1439,7 +1459,7 @@ class EloCalculatorApp:
             match_scores = {p.id: 0.0 for p in self.league.players}
             opponent_weights: list[tuple[int, float]] = []
             y_values.append(0.0)
-            for m in matches:
+            for match_index, m in enumerate(matches):
                 if m.is_draw:
                     match_scores[m.winner_id] += 0.5
                     match_scores[m.loser_id] += 0.5
@@ -1456,6 +1476,7 @@ class EloCalculatorApp:
                     for opponent_id, weight in opponent_weights
                 )
                 y_values.append(sb)
+                match_indices.append(match_index)
 
         if not y_values:
             return
@@ -1515,7 +1536,15 @@ class EloCalculatorApp:
             else:
                 y = margin_y + (max_y - y_values[0]) / (max_y - min_y) * (height - 2 * margin_y)
             self._draw_graph_point(
-                x, y, y_values[0], metric, width, margin_x, margin_y, graph_colors
+                x,
+                y,
+                y_values[0],
+                metric,
+                width,
+                margin_x,
+                margin_y,
+                graph_colors,
+                match_indices[0],
             )
         else:
             points = []
@@ -1529,10 +1558,42 @@ class EloCalculatorApp:
             self.graph_canvas.create_line(
                 points, fill=graph_colors["plot"], width=2
             )
-            for x, y, value in zip(points[::2], points[1::2], y_values):
+            for x, y, value, match_index in zip(
+                points[::2], points[1::2], y_values, match_indices
+            ):
                 self._draw_graph_point(
-                    x, y, value, metric, width, margin_x, margin_y, graph_colors
+                    x,
+                    y,
+                    value,
+                    metric,
+                    width,
+                    margin_x,
+                    margin_y,
+                    graph_colors,
+                    match_index,
                 )
+
+    def _show_match_from_graph(self, match_index: int) -> None:
+        """Open Match history and select the match behind a graph point."""
+        if not 0 <= match_index < len(self.league.matches):
+            return
+        history_item = f"match-{match_index}"
+        if not self.history.exists(history_item):
+            return
+        self.activity_notebook.select(self.history_frame)
+        self.history.selection_set(history_item)
+        self.history.focus(history_item)
+        self.history.see(history_item)
+
+        match = self.league.matches[match_index]
+        winner = self.league.player(match.winner_id).name
+        loser = self.league.player(match.loser_id).name
+        result = (
+            f"{winner} drew with {loser}"
+            if match.is_draw
+            else f"{winner} {match.winner_games}-{match.loser_games} {loser}"
+        )
+        self.status_var.set(f"Selected match {match_index + 1}: {result}.")
 
     def _update_columns(self) -> None:
         self.visible_columns = [
@@ -3028,9 +3089,9 @@ class EloCalculatorApp:
     def _refresh_history(self) -> None:
         self.history.delete(*self.history.get_children())
         sb_history = _match_sb_history(self.league)
-        for match, (winner_sb, loser_sb) in reversed(
-            list(zip(self.league.matches, sb_history))
-        ):
+        for match_index in range(len(self.league.matches) - 1, -1, -1):
+            match = self.league.matches[match_index]
+            winner_sb, loser_sb = sb_history[match_index]
             winner = self.league.player(match.winner_id).name
             loser = self.league.player(match.loser_id).name
             try:
@@ -3051,6 +3112,7 @@ class EloCalculatorApp:
             self.history.insert(
                 "",
                 "end",
+                iid=f"match-{match_index}",
                 values=(
                     timestamp,
                     result,
@@ -3380,6 +3442,11 @@ if __name__ == "__main__":
 # the report; 2893 uses the shared ranking helper without changing standings order.
 # SB log update: Show structured post-match SB scores in match history and the
 # append-only activity log while retaining compatibility with older log entries.
+# Graph trace update: 2026-09-12 18:41 America/New_York; make plotted observations
+# select their exact source match in Match history. Rank and SB points map to every
+# league match; Elo and win-percentage points map only to the selected player's games.
+# Changed lines: activity notebook references, graph controls/history mapping and
+# point bindings, graph-to-history selection handler, and stable match-history IDs.
 # Graph result update: 2026-09-12 18:33 America/New_York. Format and draw a
 # theme-aware result label beside every point on each line graph; edge labels
 # use inward anchors and top-edge labels move below their point to remain visible.

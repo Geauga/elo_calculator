@@ -1,5 +1,5 @@
 # test_elo_model.py
-# Request: Test result labels at every line-graph point.
+# Request: Test graph-point labels and source-match tracing.
 """Tests for the Elo league rules."""
 
 from pathlib import Path
@@ -441,6 +441,58 @@ class EloModelTests(unittest.TestCase):
                 label["fill"] == THEME_PALETTES["light"]["muted"]
                 for label in result_labels
             )
+        )
+
+    def test_elo_graph_points_link_only_to_the_players_matches(self) -> None:
+        league = League.new(3)
+        league.record_match(0, 1, 0)
+        league.record_match(1, 2, 0)
+        league.record_match(2, 0, 0)
+
+        app = object.__new__(EloCalculatorApp)
+        app.league = league
+        app.graph_canvas = Mock()
+        app.graph_canvas.winfo_width.return_value = 400
+        app.graph_canvas.winfo_height.return_value = 300
+        app.graph_canvas.create_oval.side_effect = [101, 102, 103]
+        app.graph_player_combo = Mock(get=Mock(return_value="Player 1"))
+        app.player_name_to_id = {"Player 1": 0}
+        app.graph_metric_var = Mock(get=Mock(return_value="elo"))
+        app.theme_var = Mock(get=Mock(return_value="light"))
+        app._show_match_from_graph = Mock()
+
+        app._refresh_graph()
+
+        bindings = app.graph_canvas.tag_bind.call_args_list
+        self.assertEqual(
+            [call.args[:2] for call in bindings],
+            [(102, "<Button-1>"), (103, "<Button-1>")],
+        )
+        for call in bindings:
+            call.args[2](None)
+        self.assertEqual(
+            [call.args[0] for call in app._show_match_from_graph.call_args_list],
+            [0, 2],
+        )
+
+    def test_graph_point_opens_and_selects_its_match_history_row(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.league = League.new(2)
+        app.league.record_match(0, 1, 1)
+        app.history = Mock()
+        app.history.exists.return_value = True
+        app.activity_notebook = Mock()
+        app.history_frame = object()
+        app.status_var = Mock()
+
+        app._show_match_from_graph(0)
+
+        app.activity_notebook.select.assert_called_once_with(app.history_frame)
+        app.history.selection_set.assert_called_once_with("match-0")
+        app.history.focus.assert_called_once_with("match-0")
+        app.history.see.assert_called_once_with("match-0")
+        app.status_var.set.assert_called_once_with(
+            "Selected match 1: Player 1 3-1 Player 2."
         )
 
     def test_season_report_contains_rules_standings_and_match_history(self) -> None:
@@ -1657,6 +1709,7 @@ class EloModelTests(unittest.TestCase):
         app._refresh_history()
 
         newest_values = app.history.insert.call_args_list[0].kwargs["values"]
+        self.assertEqual(app.history.insert.call_args_list[0].kwargs["iid"], "match-2")
         self.assertEqual(newest_values[1], "Alice drew with Cara")
         self.assertEqual(newest_values[3], "Alice: 1.2; Cara: 0.8")
 
@@ -1967,3 +2020,6 @@ if __name__ == "__main__":
 # structured audit persistence, Match history rendering, and Activity log rendering.
 # Graph result update: Validate metric-specific result formatting and one visible
 # value label for every SB observation while preserving marker coordinates.
+# Graph trace update: 2026-09-12 18:45 America/New_York; validate that plotted
+# points map to chronological source matches and select stable Match history rows.
+# Changed lines: graph link regressions and the stable history-row ID assertion.
