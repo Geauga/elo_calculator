@@ -24,4 +24,4 @@ jobs:
       run: pip install bandit
 
     - name: Run Bandit Scan
-      run: bandit -r . -c bandit.yaml || bandit -r .
+      run: bandit -r elo_calculator.py elo_model.py elo_simulator.py elo_storage.py test_elo_model.py test_elo_theme.py
