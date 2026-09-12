@@ -711,3 +711,11 @@
 - Modified files: `elo_calculator.py`; `test_elo_model.py`; `README.md`; `历史工作记录.txt`. No executable, ZIP, build output, cache, or original-checkout dirty file was modified.
 - Tests and verification: 112 tests discovered; 108 executed tests passed and four existing real-Tk theme tests were skipped because the bundled Python runtime cannot locate `init.tcl`. New coverage validates every metric's label format, one label per SB observation, marker coordinates, edge/top placement, and theme-aware label color. `git diff --check` passed and no unresolved Python conflict markers were found. Final validation follows after this append-only record.
 - GitHub Timeline: Changes are not committed and not pushed. The isolated branch is synchronized with `origin/main`; the user has not requested publication in this turn.
+
+## 2026-09-12 18:38:07 -04:00
+
+- User Prompt summary: Push the graph-point result labels.
+- Actions: Committed the graph labels, regression, README, and initial work record as `492e8a3`; fetched GitHub and confirmed the branch was current; reran the full suite; pushed normally to `origin/main`; verified GitHub's exact branch hash.
+- Modified files: This append-only publication record only; implementation files are in commit `492e8a3`.
+- Tests and verification: 112 tests were discovered after the final synchronization; 108 executed tests passed and four existing real-Tk theme tests were skipped because the bundled runtime cannot locate `init.tcl`. `git diff --check` passed, no bytecode was generated, and `git ls-remote` returned `492e8a31d1a8951393788ed8a4599a2fcb389636` for `refs/heads/main`.
+- GitHub Timeline: Graph-point result commit `492e8a31d1a8951393788ed8a4599a2fcb389636` is pushed and verified on GitHub `main`. This log-only publication record is pending its follow-up commit and push.
