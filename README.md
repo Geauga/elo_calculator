@@ -52,7 +52,8 @@ with adjustable rosters.
   the player's actual saved starting rating; percentage calculations are
   draw-aware, and SB history reflects later results from prior opponents. Its
   background, axes, grid, labels, plot line, and point markers follow the active
-  theme. Every observation on a line graph is marked with a visible point.
+  theme. Every observation on a line graph is marked with a visible point and
+  its exact result: configured-precision Elo, league rank, percentage, or SB.
   League Rank replays saved results for the current roster using current ranking
   priorities and names; unplayed players retain their actual ratings.
 - The league Settings button selects a separate match format for each league.
@@ -141,5 +142,5 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation: 111 tests, including season-report, SB-history,
+Current source validation: 112 tests, including graph-result, season-report, SB-history,
 numeric-validation, historical-rank, and real Tk theme checks.

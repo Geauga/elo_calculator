@@ -1,5 +1,5 @@
 # test_elo_model.py
-# Request: Test season-document export and SB scores in history views.
+# Request: Test result labels at every line-graph point.
 """Tests for the Elo league rules."""
 
 from pathlib import Path
@@ -185,6 +185,17 @@ class EloModelTests(unittest.TestCase):
                 self.assertEqual(graph_colors["grid"], palette["button_active"])
                 self.assertEqual(graph_colors["text"], palette["muted"])
                 self.assertEqual(graph_colors["plot"], palette["selection"])
+
+    def test_graph_point_values_use_metric_specific_formats(self) -> None:
+        app = object.__new__(EloCalculatorApp)
+        app.league = League.new(2)
+        app.league.elo_decimal_places = 2
+
+        self.assertEqual(app._format_graph_value("elo", 1516.125), "1516.12")
+        self.assertEqual(app._format_graph_value("rank", 2.0), "#2")
+        self.assertEqual(app._format_graph_value("match_pct", 2 / 3 * 100), "66.7%")
+        self.assertEqual(app._format_graph_value("game_pct", 75.0), "75.0%")
+        self.assertEqual(app._format_graph_value("sb", 1.26), "1.3")
 
     def test_elo_history_uses_the_saved_starting_rating(self) -> None:
         league = League.new(3)
@@ -412,6 +423,25 @@ class EloModelTests(unittest.TestCase):
             points[1::2],
         ):
             self.assertEqual(marker_call.args, (x - 3, y - 3, x + 3, y + 3))
+        result_labels = [
+            call.kwargs
+            for call in app.graph_canvas.create_text.call_args_list
+            if call.kwargs.get("font") == ("Segoe UI", 8, "bold")
+        ]
+        self.assertEqual(
+            [label["text"] for label in result_labels],
+            ["0.0", "0.0", "1.0"],
+        )
+        self.assertEqual(
+            [label["anchor"] for label in result_labels],
+            ["sw", "s", "ne"],
+        )
+        self.assertTrue(
+            all(
+                label["fill"] == THEME_PALETTES["light"]["muted"]
+                for label in result_labels
+            )
+        )
 
     def test_season_report_contains_rules_standings_and_match_history(self) -> None:
         league = League.new(2)
@@ -1935,3 +1965,5 @@ if __name__ == "__main__":
 # history, UTF-8 file output, audit logging, and the successful dialog workflow.
 # SB log update: Import the history helper; validate exact post-match SB snapshots,
 # structured audit persistence, Match history rendering, and Activity log rendering.
+# Graph result update: Validate metric-specific result formatting and one visible
+# value label for every SB observation while preserving marker coordinates.
