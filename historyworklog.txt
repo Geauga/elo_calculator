@@ -1192,4 +1192,5 @@
  -   U p d a t e d   S E C U R I T Y . m d   t e m p l a t e   w i t h   p r o p e r   v u l n e r a b i l i t y   r e p o r t i n g   g u i d e l i n e s   a n d   a d d e d   a   G i t H u b   A c t i o n s   C o d e Q L   w o r k f l o w   f o r   a u t o m a t e d   s e c u r i t y   s c a n n i n g .  
  -   R e b u i l t   t h e   E l o L e a g u e C a l c u l a t o r   s t a n d a l o n e   e x e c u t a b l e   t o   b u n d l e   t h e   l a t e s t   S B - s c o r e   h i s t o r y   l a y o u t   c h a n g e s   a n d   t h e   r a n k   g r a p h   f e a t u r e   t o g e t h e r .  
  -   A d d e d   C o d e Q L   s u p p r e s s i o n   c o m m e n t s   t o   r e s o l v e   t h e   i n s e c u r e - r a n d o m n e s s   f a l s e   p o s i t i v e   i n   t h e   s i m u l a t o r .  
+ -   R e p l a c e d   t h e   C o d e Q L   G i t H u b   A c t i o n s   w o r k f l o w   w i t h   B a n d i t   t o   p r o v i d e   f r e e   o p e n - s o u r c e   s e c u r i t y   s c a n n i n g   f o r   t h i s   r e p o s i t o r y .  
  
