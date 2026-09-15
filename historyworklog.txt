@@ -1195,3 +1195,5 @@
  -   R e p l a c e d   t h e   C o d e Q L   G i t H u b   A c t i o n s   w o r k f l o w   w i t h   B a n d i t   t o   p r o v i d e   f r e e   o p e n - s o u r c e   s e c u r i t y   s c a n n i n g   f o r   t h i s   r e p o s i t o r y .  
  
 [2026-09-14 20:47:30] Synced with origin/main which had the graph points trace to match history already implemented. Rebuilt the application and copied executable to release folder.
+[ 2 0 2 6 - 0 9 - 1 4   2 1 : 1 1 : 2 6 ]   M a d e   l e a g u e   t i e b r e a k e r s   a n d   r a n k i n g   m o d e   c u s t o m i z a b l e .   A d d e d   L e a g u e   S e t t i n g s   U I ,   r e l a x e d   t i e b r e a k e r   v a l i d a t i o n   i n   m o d e l ,   a n d   i m p l e m e n t e d   r a n k   s h a r i n g   m o d e s   ( S e q u e n t i a l ,   C o m p e t i t i o n ,   D e n s e ) .   A d d e d   t e s t s .   B u i l t   P y I n s t a l l e r   p a c k a g e   a n d   p u s h e d   t o   r e p o s i t o r y .  
+ 
