@@ -39,6 +39,11 @@ DEFAULT_TIEBREAKER_HIERARCHY = (
     "name",
 )
 
+RANKING_MODE_SEQUENTIAL = "sequential"
+RANKING_MODE_COMPETITION = "competition"
+RANKING_MODE_DENSE = "dense"
+RANKING_MODES = (RANKING_MODE_SEQUENTIAL, RANKING_MODE_COMPETITION, RANKING_MODE_DENSE)
+
 
 def _is_finite_number(value: Any) -> bool:
     """Reject non-numbers and integers too large for Elo's float arithmetic."""
@@ -178,17 +183,28 @@ def validate_base_elo(base_elo: float) -> float:
 
 
 def validate_tiebreaker_hierarchy(hierarchy: list[str]) -> list[str]:
-    if (
-        not isinstance(hierarchy, list)
-        or len(hierarchy) != len(DEFAULT_TIEBREAKER_HIERARCHY)
-        or any(not isinstance(item, str) for item in hierarchy)
-        or set(hierarchy) != set(DEFAULT_TIEBREAKER_HIERARCHY)
-    ):
+    if not isinstance(hierarchy, list) or any(not isinstance(item, str) for item in hierarchy):
+        raise ValueError("The tiebreaker hierarchy must be a list of strings.")
+    
+    if not hierarchy:
+        raise ValueError("The tiebreaker hierarchy cannot be empty.")
+    
+    invalid_items = set(hierarchy) - set(DEFAULT_TIEBREAKER_HIERARCHY)
+    if invalid_items:
         raise ValueError(
-            "The tiebreaker hierarchy must contain each supported tiebreaker "
-            "exactly once."
+            f"Invalid tiebreakers found: {', '.join(invalid_items)}. "
+            f"Supported tiebreakers are: {', '.join(DEFAULT_TIEBREAKER_HIERARCHY)}."
         )
+    
+    if len(set(hierarchy)) != len(hierarchy):
+        raise ValueError("The tiebreaker hierarchy cannot contain duplicates.")
+        
     return list(hierarchy)
+
+def validate_ranking_mode(mode: str) -> str:
+    if mode not in RANKING_MODES:
+        raise ValueError(f"Ranking mode must be one of {RANKING_MODES}.")
+    return mode
 
 
 def expected_score(rating: float, opponent_rating: float) -> float:
@@ -314,6 +330,7 @@ class League:
     tiebreaker_hierarchy: list[str] = field(
         default_factory=lambda: list(DEFAULT_TIEBREAKER_HIERARCHY)
     )
+    ranking_mode: str = RANKING_MODE_SEQUENTIAL
 
     def __post_init__(self) -> None:
         self.k_factor = validate_k_factor(self.k_factor)
@@ -329,6 +346,7 @@ class League:
         self.tiebreaker_hierarchy = validate_tiebreaker_hierarchy(
             self.tiebreaker_hierarchy
         )
+        self.ranking_mode = validate_ranking_mode(self.ranking_mode)
 
     @classmethod
     def new(cls, player_count: int = DEFAULT_PLAYER_COUNT) -> "League":
@@ -734,6 +752,7 @@ class League:
             "base_elo": self.base_elo,
             "k_factor_scaling": self.k_factor_scaling,
             "tiebreaker_hierarchy": self.tiebreaker_hierarchy,
+            "ranking_mode": self.ranking_mode,
         }
 
     @classmethod
@@ -859,6 +878,7 @@ class League:
                     list(DEFAULT_TIEBREAKER_HIERARCHY),
                 )
             )
+            ranking_mode = validate_ranking_mode(data.get("ranking_mode", RANKING_MODE_SEQUENTIAL))
         except ValueError as error:
             raise ValueError("The save file has invalid league settings.") from error
             
@@ -873,6 +893,7 @@ class League:
             base_elo=base_elo,
             k_factor_scaling=k_factor_scaling,
             tiebreaker_hierarchy=tiebreaker_hierarchy,
+            ranking_mode=ranking_mode,
         )
         valid_ids = {player.id for player in players}
         for match in matches:

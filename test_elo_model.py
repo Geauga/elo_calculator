@@ -15,6 +15,7 @@ from elo_calculator import (
     _build_season_report,
     _match_sb_history,
     _player_elo_history,
+    _ranked_players,
     fit_window_to_screen,
     load_app_settings,
     load_theme,
@@ -28,6 +29,9 @@ from elo_model import (
     INITIAL_RATING,
     K_FACTOR,
     LEAGUE_SCHEMA_VERSION,
+    RANKING_MODE_SEQUENTIAL,
+    RANKING_MODE_COMPETITION,
+    RANKING_MODE_DENSE,
     MAX_CUSTOM_SCORE,
     MAX_ELO_DECIMAL_PLACES,
     MAX_K_FACTOR,
@@ -2029,3 +2033,51 @@ if __name__ == "__main__":
 # Purpose/upstream: Preserve SB and match-link unit checks for elo_calculator.py;
 # upstream GUI now measures canvas text, covered separately by real-Tk tests.
 # Changed lines: 405 and 456 declare unavailable text bounds on mock canvases.
+
+    def test_ranking_modes(self) -> None:
+        league = League.new(4)
+        league.tiebreaker_hierarchy = ["rating"]  # Only use rating
+        league.players[0].rating = 1600
+        league.players[1].rating = 1600
+        league.players[2].rating = 1500
+        league.players[3].rating = 1400
+        
+        # Test Sequential
+        league.ranking_mode = RANKING_MODE_SEQUENTIAL
+        ranks = [rank for rank, p in _ranked_players(league)]
+        self.assertEqual(ranks, [1, 2, 3, 4])
+        
+        # Test Competition
+        league.ranking_mode = RANKING_MODE_COMPETITION
+        ranks = [rank for rank, p in _ranked_players(league)]
+        self.assertEqual(ranks, [1, 1, 3, 4])
+        
+        # Test Dense
+        league.ranking_mode = RANKING_MODE_DENSE
+        ranks = [rank for rank, p in _ranked_players(league)]
+        self.assertEqual(ranks, [1, 1, 2, 3])
+
+
+class RankingModesTests(unittest.TestCase):
+    def test_ranking_modes(self) -> None:
+        league = League.new(4)
+        league.tiebreaker_hierarchy = ["rating"]
+        league.players[0].rating = 1600
+        league.players[1].rating = 1600
+        league.players[2].rating = 1500
+        league.players[3].rating = 1400
+        
+        # Test Sequential
+        league.ranking_mode = RANKING_MODE_SEQUENTIAL
+        ranks = [rank for rank, p in _ranked_players(league)]
+        self.assertEqual(ranks, [1, 2, 3, 4])
+        
+        # Test Competition
+        league.ranking_mode = RANKING_MODE_COMPETITION
+        ranks = [rank for rank, p in _ranked_players(league)]
+        self.assertEqual(ranks, [1, 1, 3, 4])
+        
+        # Test Dense
+        league.ranking_mode = RANKING_MODE_DENSE
+        ranks = [rank for rank, p in _ranked_players(league)]
+        self.assertEqual(ranks, [1, 1, 2, 3])
