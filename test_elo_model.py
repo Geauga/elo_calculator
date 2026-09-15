@@ -402,6 +402,7 @@ class EloModelTests(unittest.TestCase):
         app.graph_canvas.winfo_height.return_value = 300
         app.graph_player_combo = Mock(get=Mock(return_value="Player 1"))
         app.player_name_to_id = {"Player 1": 0}
+        app.graph_canvas.bbox.return_value = None
         app.graph_metric_var = Mock(get=Mock(return_value="sb"))
         app.theme_var = Mock(get=Mock(return_value="light"))
 
@@ -452,6 +453,7 @@ class EloModelTests(unittest.TestCase):
         app = object.__new__(EloCalculatorApp)
         app.league = league
         app.graph_canvas = Mock()
+        app.graph_canvas.bbox.return_value = None
         app.graph_canvas.winfo_width.return_value = 400
         app.graph_canvas.winfo_height.return_value = 300
         app.graph_canvas.create_oval.side_effect = [101, 102, 103]
@@ -2023,3 +2025,7 @@ if __name__ == "__main__":
 # Graph trace update: 2026-09-12 18:45 America/New_York; validate that plotted
 # points map to chronological source matches and select stable Match history rows.
 # Changed lines: graph link regressions and the stable history-row ID assertion.
+# Graph fixture update: 2026-09-14 20:22 America/New_York; Python 3.12 / Windows.
+# Purpose/upstream: Preserve SB and match-link unit checks for elo_calculator.py;
+# upstream GUI now measures canvas text, covered separately by real-Tk tests.
+# Changed lines: 405 and 456 declare unavailable text bounds on mock canvases.

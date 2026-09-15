@@ -1,11 +1,12 @@
 # elo_calculator.py
-# Request: Show the result value at every line-graph point.
+# Request: Keep graph results readable, numerically safe and fast, with match links.
 """Tkinter desktop interface for the twelve-player Elo calculator."""
 
 from __future__ import annotations
 
 from datetime import datetime
 import json
+import math
 import os
 from pathlib import Path
 import shutil
@@ -24,6 +25,7 @@ from elo_model import (
     SCORE_MODE_CUSTOM,
     SCORE_MODE_FIXED,
     League,
+    PlayerStatistics,
     WinCondition,
     validate_base_elo,
     validate_elo_decimal_places,
@@ -55,9 +57,15 @@ STANDINGS_COLUMN_IDS = (
 )
 
 
-def _ranked_players(league: League) -> list:
+def _ranked_players(
+    league: League,
+    *,
+    statistics: dict[int, PlayerStatistics] | None = None,
+    pair_statistics: dict[tuple[int, int], PlayerStatistics] | None = None,
+) -> list:
     """Return players in the same order used by the standings display."""
-    statistics = league.statistics()
+    if statistics is None:
+        statistics = league.statistics()
     ranking_ratings = {
         player.id: round(player.rating, league.elo_decimal_places)
         for player in league.players
@@ -69,10 +77,21 @@ def _ranked_players(league: League) -> list:
     head_to_head = {}
     head_to_head_games = {}
     for player_ids in rating_groups.values():
-        head_to_head.update(league.head_to_head_percentages(player_ids))
-        head_to_head_games.update(
-            league.head_to_head_game_percentages(player_ids)
-        )
+        if pair_statistics is None:
+            head_to_head.update(league.head_to_head_percentages(player_ids))
+            head_to_head_games.update(league.head_to_head_game_percentages(player_ids))
+        else:
+            for player_id in player_ids:
+                records = [pair_statistics[(player_id, opponent)]
+                           for opponent in player_ids
+                           if (player_id, opponent) in pair_statistics]
+                played = sum(s.matches_won + s.matches_drawn + s.matches_lost for s in records)
+                points = sum(s.matches_won + 0.5 * s.matches_drawn for s in records)
+                games = sum(s.games_won + s.games_lost for s in records)
+                head_to_head[player_id] = 100.0 * points / played if played else 0.0
+                head_to_head_games[player_id] = (
+                    100.0 * sum(s.games_won for s in records) / games if games else 0.0
+                )
 
     def metric(player, metric_name):
         stats = statistics[player.id]
@@ -153,8 +172,13 @@ def _player_rank_history(league: League, player_id: int) -> list[int]:
             unseen.remove(m.loser_id)
         if not unseen: break
         
+    statistics = {p.id: PlayerStatistics() for p in sim.players}
+    pair_statistics: dict[tuple[int, int], PlayerStatistics] = {}
+
     def get_rank():
-        ranked_players = _ranked_players(sim)
+        ranked_players = _ranked_players(
+            sim, statistics=statistics, pair_statistics=pair_statistics
+        )
         for i, p in enumerate(ranked_players):
             if p.id == player_id:
                 return i + 1
@@ -164,10 +188,52 @@ def _player_rank_history(league: League, player_id: int) -> list[int]:
     for m in league.matches:
         sim.player(m.winner_id).rating += m.rating_change
         sim.player(m.loser_id).rating -= m.rating_change
-        sim.matches.append(m)
+        # Accumulate each result once instead of rescanning every history prefix.
+        for player_id_, opponent_id, won, games_won, games_lost in (
+            (m.winner_id, m.loser_id, True, m.winner_games, m.loser_games),
+            (m.loser_id, m.winner_id, False, m.loser_games, m.winner_games),
+        ):
+            pair = pair_statistics.setdefault((player_id_, opponent_id), PlayerStatistics())
+            for stats in (statistics[player_id_], pair):
+                if m.is_draw:
+                    stats.matches_drawn += 1
+                elif won:
+                    stats.matches_won += 1
+                else:
+                    stats.matches_lost += 1
+                if not m.is_draw:
+                    stats.games_won += games_won
+                    stats.games_lost += games_lost
+        # SB depends on opponents' current match points. Work is bounded by
+        # roster size (at most 64), not the number of earlier matches.
+        for stats in statistics.values():
+            stats.sb_score = 0.0
+        for (player_id_, opponent_id), pair in pair_statistics.items():
+            opponent = statistics[opponent_id]
+            statistics[player_id_].sb_score += (
+                (pair.matches_won + 0.5 * pair.matches_drawn)
+                * (opponent.matches_won + 0.5 * opponent.matches_drawn)
+            )
         ranks.append(get_rank())
         
     return ranks
+
+
+def _graph_bounds(values: list[float]) -> tuple[float, float]:
+    """Return a finite, nonzero range even at the limits of float precision."""
+    low, high = min(values), max(values)
+    if low == high:
+        padding = max(1.0, abs(low) * 0.05)
+        lower, upper = low - padding, high + padding
+        low = lower if math.isfinite(lower) else low
+        high = upper if math.isfinite(upper) else high
+    return low, high
+
+
+def _graph_fraction(value: float, low: float, high: float) -> float:
+    """Normalize before subtraction so opposite extreme values cannot overflow."""
+    scale = max(abs(low), abs(high), 1.0)
+    return (value / scale - low / scale) / (high / scale - low / scale)
 
 
 def _build_season_report(
@@ -1220,7 +1286,7 @@ class EloCalculatorApp:
             width=15
         )
         self.graph_metric_combo.pack(side="left", padx=4)
-        ttk.Label(controls, text="Click a point to show its match.").pack(
+        ttk.Label(controls, text="Hover for value; click a point to show its match.").pack(
             side="left", padx=(12, 0)
         )
         
@@ -1238,6 +1304,8 @@ class EloCalculatorApp:
         )
         self.graph_canvas.grid(row=1, column=0, sticky="nsew")
         self.graph_canvas.bind("<Configure>", lambda e: self._refresh_graph())
+        self.graph_canvas.bind("<Motion>", self._show_graph_hover)
+        self.graph_canvas.bind("<Leave>", self._hide_graph_hover)
 
     def _graph_colors(self) -> dict[str, str]:
         colors = THEME_PALETTES[self.theme_var.get()]
@@ -1280,11 +1348,12 @@ class EloCalculatorApp:
             outline=graph_colors["plot"],
         )
         if match_index is not None:
-            self.graph_canvas.tag_bind(
+            binding = self.graph_canvas.tag_bind(
                 marker_id,
                 "<Button-1>",
                 lambda _event, index=match_index: self._show_match_from_graph(index),
             )
+            self._graph_point_bindings.append((marker_id, binding))
         label_below = y < margin_y + 16
         label_y = y + 7 if label_below else y - 7
         vertical_anchor = "n" if label_below else "s"
@@ -1294,14 +1363,65 @@ class EloCalculatorApp:
             anchor = f"{vertical_anchor}e"
         else:
             anchor = vertical_anchor
-        self.graph_canvas.create_text(
+        text = self._format_graph_value(metric, value)
+        self._graph_point_labels[marker_id] = (x, label_y, text, anchor)
+        label_id = self.graph_canvas.create_text(
             x,
             label_y,
-            text=self._format_graph_value(metric, value),
+            text=text,
             anchor=anchor,
             font=("Segoe UI", 8, "bold"),
             fill=graph_colors["text"],
         )
+        bounds = self.graph_canvas.bbox(label_id)
+        if bounds is not None:
+            left, top, right, bottom = bounds
+            # Tk includes a small text margin even for inward-facing anchors.
+            if right - left <= width - margin_x:
+                dx = max(margin_x - left, min(0, width - right))
+                self.graph_canvas.move(label_id, dx, 0)
+                left, right = left + dx, right + dx
+            overlaps = self.graph_canvas.find_overlapping(left - 2, top - 2, right + 2, bottom + 2)
+            if left < margin_x or right > width or any(
+                "graph-value" in self.graph_canvas.gettags(item) for item in overlaps
+                if item != label_id
+            ):
+                self.graph_canvas.delete(label_id)
+            else:
+                self.graph_canvas.addtag_withtag("graph-value", label_id)
+
+    def _hide_graph_hover(self, _event=None) -> None:
+        self.graph_canvas.delete("graph-hover")
+        self._graph_hover_marker = None
+
+    def _show_graph_hover(self, _event=None) -> None:
+        current = self.graph_canvas.find_withtag("current")
+        marker = current[0] if current else None
+        if marker == getattr(self, "_graph_hover_marker", None):
+            return
+        self._hide_graph_hover()
+        details = getattr(self, "_graph_point_labels", {}).get(marker)
+        if details is None:
+            return
+        self._graph_hover_marker = marker
+        x, y, text, anchor = details
+        colors = self._graph_colors()
+        label = self.graph_canvas.create_text(
+            x, y, text=text, anchor=anchor, font=("Segoe UI", 8, "bold"),
+            fill=colors["text"], width=max(40, self.graph_canvas.winfo_width() - 60),
+            tags="graph-hover",
+        )
+        bounds = self.graph_canvas.bbox(label)
+        if bounds is not None:
+            left, top, right, bottom = bounds
+            dx = max(4 - left, min(0, self.graph_canvas.winfo_width() - 4 - right))
+            dy = max(4 - top, min(0, self.graph_canvas.winfo_height() - 4 - bottom))
+            self.graph_canvas.move(label, dx, dy)
+            box = self.graph_canvas.create_rectangle(
+                left + dx - 2, top + dy - 2, right + dx + 2, bottom + dy + 2,
+                fill=colors["background"], outline=colors["axis"], tags="graph-hover",
+            )
+            self.graph_canvas.tag_lower(box, label)
 
     def _refresh_graph(self) -> None:
         if not hasattr(self, "graph_canvas"): return
@@ -1310,7 +1430,12 @@ class EloCalculatorApp:
             background=graph_colors["background"],
             highlightbackground=graph_colors["axis"],
         )
+        for marker_id, binding in getattr(self, "_graph_point_bindings", []):
+            self.graph_canvas.tag_unbind(marker_id, "<Button-1>", binding)
+        self._graph_point_bindings = []
         self.graph_canvas.delete("all")
+        self._graph_point_labels = {}
+        self._graph_hover_marker = None
         width = self.graph_canvas.winfo_width()
         height = self.graph_canvas.winfo_height()
         if width < 50 or height < 50: return
@@ -1481,11 +1606,7 @@ class EloCalculatorApp:
         if not y_values:
             return
 
-        min_y = min(y_values)
-        max_y = max(y_values)
-        if min_y == max_y:
-            min_y -= 1
-            max_y += 1
+        min_y, max_y = _graph_bounds(y_values)
 
         margin_x = 45
         margin_y = 20
@@ -1507,7 +1628,7 @@ class EloCalculatorApp:
             if metric == "rank":
                 continue # Rank uses discrete gridlines below
             y_pos = margin_y + i * (height - 2 * margin_y) / 4
-            val = max_y - i * (max_y - min_y) / 4
+            val = (1 - i / 4) * max_y + (i / 4) * min_y
             self.graph_canvas.create_line(
                 margin_x, y_pos, width, y_pos,
                 fill=graph_colors["grid"], dash=(4, 4),
@@ -1534,7 +1655,7 @@ class EloCalculatorApp:
             if metric == "rank":
                 y = margin_y + (y_values[0] - min_y) / (max_y - min_y) * (height - 2 * margin_y)
             else:
-                y = margin_y + (max_y - y_values[0]) / (max_y - min_y) * (height - 2 * margin_y)
+                y = margin_y + (1 - _graph_fraction(y_values[0], min_y, max_y)) * (height - 2 * margin_y)
             self._draw_graph_point(
                 x,
                 y,
@@ -1553,7 +1674,7 @@ class EloCalculatorApp:
                 if metric == "rank":
                     y = margin_y + (val - min_y) / (max_y - min_y) * (height - 2 * margin_y)
                 else:
-                    y = margin_y + (max_y - val) / (max_y - min_y) * (height - 2 * margin_y)
+                    y = margin_y + (1 - _graph_fraction(val, min_y, max_y)) * (height - 2 * margin_y)
                 points.extend([x, y])
             self.graph_canvas.create_line(
                 points, fill=graph_colors["plot"], width=2
@@ -3450,3 +3571,11 @@ if __name__ == "__main__":
 # Graph result update: 2026-09-12 18:33 America/New_York. Format and draw a
 # theme-aware result label beside every point on each line graph; edge labels
 # use inward anchors and top-edge labels move below their point to remain visible.
+# Graph fixes: 2026-09-14 20:22 America/New_York; Python 3.12 / Windows Tk 8.6.
+# Purpose: Prevent extreme-Elo crashes, quadratic rank replay and crowded labels.
+# Upstream: elo_model.py supplies validated league/match data and ranking metrics;
+# Tk Canvas supplies text bounds, drawing and pointer/click event handling.
+# Changed lines: 2/9/28 request/imports; 60-128 optional accumulated ranking stats;
+# 174-217 incremental rank replay; 222-236 finite graph bounds/normalization;
+# 1289/1307-1308 hover hint/events; 1330-1424 label layout/hover/click tracking;
+# 1433-1438 callback cleanup; 1609-1678 safe range, ticks and plotted coordinates.
