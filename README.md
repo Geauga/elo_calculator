@@ -52,11 +52,14 @@ with adjustable rosters.
   the player's actual saved starting rating; percentage calculations are
   draw-aware, and SB history reflects later results from prior opponents. Its
   background, axes, grid, labels, plot line, and point markers follow the active
-  theme. Every observation on a line graph is marked with a visible point and
-  its exact result: configured-precision Elo, league rank, percentage, or SB.
+  theme. Every observation on a line graph has a point with its exact result:
+  configured-precision Elo, league rank, percentage, or SB. Labels are shown
+  where they fit without overlapping; hover over any point to read its value.
   Click any post-match point to open and select its source in Match History.
   League Rank replays saved results for the current roster using current ranking
-  priorities and names; unplayed players retain their actual ratings.
+  priorities and names; unplayed players retain their actual ratings. Rank replay
+  accumulates statistics instead of repeatedly scanning earlier matches. Graph
+  ranges also support very large finite Elo settings without division by zero.
 - The league Settings button selects a separate match format for each league.
   First-to-N mode sets the games needed to win and the Elo multiplier for every
   possible losing score. Custom-score mode accepts any whole-number result
@@ -143,5 +146,8 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation: 114 tests, including graph-result, graph-trace, season-report, SB-history,
-numeric-validation, historical-rank, and real Tk theme checks.
+Current source validation: 122 tests, including graph ranges, crowded labels and
+hover values, click-handler cleanup, rank replay across every priority order,
+graph-trace, season-report, SB-history, numeric-validation, and real Tk theme checks.
+The graph fixes and point-to-match links are source updates; the v24 executable
+has not been rebuilt with these changes.
