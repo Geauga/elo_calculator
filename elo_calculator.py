@@ -44,6 +44,13 @@ import re
 def _natural_sort_key(s: str) -> list:
     return [int(t) if t.isdigit() else t.casefold() for t in re.split(r"(\d+)", s)]
 
+TIEBREAKER_LABELS = {
+    "rating": "Rating",
+    "match_pct": "Match Win %",
+    "sb_score": "SB Score",
+    "game_pct": "Game Win %",
+    "name": "Name",
+}
 
 STANDINGS_COLUMN_IDS = (
     "rank",
@@ -62,7 +69,7 @@ def _ranked_players(
     *,
     statistics: dict[int, PlayerStatistics] | None = None,
     pair_statistics: dict[tuple[int, int], PlayerStatistics] | None = None,
-) -> list:
+) -> list[tuple[int, Player]]:
     """Return players in the same order used by the standings display."""
     if statistics is None:
         statistics = league.statistics()
@@ -111,12 +118,35 @@ def _ranked_players(
             return _natural_sort_key(player.name)
         return 0
 
-    return sorted(
-        league.players,
-        key=lambda player: tuple(
-            metric(player, name) for name in league.tiebreaker_hierarchy
-        ),
-    )
+    def get_metrics(player):
+        return tuple(metric(player, name) for name in league.tiebreaker_hierarchy)
+
+    sorted_players = sorted(league.players, key=get_metrics)
+    
+    if not sorted_players:
+        return []
+
+    ranked = []
+    current_rank = 1
+    previous_metrics = get_metrics(sorted_players[0])
+    
+    for i, player in enumerate(sorted_players):
+        current_metrics = get_metrics(player)
+        if current_metrics != previous_metrics:
+            if league.ranking_mode == "dense":
+                current_rank += 1
+            elif league.ranking_mode == "competition":
+                current_rank = i + 1
+            else:  # sequential
+                current_rank = i + 1
+            previous_metrics = current_metrics
+        else:
+            if league.ranking_mode == "sequential" and i > 0:
+                current_rank = i + 1
+
+        ranked.append((current_rank, player))
+        
+    return ranked
 
 
 def _player_elo_history(league: League, player_id: int) -> list[float]:
@@ -179,9 +209,9 @@ def _player_rank_history(league: League, player_id: int) -> list[int]:
         ranked_players = _ranked_players(
             sim, statistics=statistics, pair_statistics=pair_statistics
         )
-        for i, p in enumerate(ranked_players):
+        for rank, p in ranked_players:
             if p.id == player_id:
-                return i + 1
+                return rank
         return 1
         
     ranks = [get_rank()]
@@ -289,7 +319,7 @@ def _build_season_report(
             f"Rank | Player | Elo | SB | {match_record_heading} | Match % | Game W-L | Game %",
         ]
     )
-    for rank, player in enumerate(ranked_players, start=1):
+    for rank, player in ranked_players:
         stats = statistics[player.id]
         match_record = (
             f"{stats.matches_won}-{stats.matches_drawn}-{stats.matches_lost}"
@@ -967,6 +997,11 @@ class EloCalculatorApp:
             value="dark",
             variable=self.theme_var,
             command=self._select_theme,
+        )
+        self.settings_menu.add_separator()
+        self.settings_menu.add_command(
+            label="League Settings...",
+            command=self._show_league_settings,
         )
         self.settings_button.configure(menu=self.settings_menu)
         self.settings_button.grid(row=0, column=2, padx=(3, 0), sticky="e")
@@ -3165,6 +3200,74 @@ class EloCalculatorApp:
     def _format_signed_elo(self, value: float) -> str:
         return f"{value:+.{self.league.elo_decimal_places}f}"
 
+    def _show_league_settings(self) -> None:
+        window = tk.Toplevel(self.root)
+        window.title("League Settings")
+        window.geometry("350x300")
+        window.transient(self.root)
+        window.grab_set()
+
+        frame = ttk.Frame(window, padding=16)
+        frame.pack(fill="both", expand=True)
+
+        # Tiebreaker Hierarchy
+        ttk.Label(frame, text="Tiebreakers (Top to Bottom):", font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(0, 4))
+        
+        list_frame = ttk.Frame(frame)
+        list_frame.pack(fill="both", expand=True)
+        
+        listbox = tk.Listbox(list_frame, height=5, selectmode=tk.SINGLE, font=("Segoe UI", 10))
+        listbox.pack(side="left", fill="both", expand=True)
+        
+        # Populate listbox with current hierarchy
+        current_tiebreakers = self.league.tiebreaker_hierarchy
+        for tb in current_tiebreakers:
+            listbox.insert(tk.END, TIEBREAKER_LABELS.get(tb, tb))
+
+        btn_frame = ttk.Frame(list_frame)
+        btn_frame.pack(side="left", fill="y", padx=(8, 0))
+
+        def move_up():
+            sel = listbox.curselection()
+            if not sel or sel[0] == 0: return
+            idx = sel[0]
+            val = listbox.get(idx)
+            listbox.delete(idx)
+            listbox.insert(idx - 1, val)
+            listbox.selection_set(idx - 1)
+
+        def move_down():
+            sel = listbox.curselection()
+            if not sel or sel[0] == listbox.size() - 1: return
+            idx = sel[0]
+            val = listbox.get(idx)
+            listbox.delete(idx)
+            listbox.insert(idx + 1, val)
+            listbox.selection_set(idx + 1)
+
+        ttk.Button(btn_frame, text="Move Up", command=move_up).pack(fill="x", pady=(0, 4))
+        ttk.Button(btn_frame, text="Move Down", command=move_down).pack(fill="x")
+
+        # Rank Mode
+        ttk.Label(frame, text="Rank Sharing Method:", font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(16, 4))
+        mode_var = tk.StringVar(value=self.league.ranking_mode)
+        mode_combo = ttk.Combobox(frame, textvariable=mode_var, state="readonly", values=["sequential", "competition", "dense"])
+        mode_combo.pack(fill="x")
+
+        def save():
+            label_to_tb = {v: k for k, v in TIEBREAKER_LABELS.items()}
+            new_hierarchy = [label_to_tb[listbox.get(i)] for i in range(listbox.size())]
+            self.league.tiebreaker_hierarchy = new_hierarchy
+            self.league.ranking_mode = mode_var.get()
+            self.storage.save_league(self.league)
+            self._refresh_all()
+            window.destroy()
+
+        save_btn = ttk.Button(frame, text="Save Settings", command=save, style="Accent.TButton")
+        save_btn.pack(pady=(20, 0))
+        
+        self._center_dialog(window, self.root)
+
     def _refresh_standings(self) -> None:
         selected = self.standings.selection()
         selected_id = int(selected[0]) if selected else None
@@ -3182,7 +3285,7 @@ class EloCalculatorApp:
         self.standings.delete(*self.standings.get_children())
         statistics = self.league.statistics()
         ranked_players = _ranked_players(self.league)
-        for rank, player in enumerate(ranked_players, start=1):
+        for rank, player in ranked_players:
             stats = statistics[player.id]
             match_record = (
                 f"{stats.matches_won}-{stats.matches_drawn}-{stats.matches_lost}"
