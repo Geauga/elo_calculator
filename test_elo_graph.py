@@ -75,7 +75,7 @@ class RankHistoryTests(unittest.TestCase):
         ranks = {p.id: [] for p in sim.players}
 
         def collect():
-            for position, player in enumerate(_ranked_players(sim), 1):
+            for position, player in _ranked_players(sim):
                 ranks[player.id].append(position)
 
         collect()
@@ -104,6 +104,16 @@ class RankHistoryTests(unittest.TestCase):
              patch.object(League, "head_to_head_percentages", side_effect=AssertionError("H2H rescan")), \
              patch.object(League, "head_to_head_game_percentages", side_effect=AssertionError("game rescan")):
             self.assertEqual(len(_player_rank_history(league, 10)), len(league.matches) + 1)
+
+    def test_shared_ranks_match_standings_at_every_history_prefix(self):
+        for mode in ("sequential", "competition", "dense"):
+            league = self.fixture(False)
+            league.ranking_mode = mode
+            league.tiebreaker_hierarchy = ["match_pct"]
+            expected = self.slow_history(league)
+            for player in league.players:
+                with self.subTest(mode=mode, player=player.id):
+                    self.assertEqual(_player_rank_history(league, player.id), expected[player.id])
 
 
 class TkGraphTests(unittest.TestCase):
@@ -205,3 +215,5 @@ if __name__ == "__main__":
 # Upstream: elo_model.py owns match data; elo_calculator.py renders/ranks it.
 # Environment: Python 3.12 / Windows Tk 8.6; generated 2026-09-14 America/New_York.
 # Changes: New file; range, replay-equivalence, labels/hover and callback tests.
+# Review: 2026-09-15 America/New_York; line 78 follows (rank, player) API;
+# lines 110-119 verify every history prefix for all three rank-sharing modes.
