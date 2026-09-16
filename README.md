@@ -127,25 +127,27 @@ season reports use the selected ranking mode.
 ## Standalone Windows package
 
 The current packaged release is
-`release/EloLeagueCalculator-v24-Windows-x64.zip`.
+`release/EloLeagueCalculator-v25-Windows-x64.zip`.
 It contains `EloLeagueCalculator.exe` and `README.txt`; Python does not need to
 be installed. Extract the ZIP, then double-click the executable to start it.
-Version 24 includes the season-document export, structured SB history columns,
-line-graph points, League Rank history, validation fixes, schema-8 settings, and
-theme fixes described above. It was built from source commit
-`7d015441b7166193cbc7fb7045ed0483e33bb0c3` on September 11, 2026.
+Version 25 includes graph hover values and match links, extreme-Elo graph fixes,
+faster historical ranks, ranking-settings save/rollback and theme fixes, and
+schema-9 rank-sharing persistence, plus the earlier season export and SB history.
+It was built from source commit
+`f0346c328ccbb97a4274a20db43711371e291eef` on September 15, 2026.
 Older releases are preserved. Back up your application data before upgrading;
-older executables cannot read schema-8 saves.
+older executables cannot read schema-9 saves.
 
 Package verification:
 
 - Executable SHA-256:
-  `0303D109B0B4CAD0200518A96E08C15B346AC3D39A0DD4BCD183CB72A9DE898C`
+  `3E423C3B79B4222A0374BDDC97706AE436ECE3395EDE05438557C6A8766883AF`
 - ZIP SHA-256:
-  `3D186803AE74850547C8CBF2C7EFEC54FABF1323CDFB7E0948CB63039DD4D6B8`
-- Validation: 111 tests passed with no skips, including real Tk theme checks.
-  The executable's bundled runtime was verified; an isolated Windows startup
-  check reached GUI input idle. This is not a full manual UI acceptance test.
+  `57711021408C8337DC75ABAE53BF86EB28EEAC5BFA5CDB2D8C820C88653C1BD1`
+- Validation: 130 tests passed with no skips, including real Tk checks.
+  Bundled Python/Tcl/Tk and ranking fixes were verified; raw and ZIP-extracted
+  executables reached GUI input idle with isolated application data. This is
+  not a full manual UI acceptance test.
 
 ## Test
 
@@ -157,5 +159,4 @@ Current source validation: 130 tests, including ranking-settings persistence,
 rollback, schema migration, dialog styling, graph ranges, crowded labels and
 hover values, click-handler cleanup, rank replay across every priority order,
 graph-trace, season-report, SB-history, numeric-validation, and real Tk theme checks.
-The graph fixes and point-to-match links are source updates; the v24 executable
-has not been rebuilt with these changes.
+These changes are included in the v25 executable. Older packages are preserved.
