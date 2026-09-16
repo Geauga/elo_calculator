@@ -716,7 +716,7 @@ class EloModelTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "invalid league settings"):
                     League.from_dict(data)
 
-    def test_schema_seven_defaults_new_settings_and_upgrades_to_eight(self) -> None:
+    def test_schema_seven_defaults_new_settings_and_upgrades_to_current(self) -> None:
         data = League.new(2).to_dict()
         data["schema_version"] = 7
         data.pop("base_elo")
@@ -731,7 +731,7 @@ class EloModelTests(unittest.TestCase):
             restored.tiebreaker_hierarchy,
             list(DEFAULT_TIEBREAKER_HIERARCHY),
         )
-        self.assertEqual(restored.to_dict()["schema_version"], 8)
+        self.assertEqual(restored.to_dict()["schema_version"], LEAGUE_SCHEMA_VERSION)
 
     def test_base_elo_is_used_when_roster_is_replayed(self) -> None:
         league = League.new(3)
@@ -2081,3 +2081,7 @@ class RankingModesTests(unittest.TestCase):
         league.ranking_mode = RANKING_MODE_DENSE
         ranks = [rank for rank, p in _ranked_players(league)]
         self.assertEqual(ranks, [1, 1, 2, 3])
+
+# Review: 2026-09-15 America/New_York; Python 3.12 / Windows.
+# Purpose/upstream: Keep elo_model.py migration tests aligned with current schema.
+# Changed lines: 719/734 verify legacy schema-7 migration to LEAGUE_SCHEMA_VERSION.

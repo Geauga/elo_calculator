@@ -112,10 +112,17 @@ automatically by retaining the original league and adding Players 9 through 12.
 The previous single-league database is also upgraded automatically to
 `League 1`, preserving its standings and match history.
 
-League schema 8 stores Base Elo, victory-margin K scaling, and standings
-priority explicitly. Schema-7 and older saves are upgraded with compatible
-defaults. Older executables reject schema 8 instead of silently discarding the
-new settings.
+League schema 9 preserves rank-sharing mode as well as Base Elo, victory-margin
+K scaling, and standings priority. Schema-8 and older saves upgrade with compatible
+defaults, retaining any previously saved ranking mode. Older executables reject
+schema 9 instead of silently discarding ranking settings. Back up your data before
+upgrading; do not open upgraded saves in an older executable.
+
+The standings Settings menu's League Settings dialog saves ranking priorities and
+sequential, competition, or dense rank sharing with the same backup and audit
+protection as other league edits. Equal ranks require all selected priorities to
+tie; including unique player names prevents shared ranks. Rank graphs and exported
+season reports use the selected ranking mode.
 
 ## Standalone Windows package
 
@@ -146,7 +153,8 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation: 122 tests, including graph ranges, crowded labels and
+Current source validation: 130 tests, including ranking-settings persistence,
+rollback, schema migration, dialog styling, graph ranges, crowded labels and
 hover values, click-handler cleanup, rank replay across every priority order,
 graph-trace, season-report, SB-history, numeric-validation, and real Tk theme checks.
 The graph fixes and point-to-match links are source updates; the v24 executable

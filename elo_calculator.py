@@ -25,12 +25,14 @@ from elo_model import (
     SCORE_MODE_CUSTOM,
     SCORE_MODE_FIXED,
     League,
+    Player,
     PlayerStatistics,
     WinCondition,
     validate_base_elo,
     validate_elo_decimal_places,
     validate_k_factor,
     validate_tiebreaker_hierarchy,
+    validate_ranking_mode,
 )
 from elo_simulator import (
     simulate_first_to_n_league,
@@ -183,6 +185,7 @@ def _player_rank_history(league: League, player_id: int) -> list[int]:
     league.player(player_id)
     sim = League.new(len(league.players))
     sim.tiebreaker_hierarchy = league.tiebreaker_hierarchy
+    sim.ranking_mode = league.ranking_mode
     sim.elo_decimal_places = league.elo_decimal_places
     sim.base_elo = league.base_elo
     
@@ -303,6 +306,7 @@ def _build_season_report(
         f"Automatic Elo: {'Enabled' if league.calculate_elo else 'Disabled'}",
         f"Draws: {'Enabled' if league.allow_draws else 'Disabled'}",
         "Standings priorities: " + " > ".join(league.tiebreaker_hierarchy),
+        f"Rank sharing: {league.ranking_mode}",
     ]
     if league.win_condition.score_mode == SCORE_MODE_FIXED:
         lines.append("Score multipliers:")
@@ -3203,9 +3207,8 @@ class EloCalculatorApp:
     def _show_league_settings(self) -> None:
         window = tk.Toplevel(self.root)
         window.title("League Settings")
-        window.geometry("350x300")
-        window.transient(self.root)
-        window.grab_set()
+        self._configure_dialog(window, self.root, resizable=(True, True))
+        colors = THEME_PALETTES[self.theme_var.get()]
 
         frame = ttk.Frame(window, padding=16)
         frame.pack(fill="both", expand=True)
@@ -3216,7 +3219,12 @@ class EloCalculatorApp:
         list_frame = ttk.Frame(frame)
         list_frame.pack(fill="both", expand=True)
         
-        listbox = tk.Listbox(list_frame, height=5, selectmode=tk.SINGLE, font=("Segoe UI", 10))
+        listbox = tk.Listbox(
+            list_frame, height=5, selectmode=tk.SINGLE, exportselection=False,
+            font=("Segoe UI", 10), background=colors["field"],
+            foreground=colors["foreground"], selectbackground=colors["selection"],
+            selectforeground=colors["selection_text"],
+        )
         listbox.pack(side="left", fill="both", expand=True)
         
         # Populate listbox with current hierarchy
@@ -3256,10 +3264,26 @@ class EloCalculatorApp:
 
         def save():
             label_to_tb = {v: k for k, v in TIEBREAKER_LABELS.items()}
-            new_hierarchy = [label_to_tb[listbox.get(i)] for i in range(listbox.size())]
+            try:
+                new_hierarchy = validate_tiebreaker_hierarchy(
+                    [label_to_tb[listbox.get(i)] for i in range(listbox.size())]
+                )
+                new_mode = validate_ranking_mode(mode_var.get())
+            except (ValueError, tk.TclError) as error:
+                self._show_error("Invalid ranking settings", str(error), parent=window)
+                return
+            previous_state = self.collection.to_dict()
             self.league.tiebreaker_hierarchy = new_hierarchy
-            self.league.ranking_mode = mode_var.get()
-            self.storage.save_league(self.league)
+            self.league.ranking_mode = new_mode
+            try:
+                self._commit_edit(
+                    previous_state, "ranking_edited",
+                    f"Rank sharing={new_mode}; priorities={' > '.join(new_hierarchy)}.",
+                )
+            except (OSError, ValueError) as error:
+                self._restore_collection(previous_state)
+                self._show_error("Ranking settings not saved", str(error), parent=window)
+                return
             self._refresh_all()
             window.destroy()
 
@@ -3267,6 +3291,7 @@ class EloCalculatorApp:
         save_btn.pack(pady=(20, 0))
         
         self._center_dialog(window, self.root)
+        window.minsize(window.winfo_reqwidth(), window.winfo_reqheight())
 
     def _refresh_standings(self) -> None:
         selected = self.standings.selection()
@@ -3682,3 +3707,8 @@ if __name__ == "__main__":
 # 174-217 incremental rank replay; 222-236 finite graph bounds/normalization;
 # 1289/1307-1308 hover hint/events; 1330-1424 label layout/hover/click tracking;
 # 1433-1438 callback cleanup; 1609-1678 safe range, ticks and plotted coordinates.
+# Review update: 2026-09-15 20:05 America/New_York; Python 3.12 / Windows Tk 8.6.
+# Purpose: Make ranking edits persistent, recoverable and theme-compatible.
+# Upstream: elo_model.py validates ranks; elo_storage.py backs up/saves/audits edits.
+# Changed lines: 28/35 import Player/validator; 188 copy rank mode into replay;
+# 309 report rank mode; 3207-3294 theme/size dialog and use transactional save.

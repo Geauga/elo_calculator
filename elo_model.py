@@ -18,7 +18,7 @@ PLAYER_COUNT = DEFAULT_PLAYER_COUNT
 LEGACY_PLAYER_COUNT = 8
 MIN_PLAYER_COUNT = 2
 MAX_PLAYER_COUNT = 64
-LEAGUE_SCHEMA_VERSION = 8
+LEAGUE_SCHEMA_VERSION = 9
 INITIAL_RATING = 1500.0
 K_FACTOR = 32.0
 MIN_K_FACTOR = 0.01
@@ -760,7 +760,7 @@ class League:
         if not isinstance(data, dict):
             raise ValueError("The save file must contain a JSON object.")
         schema_version = data.get("schema_version")
-        if schema_version not in (1, 2, 3, 4, 5, 6, 7, LEAGUE_SCHEMA_VERSION):
+        if schema_version not in (1, 2, 3, 4, 5, 6, 7, 8, LEAGUE_SCHEMA_VERSION):
             raise ValueError("Unsupported save-file version.")
 
         try:
@@ -987,3 +987,7 @@ class League:
 # Upstream: UI/API inputs and JSON save files; upstream purpose: persist valid match data.
 # Changed lines: 43-50 finite-number guard; 79/145/174/199/218 numeric validators;
 # 100-101 fixed-target score type; 344-345 player ID type; 812 and 890-917 saved numbers.
+# Review update: 2026-09-15 20:05 America/New_York; Python 3.12 / Windows.
+# Purpose: Prevent older executables silently dropping saved rank-sharing modes.
+# Upstream: JSON league files persist ranking configuration; retain schemas 1-8.
+# Changed lines: 22 writes schema 9; 762 accepts schema 8 during migration.
