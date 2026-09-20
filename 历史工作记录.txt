@@ -771,3 +771,12 @@
 - Modified files: This append-only final publication record; source fixes are in `f0346c3` and package/documentation in `84336e0`.
 - Tests and verification: Final 130/130 tests passed in 4.300 seconds without skips. Staged whitespace checks passed. Both isolated executable startup checks and archive/runtime inspection passed; hashes remain those recorded above. `git ls-remote` returned `84336e0bae670c5f9f8b4815b3f7e8fbbfe9b4b2`, matching local HEAD after package push.
 - GitHub Timeline: Source `f0346c328ccbb97a4274a20db43711371e291eef` and package `84336e0bae670c5f9f8b4815b3f7e8fbbfe9b4b2` are pushed and verified on GitHub main. This publication record will follow in a log-only commit and normal push.
+
+## 2026-09-20 16:54:03 -04:00
+
+- User Prompt summary: "push public"; explicitly confirmed making `Geauga/elo_calculator` public, exposing repository files and commit history; requested continuation after an approval-service credit failure.
+- Execution location: Local Windows repository `C:\Users\danie\OneDrive\Documents\ChatGPT\elo` and GitHub repository API. Existing Git Credential Manager authentication was used in memory without displaying or saving credentials.
+- Actions: Verified exact repository identity, private visibility and administrator permission; changed only repository visibility to public. Verified anonymous API access (`private=false`, `visibility=public`, `disabled=false`, `archived=false`) and anonymous repository-page HTTP 200. Initial Git access immediately after the visibility change returned a disabled-repository 403; subsequent metadata confirmed the repository enabled, followed by a Git-access recheck. No source, executable, package, data or commit history was replaced or removed.
+- Modified files: Append-only `历史工作记录.txt`; external GitHub visibility setting changed from private to public.
+- Tests and verification: No code changes, so tests/build were not rerun. Existing v25 source and package remain intact. Anonymous public metadata and web access verified; final Git-access and log-push verification follows.
+- GitHub Timeline: Existing source/package commits were already pushed. Public visibility is applied and verified. This local audit record is not committed or pushed yet; it will be committed and normally pushed after Git access is confirmed.
