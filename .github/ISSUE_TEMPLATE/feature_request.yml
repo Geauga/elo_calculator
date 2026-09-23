@@ -1,0 +1,36 @@
+# .github/ISSUE_TEMPLATE/feature_request.yml
+# Request: Collect focused community feature proposals.
+name: Feature request
+description: Propose an improvement and describe the problem it solves.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: Explain who needs this and what is difficult today. Do not include personal league data.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the desired result and any effects on league rules, saved data, or the interface.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include workarounds or simpler approaches, if any.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for similar requests.
+          required: true
+        - label: I agree to follow the project's Code of Conduct.
+          required: true
+# Purpose: Feature intake; upstream: CONTRIBUTING.md defines review expectations.
+# Environment: GitHub issue forms. Created 2026-09-22 America/New_York; new file.

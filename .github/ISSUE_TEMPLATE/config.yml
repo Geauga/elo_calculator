@@ -1,0 +1,12 @@
+# .github/ISSUE_TEMPLATE/config.yml
+# Request: Direct community submissions to appropriate forms and policies.
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability reporting
+    url: https://github.com/Geauga/elo_calculator/blob/main/SECURITY.md
+    about: Read the private reporting policy. Do not disclose vulnerabilities in public issues.
+  - name: Conduct and safety concerns
+    url: https://github.com/Geauga/elo_calculator/blob/main/CODE_OF_CONDUCT.md
+    about: Read the conduct policy and reporting guidance before sharing sensitive information.
+# Purpose: Issue routing; upstream: security and conduct policies define reporting.
+# Environment: GitHub issue chooser. Created 2026-09-22 America/New_York; new file.

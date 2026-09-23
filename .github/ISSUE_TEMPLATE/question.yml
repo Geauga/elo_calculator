@@ -1,0 +1,26 @@
+# .github/ISSUE_TEMPLATE/question.yml
+# Request: Provide community support without requiring GitHub Discussions.
+name: Usage question
+description: Ask about installation, rules, settings, or using the application.
+title: "[Question]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check [README.md](https://github.com/Geauga/elo_calculator/blob/main/README.md) and existing issues first.
+        Do not include private data. Follow SECURITY.md for vulnerabilities and CODE_OF_CONDUCT.md for conduct concerns.
+  - type: input
+    id: version
+    attributes:
+      label: Application version and operating system
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: Explain what you want to do and what you have already tried.
+    validations:
+      required: true
+# Purpose: Usage support intake; upstream: SUPPORT.md documents public support.
+# Environment: GitHub issue forms. Created 2026-09-22 America/New_York; new file.

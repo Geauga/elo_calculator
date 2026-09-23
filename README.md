@@ -3,6 +3,17 @@
 A Python desktop program for configurable first-to-N or custom-score leagues
 with adjustable rosters.
 
+## Community
+
+Read the [contribution guide](CONTRIBUTING.md), [code of conduct](CODE_OF_CONDUCT.md),
+and [support guide](SUPPORT.md) before participating. Use the
+[issue forms](https://github.com/Geauga/elo_calculator/issues/new/choose) for bugs,
+feature requests, and usage questions. Report vulnerabilities privately as
+described in the [security policy](SECURITY.md).
+
+A project license has not yet been selected; these community documents do not
+change the licensing of the code or bundled third-party components.
+
 ## Rules
 
 - New leagues default to 12 players, and each league can independently use

@@ -1,0 +1,58 @@
+# .github/ISSUE_TEMPLATE/bug_report.yml
+# Request: Collect actionable, privacy-safe community bug reports.
+name: Bug report
+description: Report a reproducible problem with the calculator.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For vulnerabilities, follow [SECURITY.md](https://github.com/Geauga/elo_calculator/blob/main/SECURITY.md) instead of posting publicly.
+        Use synthetic league data and redact names, tokens, and private paths.
+  - type: input
+    id: version
+    attributes:
+      label: Application version or source commit
+      placeholder: "For example: v25 EXE, or a source commit hash"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Operating system and runtime
+      description: Include OS version, EXE or Python source, and Python version if applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Describe a minimal example, including relevant league rules and ranking settings.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include redacted error text or screenshots. Note theme and display scaling for GUI problems.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for this problem.
+          required: true
+        - label: I removed personal data and credentials from this report.
+          required: true
+        - label: I agree to follow the project's Code of Conduct.
+          required: true
+# Purpose: Reproducible bug intake; upstream: SUPPORT.md and SECURITY.md.
+# Environment: GitHub issue forms. Created 2026-09-22 America/New_York; new file.
