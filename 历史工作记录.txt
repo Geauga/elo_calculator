@@ -789,3 +789,19 @@
 - Modified files: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/ISSUE_TEMPLATE/bug_report.yml`, `.github/ISSUE_TEMPLATE/feature_request.yml`, `.github/ISSUE_TEMPLATE/question.yml`, `.github/ISSUE_TEMPLATE/config.yml`, `README.md`, append-only `历史工作记录.txt`.
 - Tests and verification: Parsed all four YAML files using PyYAML 6.0.3; checked form metadata, field types, unique IDs, boolean validations and chooser links; validated nine community documents and thirteen relative Markdown links, plus repository policy link targets. `git diff --check` passed. No application-code changes, so application tests and executable rebuild were not rerun. Checked current GitHub documentation for supported community-file locations, issue forms and abuse reporting. Fetched origin/main and confirmed ahead 0/behind 0 before changes were committed.
 - GitHub Timeline: Community files are not committed or pushed yet. They are prepared for normal commit/push; licensing and the private conduct contact remain user decisions, and older source/packages are unchanged.
+
+## 2026-09-22 21:28:59 -04:00
+
+- User Prompt summary: Publish the community standards.
+- Actions: Committed the ten intended documentation/configuration files as `9d5a379` and normally pushed main. Verified local HEAD equals the remote branch hash. Read the public GitHub community profile after publication: health percentage increased from 28 to 71; code of conduct, contribution guide and pull-request template are detected. The API's issue_template field remains null despite the YAML files being published; the anonymous issue-chooser request redirects to sign-in, so signed-in form rendering has not been verified. No login or issue submission was performed.
+- Modified files: This append-only verification record only; community documents and templates are in `9d5a379`.
+- Tests and verification: YAML and local-link validation passed before publication; GitHub remote hash is `9d5a379850adeca8d4ed1a60c5d732c3fd30167e`; working tree was clean immediately after push. Project license and dedicated private conduct contact remain unselected. Repository description remains unchanged; no claim of a 100% community checklist is made.
+- GitHub Timeline: Community standards commit `9d5a379850adeca8d4ed1a60c5d732c3fd30167e` is pushed and verified. This final log-only record is pending its follow-up commit and normal push.
+
+## 2026-09-22 21:29:22 -04:00
+
+- User Prompt summary: Push the prepared community standards to GitHub.
+- Actions: Reviewed the exact pending documentation set, parsed all four GitHub issue-form YAML files, checked whitespace and searched the new community files for accidental credentials or private-key material. Fetched before publication and confirmed local `main` and `origin/main` had no divergence. Published the contribution guide, conduct policy, support guide, issue forms, issue chooser, pull-request template, README community section and their initial append-only work record.
+- Modified files: This append-only publication record only; the community files and README update are contained in commit `9d5a379`.
+- Tests and verification: YAML parsing passed for four files; `git diff --check` passed before publication; no application source or release artifact changed, so application tests and executable rebuilding were not repeated. After publication, `git ls-remote` returned `9d5a379850adeca8d4ed1a60c5d732c3fd30167e` for `refs/heads/main`, exactly matching local HEAD.
+- GitHub Timeline: Community standards commit `9d5a379850adeca8d4ed1a60c5d732c3fd30167e` is pushed and verified on GitHub `main`. This log-only completion record is pending its follow-up commit and normal push.
