@@ -864,3 +864,11 @@ Status: Completed.
 - Modified files: This append-only completion record only; all package artifacts and release documentation are in commit `2238599`.
 - Tests and verification: Build and smoke results remain those recorded above. Post-commit EXE SHA-256 remains `9FE68303ED9383050B91B91A4B71D5339B33AB65FC0F0081853EF4C908541C61`; ZIP SHA-256 remains `531FAD98DFCC47A6E9FD40DE95FF80AC705293D0F49F5DF2016E512D31FCB2E6`; `git show --check` passed.
 - GitHub Timeline: v26 is committed locally as `22385992686ae5509b17959a146d653a59c8f9bc` and is not pushed. Local `main` is one commit ahead of `origin/main`; no push was requested.
+
+## 2026-09-25 17:10:34 -04:00
+
+- User Prompt summary: Push the verified v26 Windows package.
+- Actions: Confirmed the worktree was clean, both v26 commits passed `git show --check`, fetched GitHub and verified local `main` was ahead two and behind zero. Normally pushed the package and build-verification commits without rewriting history, then checked the exact remote branch hash.
+- Modified files: This append-only publication record only; v26 artifacts and documentation are in `2238599`, and the local build-verification record is in `59db314`.
+- Tests and verification: Publication retains the recorded v26 validation: EXE SHA-256 `9FE68303ED9383050B91B91A4B71D5339B33AB65FC0F0081853EF4C908541C61`; ZIP SHA-256 `531FAD98DFCC47A6E9FD40DE95FF80AC705293D0F49F5DF2016E512D31FCB2E6`; raw and ZIP-extracted startup checks reached GUI input idle. `git ls-remote` returned `59db31431c424a1541d85dbc42f669bf34a9998a` for `refs/heads/main`, matching local HEAD after the package push.
+- GitHub Timeline: v26 package commit `22385992686ae5509b17959a146d653a59c8f9bc` and verification commit `59db31431c424a1541d85dbc42f669bf34a9998a` are pushed and verified on GitHub `main`. This log-only publication record is pending its follow-up commit and normal push.
