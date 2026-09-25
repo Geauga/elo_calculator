@@ -829,3 +829,12 @@ Status: Completed.
 - Modified files: This append-only publication record; conference implementation remains the six-file feature commit. Incoming workflows and rewritten authorship history are preserved.
 - Tests and verification: 145/145 tests passed after replay in 4.692 seconds, with no skips. `git diff --check` passed; comparing the five feature source/test/README files against `0b428a6` produced no differences. Normal push succeeded; `git ls-remote` returned `4ab9169c9a3c60ebe8463eaf07f0d7c903cfe9b5`, matching local HEAD.
 - GitHub Timeline: Conference feature `4ab9169c9a3c60ebe8463eaf07f0d7c903cfe9b5` is pushed and verified on public GitHub main. This log-only publication record is pending a follow-up commit and normal push. The executable has not been rebuilt.
+
+## 2026-09-24 20:55:00 -04:00
+
+- User Prompt: "patch and push" following the review's Unicode player-name startup crash.
+- Execution location: Local Windows Git repository `C:\Users\danie\OneDrive\Documents\ChatGPT\elo`; publication target GitHub `Geauga/elo_calculator`, main.
+- Actions: Changed natural-sort numeric detection from isdigit() to isdecimal(), retaining superscript/circled digits as text while preserving natural numeric ordering for ASCII, Arabic-Indic and fullwidth decimal digits. Added isolated real-Tk rename/save/reopen coverage for superscript and circled player names. Existing league data and executable packages were not changed. Fetched four newer remote commits and fast-forwarded main to c299306, preserving the remote scan fixes and work-log updates without rewriting history.
+- Modified files: `elo_calculator.py` line 47 and provenance footer, new `test_elo_names.py`, append-only `历史工作记录.txt`.
+- Tests and verification: New tests reproduced six subcase errors on the original code. After the fix, all 148 tests passed in 5.322 seconds with no skips; git diff --check passed. UI tests used temporary storage only. Full suite will be repeated after the remote fast-forward before publication.
+- GitHub Timeline: Not committed (未 commit); local patch is ready for commit and normal push after final verification. No executable rebuild requested.
