@@ -152,27 +152,30 @@ season reports use the selected ranking mode.
 ## Standalone Windows package
 
 The current packaged release is
-`release/EloLeagueCalculator-v25-Windows-x64.zip`.
+`release/EloLeagueCalculator-v26-Windows-x64.zip`.
 It contains `EloLeagueCalculator.exe` and `README.txt`; Python does not need to
 be installed. Extract the ZIP, then double-click the executable to start it.
-Version 25 includes graph hover values and match links, extreme-Elo graph fixes,
-faster historical ranks, ranking-settings save/rollback and theme fixes, and
-schema-9 rank-sharing persistence, plus the earlier season export and SB history.
+Version 26 adds optional conference standings and filtering, conference sections
+in season exports, schema-10 persistence, and safe sorting for player names that
+contain superscript, circled, or other non-decimal Unicode digits. It also
+includes the v25 graph, ranking, season export, backup, and audit improvements.
 It was built from source commit
-`f0346c328ccbb97a4274a20db43711371e291eef` on September 15, 2026.
+`a00bc7a512036c9fe6bd726f7bc753451bed7b9e` on September 25, 2026.
 Older releases are preserved. Back up your application data before upgrading;
-older executables cannot read schema-9 saves.
+older executables, including v25, cannot read schema-10 saves.
 
 Package verification:
 
 - Executable SHA-256:
-  `3E423C3B79B4222A0374BDDC97706AE436ECE3395EDE05438557C6A8766883AF`
+  `9FE68303ED9383050B91B91A4B71D5339B33AB65FC0F0081853EF4C908541C61`
 - ZIP SHA-256:
-  `57711021408C8337DC75ABAE53BF86EB28EEAC5BFA5CDB2D8C820C88653C1BD1`
-- Validation: 130 tests passed with no skips, including real Tk checks.
-  Bundled Python/Tcl/Tk and ranking fixes were verified; raw and ZIP-extracted
-  executables reached GUI input idle with isolated application data. This is
-  not a full manual UI acceptance test.
+  `531FAD98DFCC47A6E9FD40DE95FF80AC705293D0F49F5DF2016E512D31FCB2E6`
+- Validation: The full suite discovered 148 tests; 129 executable tests passed
+  and 19 source GUI tests skipped because the development runtime could not
+  initialize Tcl. All 148 tests passed on the integrated source before this
+  build. The package contains Python and Tcl/Tk; raw and ZIP-extracted builds
+  reached GUI input idle with isolated application data. This is not a full
+  manual UI acceptance test.
 
 ## Test
 
@@ -180,11 +183,10 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation: 145 tests, including optional conference defaults,
+Current source validation: 148 tests, including optional conference defaults,
 migration, assignments, filtered ranks, unchanged scheduling, full UI checks, ranking-settings persistence,
 rollback, schema migration, dialog styling, graph ranges, crowded labels and
 hover values, click-handler cleanup, rank replay across every priority order,
 graph-trace, season-report, SB-history, numeric-validation, and real Tk theme checks.
-The conference feature is a source update and is not included in the v25
-executable, which uses schema 9. Older packages are preserved; no package was
-rebuilt for this change.
+The conference feature and Unicode-name fix are included in the v26 executable,
+which uses schema 10. Older packages are preserved.
