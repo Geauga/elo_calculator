@@ -1245,3 +1245,9 @@ Major Changes:
 Time: 2026-09-24T20:51:29.695688
 Major Changes:
 - Fixed a CodeQL scanning alert ('Bad HTML filtering regexp') by explicitly excluding the '.build_tools' directory from GitHub CodeQL analysis via a custom codeql-config.yml.
+
+---
+Time: 2026-09-24T20:54:56.370015
+Major Changes:
+- Cleared local git configuration overrides in elo_calculator to ensure the global 'actacomes' identity is used correctly.
+- Rewrote the 4 most recent AI commits to fix the author email to 'actacomes@users.noreply.github.com' and force pushed to GitHub.
