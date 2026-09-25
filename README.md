@@ -16,6 +16,20 @@ change the licensing of the code or bundled third-party components.
 
 ## Rules
 
+- Conferences are optional and **off by default**, including when loading an
+  older league. In the main **Settings > Conferences...** dialog, enable them
+  for the active league and assign a conference name to each player. Blank
+  names leave players unassigned. Edits are saved when you select another
+  player or click **Save conferences**; Cancel discards the dialog's edits.
+- When enabled, the Standings selector offers All players, each named conference,
+  and Unassigned players. A conference view ranks only its members using the
+  league's ranking rules; statistics still include all league matches. The
+  overall standings and League Rank graph remain league-wide. Conference
+  standings are also included in season exports.
+- Conferences do not change Elo calculations, allowed opponents, or simulator
+  scheduling. Turning them off hides the selector but retains assignments.
+  Names are case-insensitive, up to 40 characters; new players start unassigned.
+
 - New leagues default to 12 players, and each league can independently use
   between 2 and 64 players. Every added player begins at that league's Base
   Elo, which defaults to `1500.00`.
@@ -123,10 +137,10 @@ automatically by retaining the original league and adding Players 9 through 12.
 The previous single-league database is also upgraded automatically to
 `League 1`, preserving its standings and match history.
 
-League schema 9 preserves rank-sharing mode as well as Base Elo, victory-margin
-K scaling, and standings priority. Schema-8 and older saves upgrade with compatible
-defaults, retaining any previously saved ranking mode. Older executables reject
-schema 9 instead of silently discarding ranking settings. Back up your data before
+Current source writes league schema 10, preserving optional conferences as well
+as rank-sharing mode, Base Elo, victory-margin K scaling, and standings priority.
+Schema-9 and older saves upgrade with conferences disabled and existing settings
+retained. Older executables, including v25, cannot open schema-10 saves. Back up your data before
 upgrading; do not open upgraded saves in an older executable.
 
 The standings Settings menu's League Settings dialog saves ranking priorities and
@@ -166,8 +180,11 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation: 130 tests, including ranking-settings persistence,
+Current source validation: 145 tests, including optional conference defaults,
+migration, assignments, filtered ranks, unchanged scheduling, full UI checks, ranking-settings persistence,
 rollback, schema migration, dialog styling, graph ranges, crowded labels and
 hover values, click-handler cleanup, rank replay across every priority order,
 graph-trace, season-report, SB-history, numeric-validation, and real Tk theme checks.
-These changes are included in the v25 executable. Older packages are preserved.
+The conference feature is a source update and is not included in the v25
+executable, which uses schema 9. Older packages are preserved; no package was
+rebuilt for this change.

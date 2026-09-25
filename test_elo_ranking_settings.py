@@ -28,7 +28,7 @@ class RankingPersistenceTests(unittest.TestCase):
             self.assertEqual(league.ranking_mode, mode or "sequential")
             self.assertEqual(league.tiebreaker_hierarchy, data["tiebreaker_hierarchy"])
             self.assertEqual(league.to_dict()["schema_version"], LEAGUE_SCHEMA_VERSION)
-            self.assertEqual(LEAGUE_SCHEMA_VERSION, 9)
+            self.assertEqual(LEAGUE_SCHEMA_VERSION, 10)
 
     def test_ranking_modes_round_trip_and_invalid_values_are_rejected(self):
         for mode in ("sequential", "competition", "dense"):
@@ -127,3 +127,5 @@ if __name__ == "__main__":
 # Upstream: elo_calculator.py edits leagues; elo_storage.py saves/backs up/audits;
 # elo_model.py validates and versions saved settings. Python 3.12 / Windows Tk 8.6.
 # Generated: 2026-09-15 America/New_York. Changes: New regression-test file.
+# Updated 2026-09-24 America/New_York: line 34 expects schema 10, while retaining
+# existing schema-8 rank-mode migration checks. Upstream purpose/environment unchanged.

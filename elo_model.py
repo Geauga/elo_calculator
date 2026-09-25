@@ -1,5 +1,5 @@
 # elo_model.py
-# Request: Review and patch league settings, historical replay, and persistence.
+# Request: Add optional, default-off conferences while preserving league rules and saves.
 """Core Elo rules and persistence for leagues with adjustable rosters."""
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ PLAYER_COUNT = DEFAULT_PLAYER_COUNT
 LEGACY_PLAYER_COUNT = 8
 MIN_PLAYER_COUNT = 2
 MAX_PLAYER_COUNT = 64
-LEAGUE_SCHEMA_VERSION = 9
+LEAGUE_SCHEMA_VERSION = 10
 INITIAL_RATING = 1500.0
 K_FACTOR = 32.0
 MIN_K_FACTOR = 0.01
@@ -276,6 +276,7 @@ class Player:
     id: int
     name: str
     rating: float = INITIAL_RATING
+    conference: str = ""
 
 
 @dataclass
@@ -331,6 +332,7 @@ class League:
         default_factory=lambda: list(DEFAULT_TIEBREAKER_HIERARCHY)
     )
     ranking_mode: str = RANKING_MODE_SEQUENTIAL
+    conferences_enabled: bool = False
 
     def __post_init__(self) -> None:
         self.k_factor = validate_k_factor(self.k_factor)
@@ -347,6 +349,33 @@ class League:
             self.tiebreaker_hierarchy
         )
         self.ranking_mode = validate_ranking_mode(self.ranking_mode)
+        self.configure_conferences(
+            self.conferences_enabled, {player.id: player.conference for player in self.players}
+        )
+
+    def configure_conferences(self, enabled: bool, assignments: dict[int, str]) -> None:
+        """Validate all assignments before changing this league; blank is unassigned."""
+        if not isinstance(enabled, bool):
+            raise ValueError("The conferences setting must be true or false.")
+        if not isinstance(assignments, dict) or set(assignments) != {p.id for p in self.players}:
+            raise ValueError("Conference assignments must include every current player exactly once.")
+        normalized = {}
+        names = {}
+        for player_id, value in assignments.items():
+            if not isinstance(player_id, int) or isinstance(player_id, bool):
+                raise ValueError("Conference assignments must use player IDs.")
+            if not isinstance(value, str):
+                raise ValueError("Conference names must be text.")
+            name = value.strip()
+            if len(name) > 40 or any(ord(char) < 32 or ord(char) == 127 for char in name):
+                raise ValueError("Conference names must be at most 40 characters without control characters.")
+            normalized[player_id] = names.setdefault(name.casefold(), name)
+        self.conferences_enabled = enabled
+        for player in self.players:
+            player.conference = normalized[player.id]
+
+    def conference_names(self) -> list[str]:
+        return sorted({p.conference for p in self.players if p.conference}, key=str.casefold)
 
     @classmethod
     def new(cls, player_count: int = DEFAULT_PLAYER_COUNT) -> "League":
@@ -753,6 +782,7 @@ class League:
             "k_factor_scaling": self.k_factor_scaling,
             "tiebreaker_hierarchy": self.tiebreaker_hierarchy,
             "ranking_mode": self.ranking_mode,
+            "conferences_enabled": self.conferences_enabled,
         }
 
     @classmethod
@@ -760,7 +790,7 @@ class League:
         if not isinstance(data, dict):
             raise ValueError("The save file must contain a JSON object.")
         schema_version = data.get("schema_version")
-        if schema_version not in (1, 2, 3, 4, 5, 6, 7, 8, LEAGUE_SCHEMA_VERSION):
+        if schema_version not in (1, 2, 3, 4, 5, 6, 7, 8, 9, LEAGUE_SCHEMA_VERSION):
             raise ValueError("Unsupported save-file version.")
 
         try:
@@ -894,6 +924,7 @@ class League:
             k_factor_scaling=k_factor_scaling,
             tiebreaker_hierarchy=tiebreaker_hierarchy,
             ranking_mode=ranking_mode,
+            conferences_enabled=data.get("conferences_enabled", False),
         )
         valid_ids = {player.id for player in players}
         for match in matches:
@@ -991,3 +1022,9 @@ class League:
 # Purpose: Prevent older executables silently dropping saved rank-sharing modes.
 # Upstream: JSON league files persist ranking configuration; retain schemas 1-8.
 # Changed lines: 22 writes schema 9; 762 accepts schema 8 during migration.
+# Conference update: 2026-09-24 20:42 America/New_York; Python 3.12 / Windows.
+# Purpose: Store optional conference memberships without changing match rules.
+# Upstream: GUI settings and JSON saves provide assignments; this model validates
+# them atomically and retains memberships through rename/resize/reset/save/restore.
+# Changed lines: 22 schema 10; 279 player membership; 335 disabled default;
+# 352-378 normalization/validation; 785 serialization; 794/927 legacy load/default.

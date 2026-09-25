@@ -1,5 +1,5 @@
 # elo_calculator.py
-# Request: Keep graph results readable, numerically safe and fast, with match links.
+# Request: Add optional, default-off conference groups and standings without changing scheduling.
 """Tkinter desktop interface for the twelve-player Elo calculator."""
 
 from __future__ import annotations
@@ -71,16 +71,18 @@ def _ranked_players(
     *,
     statistics: dict[int, PlayerStatistics] | None = None,
     pair_statistics: dict[tuple[int, int], PlayerStatistics] | None = None,
+    player_ids: set[int] | None = None,
 ) -> list[tuple[int, Player]]:
     """Return players in the same order used by the standings display."""
     if statistics is None:
         statistics = league.statistics()
+    players = [p for p in league.players if player_ids is None or p.id in player_ids]
     ranking_ratings = {
         player.id: round(player.rating, league.elo_decimal_places)
-        for player in league.players
+        for player in players
     }
     rating_groups: dict[float, set[int]] = {}
-    for player in league.players:
+    for player in players:
         rating_groups.setdefault(ranking_ratings[player.id], set()).add(player.id)
 
     head_to_head = {}
@@ -123,7 +125,7 @@ def _ranked_players(
     def get_metrics(player):
         return tuple(metric(player, name) for name in league.tiebreaker_hierarchy)
 
-    sorted_players = sorted(league.players, key=get_metrics)
+    sorted_players = sorted(players, key=get_metrics)
     
     if not sorted_players:
         return []
@@ -337,6 +339,19 @@ def _build_season_report(
             f"{stats.games_won}-{stats.games_lost} | "
             f"{stats.game_win_percentage:.1f}%"
         )
+
+    if league.conferences_enabled:
+        lines.extend(["", "Conference Standings", "--------------------",
+                      "Conference ranks; statistics include all league matches."])
+        names = league.conference_names()
+        if any(not player.conference for player in league.players):
+            names.append("")
+        for name in names:
+            lines.extend(["", f"Conference: {name}" if name else "Unassigned players",
+                          "Rank | Player | Elo"])
+            members = {p.id for p in league.players if p.conference == name}
+            for rank, player in _ranked_players(league, statistics=statistics, player_ids=members):
+                lines.append(f"{rank} | {player.name} | {player.rating:.{decimals}f}")
 
     lines.extend(["", "Match History", "-------------"])
     if not league.matches:
@@ -1007,6 +1022,9 @@ class EloCalculatorApp:
             label="League Settings...",
             command=self._show_league_settings,
         )
+        self.settings_menu.add_command(
+            label="Conferences...", command=self._show_conference_settings,
+        )
         self.settings_button.configure(menu=self.settings_menu)
         self.settings_button.grid(row=0, column=2, padx=(3, 0), sticky="e")
         self._style_settings_menu()
@@ -1054,8 +1072,19 @@ class EloCalculatorApp:
         standings_frame.grid(
             row=1, column=0, rowspan=2, sticky="nsew", padx=(0, 12)
         )
-        standings_frame.rowconfigure(0, weight=1)
+        standings_frame.rowconfigure(1, weight=1)
         standings_frame.columnconfigure(0, weight=1)
+
+        self.conference_controls = ttk.Frame(standings_frame)
+        self.conference_controls.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 8))
+        ttk.Label(self.conference_controls, text="Standings:").pack(side="left")
+        self.conference_filter_var = tk.StringVar(self.root, value="All players")
+        self.conference_filter_combo = ttk.Combobox(
+            self.conference_controls, textvariable=self.conference_filter_var,
+            state="readonly", width=32,
+        )
+        self.conference_filter_combo.pack(side="left", fill="x", expand=True, padx=(6, 0))
+        self.conference_filter_combo.bind("<<ComboboxSelected>>", lambda _event: self._refresh_standings())
 
         self.standings = ttk.Treeview(
             standings_frame,
@@ -1089,15 +1118,15 @@ class EloCalculatorApp:
         for column, (label, width, anchor) in headings.items():
             self.standings.heading(column, text=label)
             self.standings.column(column, width=width, anchor=anchor)
-        self.standings.grid(row=0, column=0, sticky="nsew")
+        self.standings.grid(row=1, column=0, sticky="nsew")
         standings_scroll = ttk.Scrollbar(
             standings_frame, orient="vertical", command=self.standings.yview
         )
-        standings_scroll.grid(row=0, column=1, sticky="ns")
+        standings_scroll.grid(row=1, column=1, sticky="ns")
         standings_horizontal_scroll = ttk.Scrollbar(
             standings_frame, orient="horizontal", command=self.standings.xview
         )
-        standings_horizontal_scroll.grid(row=1, column=0, sticky="ew")
+        standings_horizontal_scroll.grid(row=2, column=0, sticky="ew")
         self.standings.configure(
             yscrollcommand=standings_scroll.set,
             xscrollcommand=standings_horizontal_scroll.set,
@@ -1120,7 +1149,7 @@ class EloCalculatorApp:
 
         standings_buttons = ttk.Frame(standings_frame)
         standings_buttons.grid(
-            row=2, column=0, columnspan=2, sticky="ew", pady=(10, 0)
+            row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0)
         )
         ttk.Button(
             standings_buttons, text="Rename selected player", command=self._rename_player
@@ -3293,6 +3322,107 @@ class EloCalculatorApp:
         self._center_dialog(window, self.root)
         window.minsize(window.winfo_reqwidth(), window.winfo_reqheight())
 
+    def _show_conference_settings(self) -> None:
+        window = tk.Toplevel(self.root)
+        window.title("Conferences")
+        self._configure_dialog(window, self.root, resizable=(True, True))
+        frame = ttk.Frame(window, padding=16)
+        frame.pack(fill="both", expand=True)
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(2, weight=1)
+        enabled_var = tk.BooleanVar(window, value=self.league.conferences_enabled)
+        ttk.Checkbutton(frame, text="Enable conferences for this league", variable=enabled_var).grid(
+            row=0, column=0, columnspan=2, sticky="w")
+        ttk.Label(
+            frame, text="Select a player and enter a conference. Blank means unassigned.\n"
+                        "Assignments are retained when disabled. Elo and scheduling do not change.",
+            wraplength=520, justify="left",
+        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 10))
+        roster = ttk.Treeview(frame, columns=("player", "conference"), show="headings",
+                              selectmode="browse", height=8)
+        roster.heading("player", text="Player")
+        roster.heading("conference", text="Conference")
+        roster.column("player", width=200)
+        roster.column("conference", width=220)
+        roster.grid(row=2, column=0, sticky="nsew")
+        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=roster.yview)
+        scrollbar.grid(row=2, column=1, sticky="ns")
+        roster.configure(yscrollcommand=scrollbar.set)
+        draft = {p.id: p.conference for p in self.league.players}
+        for player in self.league.players:
+            roster.insert("", "end", iid=str(player.id), values=(player.name, player.conference))
+        conference_var = tk.StringVar(window)
+        ttk.Label(frame, text="Conference for selected player:").grid(row=3, column=0, sticky="w", pady=(10, 3))
+        entry = ttk.Combobox(frame, textvariable=conference_var, values=self.league.conference_names())
+        entry.grid(row=4, column=0, columnspan=2, sticky="ew")
+        current_id = None
+
+        def keep_assignment():
+            if current_id is not None:
+                draft[current_id] = conference_var.get()
+                roster.set(str(current_id), "conference", draft[current_id])
+
+        def select_player(_event=None):
+            nonlocal current_id
+            selection = roster.selection()
+            next_id = int(selection[0]) if selection else None
+            if next_id == current_id:
+                return
+            keep_assignment()
+            current_id = next_id
+            conference_var.set(draft[current_id] if current_id is not None else "")
+            entry.configure(values=sorted({name.strip() for name in draft.values() if name.strip()}, key=str.casefold))
+
+        roster.bind("<<TreeviewSelect>>", select_player)
+        if self.league.players:
+            roster.selection_set(str(self.league.players[0].id))
+            select_player()
+
+        def save():
+            keep_assignment()
+            previous_state = self.collection.to_dict()
+            try:
+                self.league.configure_conferences(enabled_var.get(), draft)
+                self._commit_edit(
+                    previous_state, "conferences_edited",
+                    f"Conferences {'enabled' if self.league.conferences_enabled else 'disabled'}; "
+                    f"{len(self.league.conference_names())} named conferences.",
+                )
+            except (OSError, ValueError, tk.TclError) as error:
+                self._restore_collection(previous_state)
+                self._show_error("Conferences not saved", str(error), parent=window)
+                return
+            self._refresh_all()
+            window.destroy()
+
+        buttons = ttk.Frame(frame)
+        buttons.grid(row=5, column=0, columnspan=2, sticky="e", pady=(12, 0))
+        ttk.Button(buttons, text="Cancel", command=window.destroy).pack(side="left", padx=(0, 8))
+        ttk.Button(buttons, text="Save conferences", command=save).pack(side="left")
+        self._center_dialog(window, self.root)
+
+    def _conference_player_ids(self) -> set[int] | None:
+        """Update the optional view; league switches always reset to all players."""
+        if not hasattr(self, "conference_controls"):
+            return None
+        options = {"All players": None}
+        if self.league.conferences_enabled:
+            options.update({f"Conference: {name}": name for name in self.league.conference_names()})
+            if any(not p.conference for p in self.league.players):
+                options["Unassigned players"] = ""
+            self.conference_controls.grid()
+        else:
+            self.conference_controls.grid_remove()
+        self.conference_filter_combo.configure(values=list(options))
+        if (getattr(self, "_conference_filter_league", None) is not self.league
+                or self.conference_filter_var.get() not in options):
+            self.conference_filter_var.set("All players")
+        self._conference_filter_league = self.league
+        name = options[self.conference_filter_var.get()]
+        if name is None:
+            return None
+        return {p.id for p in self.league.players if p.conference == name}
+
     def _refresh_standings(self) -> None:
         selected = self.standings.selection()
         selected_id = int(selected[0]) if selected else None
@@ -3309,7 +3439,9 @@ class EloCalculatorApp:
             )
         self.standings.delete(*self.standings.get_children())
         statistics = self.league.statistics()
-        ranked_players = _ranked_players(self.league)
+        ranked_players = _ranked_players(
+            self.league, statistics=statistics, player_ids=self._conference_player_ids()
+        )
         for rank, player in ranked_players:
             stats = statistics[player.id]
             match_record = (
@@ -3712,3 +3844,10 @@ if __name__ == "__main__":
 # Upstream: elo_model.py validates ranks; elo_storage.py backs up/saves/audits edits.
 # Changed lines: 28/35 import Player/validator; 188 copy rank mode into replay;
 # 309 report rank mode; 3207-3294 theme/size dialog and use transactional save.
+# Conference update: 2026-09-24 20:42 America/New_York; Python 3.12 / Windows Tk 8.6.
+# Purpose: Optional per-league player grouping/standings, never enabled by default.
+# Upstream: elo_model.py validates/persists assignments; elo_storage.py provides
+# backup/save/audit/rollback. Existing Elo, match entry and scheduling stay intact.
+# Changed lines: 74-127 scoped standings; 343-355 conference report section;
+# 1024-1163 settings entry/hidden-by-default filter layout; 3325-3426 transactional
+# conference dialog/filter; 3444-3446 scoped standings refresh.
