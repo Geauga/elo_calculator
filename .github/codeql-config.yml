@@ -1,0 +1,7 @@
+name: "CodeQL Exclusions"
+
+paths-ignore:
+  - "**/.build_tools/**"
+  - "**/.codex-*/**"
+  - "build/**"
+  - "dist/**"
