@@ -838,3 +838,11 @@ Status: Completed.
 - Modified files: `elo_calculator.py` line 47 and provenance footer, new `test_elo_names.py`, append-only `历史工作记录.txt`.
 - Tests and verification: New tests reproduced six subcase errors on the original code. After the fix, all 148 tests passed in 5.322 seconds with no skips; git diff --check passed. UI tests used temporary storage only. Full suite will be repeated after the remote fast-forward before publication.
 - GitHub Timeline: Not committed (未 commit); local patch is ready for commit and normal push after final verification. No executable rebuild requested.
+
+## 2026-09-24 20:56:49 -04:00
+
+- User Prompt: "patch and push"; publication verification.
+- Actions: Repeated all 148 tests after the initial fast-forward (5.239 seconds), committed the fix as 6c483a3, and attempted a normal push. Push was rejected because remote main was externally rewritten again. Fetched and inspected the remote delta (only historyworklog.txt content differed); preserved the original fix on local branch codex/unicode-name-before-sync and replayed only that unpublished commit onto 7a0c033. Replayed source/tests exactly match the tested originals. Normal push then succeeded as 3544db7; no force-push, package rebuild, or user-data edit was performed.
+- Modified files: This append-only completion record; source and new regression tests are in the fix commit.
+- Tests and verification: Final integrated suite passed 148/148 tests in 5.231 seconds, no skips. git ls-remote confirmed GitHub main exactly matched local HEAD 3544db7dc5f0b43b91994ed7097823d39e4bc2a5.
+- GitHub Timeline: Initial push failed (push 失败) due to concurrent remote rewrite; fixed commit 3544db7dc5f0b43b91994ed7097823d39e4bc2a5 is now pushed (已 push) and verified. This log-only record is pending its follow-up commit and normal push.
