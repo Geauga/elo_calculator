@@ -1219,9 +1219,15 @@ class EloCalculatorApp:
         )
         self.loser_score_spin.pack(side="left")
 
+        self.is_playoff_var = tk.BooleanVar(value=False)
+        self.playoff_check = ttk.Checkbutton(
+            match_frame, text="Playoff match", variable=self.is_playoff_var
+        )
+        self.playoff_check.grid(row=3, column=0, columnspan=2, sticky="w", pady=(5, 0))
+
         actions = ttk.Frame(match_frame)
         actions.grid(
-            row=3, column=0, columnspan=2, sticky="ew", pady=(10, 4)
+            row=4, column=0, columnspan=2, sticky="ew", pady=(10, 4)
         )
         actions.columnconfigure(0, weight=1)
         actions.columnconfigure(1, weight=1)
@@ -1239,14 +1245,14 @@ class EloCalculatorApp:
         self.undo_button.grid(row=0, column=2, padx=(6, 0))
 
         ttk.Separator(match_frame).grid(
-            row=4, column=0, columnspan=2, sticky="ew", pady=10
+            row=5, column=0, columnspan=2, sticky="ew", pady=10
         )
         ttk.Label(
             match_frame,
             textvariable=self.preview_var,
             wraplength=330,
             justify="left",
-        ).grid(row=5, column=0, columnspan=2, sticky="w", pady=(0, 4))
+        ).grid(row=6, column=0, columnspan=2, sticky="w", pady=(0, 4))
 
         for widget in (self.winner_combo, self.loser_combo, self.score_combo):
             widget.bind("<<ComboboxSelected>>", lambda _event: self._update_preview())
@@ -1262,6 +1268,9 @@ class EloCalculatorApp:
         self.activity_notebook.add(self.history_frame, text="Match history")
         self.activity_notebook.add(graphs_frame, text="Graphs")
         self.activity_notebook.add(log_frame, text="Activity log")
+        
+        self.playoffs_frame = ttk.Frame(self.activity_notebook, padding=8)
+        self.activity_notebook.add(self.playoffs_frame, text="Playoffs")
         history_frame = self.history_frame
         history_frame.rowconfigure(0, weight=1)
         history_frame.columnconfigure(0, weight=1)
@@ -1317,6 +1326,7 @@ class EloCalculatorApp:
         )
 
         self._build_graphs_tab(graphs_frame)
+        self._build_playoffs_tab(self.playoffs_frame)
 
         ttk.Label(outer, textvariable=self.status_var, anchor="w").grid(
             row=3, column=0, columnspan=2, sticky="ew", pady=(12, 0)
@@ -3216,6 +3226,7 @@ class EloCalculatorApp:
         self._refresh_standings()
         self._refresh_history()
         self._refresh_activity_log()
+        self._refresh_playoffs_tab()
         if hasattr(self, "graph_player_combo"):
             self.graph_player_combo["values"] = names
             if self.graph_player_combo.get() not in names and names:
@@ -3291,6 +3302,16 @@ class EloCalculatorApp:
         mode_combo = ttk.Combobox(frame, textvariable=mode_var, state="readonly", values=["sequential", "competition", "dense"])
         mode_combo.pack(fill="x")
 
+        # Playoff Settings
+        ttk.Label(frame, text="Playoffs:", font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(16, 4))
+        playoffs_frame = ttk.Frame(frame)
+        playoffs_frame.pack(fill="x")
+        ttk.Label(playoffs_frame, text="Size (e.g., 4 or 8):").pack(side="left", padx=(0, 8))
+        self.psize_var = tk.StringVar(value=str(self.league.playoff_size))
+        ttk.Spinbox(playoffs_frame, from_=0, to=MAX_PLAYER_COUNT, textvariable=self.psize_var, width=5).pack(side="left")
+        self.prated_var = tk.BooleanVar(value=self.league.playoffs_rated)
+        ttk.Checkbutton(playoffs_frame, text="Playoff matches affect Elo", variable=self.prated_var).pack(side="left", padx=(16, 0))
+
         def save():
             label_to_tb = {v: k for k, v in TIEBREAKER_LABELS.items()}
             try:
@@ -3298,12 +3319,15 @@ class EloCalculatorApp:
                     [label_to_tb[listbox.get(i)] for i in range(listbox.size())]
                 )
                 new_mode = validate_ranking_mode(mode_var.get())
+                new_playoff_size = int(self.psize_var.get())
             except (ValueError, tk.TclError) as error:
-                self._show_error("Invalid ranking settings", str(error), parent=window)
+                self._show_error("Invalid settings", str(error), parent=window)
                 return
             previous_state = self.collection.to_dict()
             self.league.tiebreaker_hierarchy = new_hierarchy
             self.league.ranking_mode = new_mode
+            self.league.playoff_size = new_playoff_size
+            self.league.playoffs_rated = self.prated_var.get()
             try:
                 self._commit_edit(
                     previous_state, "ranking_edited",
@@ -3321,6 +3345,78 @@ class EloCalculatorApp:
         
         self._center_dialog(window, self.root)
         window.minsize(window.winfo_reqwidth(), window.winfo_reqheight())
+
+    def _build_playoffs_tab(self, parent) -> None:
+        parent.rowconfigure(0, weight=1)
+        parent.columnconfigure(0, weight=1)
+        self.playoffs_canvas = tk.Canvas(parent, bg="white", highlightthickness=0)
+        self.playoffs_canvas.grid(row=0, column=0, sticky="nsew")
+        self.playoffs_canvas.bind("<Configure>", lambda e: self._refresh_playoffs_tab())
+
+    def _refresh_playoffs_tab(self) -> None:
+        if not hasattr(self, "playoffs_canvas"): return
+        self.playoffs_canvas.delete("all")
+        width = self.playoffs_canvas.winfo_width()
+        height = self.playoffs_canvas.winfo_height()
+        if width < 50 or height < 50: return
+
+        if self.league.playoff_size <= 0:
+            self.playoffs_canvas.create_text(width/2, height/2, text="Playoffs are disabled. Enable them in League Settings.", font=("Segoe UI", 12), fill="#666666")
+            return
+
+        players = self.league.players
+        stats = self.league.statistics()
+        def get_sort_key(p):
+            st = stats[p.id]
+            return (-p.rating, -st.match_win_percentage, -st.sb_score, p.name)
+        
+        sorted_players = sorted(players, key=get_sort_key)
+        playoff_size = min(self.league.playoff_size, len(sorted_players))
+        if playoff_size == 0: return
+        seeds = sorted_players[:playoff_size]
+        
+        self.playoffs_canvas.create_text(width/2, 20, text=f"Top {playoff_size} Playoffs Bracket", font=("Segoe UI", 14, "bold"))
+        
+        import math
+        rounds = math.ceil(math.log2(playoff_size))
+        if rounds == 0: return
+
+        box_width = 120
+        box_height = 40
+        x_margin = 40
+        y_margin = 60
+        
+        x_step = (width - 2 * x_margin - box_width) / rounds if rounds > 0 else 0
+        
+        for r in range(rounds + 1):
+            num_matches = 2 ** (rounds - r - 1) if r < rounds else 1
+            y_step = (height - 2 * y_margin) / max(1, num_matches)
+            
+            for m in range(num_matches):
+                x = x_margin + r * x_step
+                y = y_margin + m * y_step + (y_step / 2)
+                
+                self.playoffs_canvas.create_rectangle(x, y - box_height/2, x + box_width, y + box_height/2, fill="#f0f0f0", outline="#cccccc")
+                
+                if r == 0:
+                    seed_idx1 = m
+                    seed_idx2 = playoff_size - 1 - m
+                    p1_name = seeds[seed_idx1].name if seed_idx1 < playoff_size else "BYE"
+                    p2_name = seeds[seed_idx2].name if seed_idx2 < playoff_size else "BYE"
+                    self.playoffs_canvas.create_text(x + 5, y - 10, text=f"{seed_idx1+1}. {p1_name}", anchor="w", font=("Segoe UI", 9))
+                    self.playoffs_canvas.create_text(x + 5, y + 10, text=f"{seed_idx2+1}. {p2_name}", anchor="w", font=("Segoe UI", 9))
+                else:
+                    self.playoffs_canvas.create_text(x + 5, y, text="TBD" if r < rounds else "Champion", anchor="w", font=("Segoe UI", 9, "italic"), fill="#999")
+
+                if r > 0 and r <= rounds:
+                    prev_x = x_margin + (r - 1) * x_step + box_width
+                    prev_y1 = y_margin + (m * 2) * (height - 2 * y_margin) / max(1, num_matches * 2) + ((height - 2 * y_margin) / max(1, num_matches * 2) / 2)
+                    prev_y2 = y_margin + (m * 2 + 1) * (height - 2 * y_margin) / max(1, num_matches * 2) + ((height - 2 * y_margin) / max(1, num_matches * 2) / 2)
+                    
+                    self.playoffs_canvas.create_line(prev_x, prev_y1, x - 20, prev_y1, fill="#cccccc")
+                    self.playoffs_canvas.create_line(prev_x, prev_y2, x - 20, prev_y2, fill="#cccccc")
+                    self.playoffs_canvas.create_line(x - 20, prev_y1, x - 20, prev_y2, fill="#cccccc")
+                    self.playoffs_canvas.create_line(x - 20, y, x, y, fill="#cccccc")
 
     def _show_conference_settings(self) -> None:
         window = tk.Toplevel(self.root)
@@ -3580,7 +3676,8 @@ class EloCalculatorApp:
         try:
             winner_id, loser_id, winner_games, loser_games = self._selected_match()
             match = self.league.record_match(
-                winner_id, loser_id, loser_games, winner_games
+                winner_id, loser_id, loser_games, winner_games,
+                is_playoff=self.is_playoff_var.get()
             )
             winner = self.league.player(match.winner_id).name
             loser = self.league.player(match.loser_id).name
@@ -3615,7 +3712,7 @@ class EloCalculatorApp:
         current = self.collection.active
         try:
             player_one_id, player_two_id = self._selected_players()
-            match = self.league.record_draw(player_one_id, player_two_id)
+            match = self.league.record_draw(player_one_id, player_two_id, is_playoff=self.is_playoff_var.get())
             player_one = self.league.player(match.winner_id).name
             player_two = self.league.player(match.loser_id).name
             stats = self.league.statistics()

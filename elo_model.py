@@ -18,7 +18,7 @@ PLAYER_COUNT = DEFAULT_PLAYER_COUNT
 LEGACY_PLAYER_COUNT = 8
 MIN_PLAYER_COUNT = 2
 MAX_PLAYER_COUNT = 64
-LEAGUE_SCHEMA_VERSION = 10
+LEAGUE_SCHEMA_VERSION = 11
 INITIAL_RATING = 1500.0
 K_FACTOR = 32.0
 MIN_K_FACTOR = 0.01
@@ -294,6 +294,7 @@ class Match:
     k_factor: float = K_FACTOR
     elo_decimal_places: int | None = None
     is_draw: bool = False
+    is_playoff: bool = False
 
 
 @dataclass
@@ -333,6 +334,8 @@ class League:
     )
     ranking_mode: str = RANKING_MODE_SEQUENTIAL
     conferences_enabled: bool = False
+    playoff_size: int = 0
+    playoffs_rated: bool = False
 
     def __post_init__(self) -> None:
         self.k_factor = validate_k_factor(self.k_factor)
@@ -349,6 +352,10 @@ class League:
             self.tiebreaker_hierarchy
         )
         self.ranking_mode = validate_ranking_mode(self.ranking_mode)
+        if not isinstance(self.playoff_size, int) or isinstance(self.playoff_size, bool) or self.playoff_size < 0:
+            raise ValueError("Playoff size must be a non-negative integer.")
+        if not isinstance(self.playoffs_rated, bool):
+            raise ValueError("The playoffs-rated setting must be true or false.")
         self.configure_conferences(
             self.conferences_enabled, {player.id: player.conference for player in self.players}
         )
@@ -453,6 +460,7 @@ class League:
         loser_id: int,
         loser_games: int,
         winner_games: int | None = None,
+        is_playoff: bool = False,
     ) -> Match:
         if winner_games is None:
             winner_games = self.win_condition.games_to_win
@@ -472,9 +480,10 @@ class League:
             loser_rating_before=loser.rating,
             multiplier=preview["elo_multiplier"],
             winner_games=winner_games,
-            rated=self.calculate_elo,
+            rated=self.calculate_elo and (not is_playoff or self.playoffs_rated),
             k_factor=self.k_factor,
             elo_decimal_places=self.elo_decimal_places,
+            is_playoff=is_playoff,
         )
         winner.rating = preview["winner_after"]
         loser.rating = preview["loser_after"]
@@ -511,7 +520,7 @@ class League:
             "player_two_after": player_two_after,
         }
 
-    def record_draw(self, player_one_id: int, player_two_id: int) -> Match:
+    def record_draw(self, player_one_id: int, player_two_id: int, is_playoff: bool = False) -> Match:
         preview = self.preview_draw(player_one_id, player_two_id)
         player_one = self.player(player_one_id)
         player_two = self.player(player_two_id)
@@ -525,10 +534,11 @@ class League:
             loser_rating_before=player_two.rating,
             multiplier=1.0,
             winner_games=0,
-            rated=self.calculate_elo,
+            rated=self.calculate_elo and (not is_playoff or self.playoffs_rated),
             k_factor=self.k_factor,
             elo_decimal_places=self.elo_decimal_places,
             is_draw=True,
+            is_playoff=is_playoff,
         )
         player_one.rating = preview["player_one_after"]
         player_two.rating = preview["player_two_after"]
@@ -644,6 +654,7 @@ class League:
                     k_factor=old_match.k_factor,
                     elo_decimal_places=old_match.elo_decimal_places,
                     is_draw=old_match.is_draw,
+                    is_playoff=old_match.is_playoff,
                 )
             )
             replayed_ratings[old_match.winner_id] = winner_after
@@ -685,6 +696,8 @@ class League:
         points = {player_id: 0.0 for player_id in player_ids}
         matches_played = {player_id: 0 for player_id in player_ids}
         for match in self.matches:
+            if match.is_playoff:
+                continue
             if (
                 match.winner_id not in player_ids
                 or match.loser_id not in player_ids
@@ -713,6 +726,8 @@ class League:
         games_won = {player_id: 0 for player_id in player_ids}
         games_lost = {player_id: 0 for player_id in player_ids}
         for match in self.matches:
+            if match.is_playoff:
+                continue
             if (
                 match.is_draw
                 or match.winner_id not in player_ids
@@ -740,6 +755,8 @@ class League:
             player.id: PlayerStatistics() for player in self.players
         }
         for match in self.matches:
+            if match.is_playoff:
+                continue
             winner = statistics[match.winner_id]
             loser = statistics[match.loser_id]
             if match.is_draw:
@@ -754,6 +771,8 @@ class League:
             loser.games_lost += match.winner_games
 
         for match in self.matches:
+            if match.is_playoff:
+                continue
             winner = statistics[match.winner_id]
             loser = statistics[match.loser_id]
             if match.is_draw:
@@ -783,6 +802,8 @@ class League:
             "tiebreaker_hierarchy": self.tiebreaker_hierarchy,
             "ranking_mode": self.ranking_mode,
             "conferences_enabled": self.conferences_enabled,
+            "playoff_size": self.playoff_size,
+            "playoffs_rated": self.playoffs_rated,
         }
 
     @classmethod
@@ -790,7 +811,7 @@ class League:
         if not isinstance(data, dict):
             raise ValueError("The save file must contain a JSON object.")
         schema_version = data.get("schema_version")
-        if schema_version not in (1, 2, 3, 4, 5, 6, 7, 8, 9, LEAGUE_SCHEMA_VERSION):
+        if schema_version not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, LEAGUE_SCHEMA_VERSION):
             raise ValueError("Unsupported save-file version.")
 
         try:
@@ -831,6 +852,8 @@ class League:
                     m_data["elo_decimal_places"] = None
                 if "is_draw" not in m_data:
                     m_data["is_draw"] = False
+                if "is_playoff" not in m_data:
+                    m_data["is_playoff"] = False
                 matches.append(Match(**m_data))
         except (KeyError, TypeError, ValueError, OverflowError) as error:
             raise ValueError("The save file is malformed.") from error
@@ -909,6 +932,12 @@ class League:
                 )
             )
             ranking_mode = validate_ranking_mode(data.get("ranking_mode", RANKING_MODE_SEQUENTIAL))
+            playoff_size = data.get("playoff_size", 0)
+            if not isinstance(playoff_size, int) or isinstance(playoff_size, bool) or playoff_size < 0:
+                raise ValueError("Playoff size must be a non-negative integer.")
+            playoffs_rated = data.get("playoffs_rated", False)
+            if not isinstance(playoffs_rated, bool):
+                raise ValueError("The playoffs-rated setting must be true or false.")
         except ValueError as error:
             raise ValueError("The save file has invalid league settings.") from error
             
@@ -925,6 +954,8 @@ class League:
             tiebreaker_hierarchy=tiebreaker_hierarchy,
             ranking_mode=ranking_mode,
             conferences_enabled=data.get("conferences_enabled", False),
+            playoff_size=playoff_size,
+            playoffs_rated=playoffs_rated,
         )
         valid_ids = {player.id for player in players}
         for match in matches:
@@ -971,6 +1002,7 @@ class League:
                 or validate_elo_decimal_places(match.elo_decimal_places)
                 != match.elo_decimal_places
                 or not isinstance(match.is_draw, bool)
+                or not isinstance(match.is_playoff, bool)
             ):
                 raise ValueError("The save file contains an invalid match.")
             try:

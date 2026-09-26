@@ -1251,3 +1251,5 @@ Time: 2026-09-24T20:54:56.370015
 Major Changes:
 - Cleared local git configuration overrides in elo_calculator to ensure the global 'actacomes' identity is used correctly.
 - Rewrote the 4 most recent AI commits to fix the author email to 'actacomes@users.noreply.github.com' and force pushed to GitHub.
+
+2026-09-25 21:59:34 - Added Playoffs support: Configurable playoff size, playoff rated toggle, Match.is_playoff flag, visual Playoff bracket tab in UI.
