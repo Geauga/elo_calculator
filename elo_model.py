@@ -419,7 +419,11 @@ class League:
         loser_id: int,
         loser_games: int,
         winner_games: int | None = None,
+        *,
+        is_playoff: bool = False,
     ) -> dict[str, float]:
+        if not isinstance(is_playoff, bool):
+            raise ValueError("The playoff flag must be true or false.")
         if winner_id == loser_id:
             raise ValueError("Winner and loser must be different players.")
 
@@ -437,7 +441,7 @@ class League:
                 self.k_factor,
                 self.elo_decimal_places,
             )
-            if self.calculate_elo
+            if self.calculate_elo and (not is_playoff or self.playoffs_rated)
             else 0.0
         )
         winner_after = winner.rating + change
@@ -465,7 +469,7 @@ class League:
         if winner_games is None:
             winner_games = self.win_condition.games_to_win
         preview = self.preview_match(
-            winner_id, loser_id, loser_games, winner_games
+            winner_id, loser_id, loser_games, winner_games, is_playoff=is_playoff
         )
         winner = self.player(winner_id)
         loser = self.player(loser_id)
@@ -490,7 +494,11 @@ class League:
         self.matches.append(match)
         return match
 
-    def preview_draw(self, player_one_id: int, player_two_id: int) -> dict[str, float]:
+    def preview_draw(
+        self, player_one_id: int, player_two_id: int, *, is_playoff: bool = False
+    ) -> dict[str, float]:
+        if not isinstance(is_playoff, bool):
+            raise ValueError("The playoff flag must be true or false.")
         if not self.allow_draws:
             raise ValueError("Draws are disabled for this league.")
         if player_one_id == player_two_id:
@@ -505,7 +513,7 @@ class League:
                 self.k_factor,
                 self.elo_decimal_places,
             )
-            if self.calculate_elo
+            if self.calculate_elo and (not is_playoff or self.playoffs_rated)
             else 0.0
         )
         player_one_after = player_one.rating + change
@@ -521,7 +529,7 @@ class League:
         }
 
     def record_draw(self, player_one_id: int, player_two_id: int, is_playoff: bool = False) -> Match:
-        preview = self.preview_draw(player_one_id, player_two_id)
+        preview = self.preview_draw(player_one_id, player_two_id, is_playoff=is_playoff)
         player_one = self.player(player_one_id)
         player_two = self.player(player_two_id)
         match = Match(
@@ -1060,3 +1068,9 @@ class League:
 # them atomically and retains memberships through rename/resize/reset/save/restore.
 # Changed lines: 22 schema 10; 279 player membership; 335 disabled default;
 # 352-378 normalization/validation; 785 serialization; 794/927 legacy load/default.
+# Playoff fixes: 2026-09-27 16:24 America/New_York; Python 3.12 / Windows.
+# Purpose: Apply the same playoff rating policy to previews and saved results.
+# Upstream: elo_calculator.py supplies the selected playoff flag and league rules;
+# upstream purpose: preview and record results without changing unrated Elo.
+# Changed lines: 418-444 and 497-516 validate flags and gate Elo; 472/532 forward
+# the flag when recording wins/draws so persisted transfers match replay policy.

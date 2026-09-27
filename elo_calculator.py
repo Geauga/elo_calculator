@@ -223,6 +223,10 @@ def _player_rank_history(league: League, player_id: int) -> list[int]:
     for m in league.matches:
         sim.player(m.winner_id).rating += m.rating_change
         sim.player(m.loser_id).rating -= m.rating_change
+        if m.is_playoff:
+            # Rated playoffs affect Elo, but not regular-season ranking statistics.
+            ranks.append(get_rank())
+            continue
         # Accumulate each result once instead of rescanning every history prefix.
         for player_id_, opponent_id, won, games_won, games_lost in (
             (m.winner_id, m.loser_id, True, m.winner_games, m.loser_games),
@@ -1221,7 +1225,8 @@ class EloCalculatorApp:
 
         self.is_playoff_var = tk.BooleanVar(value=False)
         self.playoff_check = ttk.Checkbutton(
-            match_frame, text="Playoff match", variable=self.is_playoff_var
+            match_frame, text="Playoff match", variable=self.is_playoff_var,
+            command=self._update_preview,
         )
         self.playoff_check.grid(row=3, column=0, columnspan=2, sticky="w", pady=(5, 0))
 
@@ -3380,6 +3385,7 @@ class EloCalculatorApp:
         import math
         rounds = math.ceil(math.log2(playoff_size))
         if rounds == 0: return
+        bracket_slots = 2 ** rounds
 
         box_width = 120
         box_height = 40
@@ -3400,11 +3406,13 @@ class EloCalculatorApp:
                 
                 if r == 0:
                     seed_idx1 = m
-                    seed_idx2 = playoff_size - 1 - m
+                    seed_idx2 = bracket_slots - 1 - m
                     p1_name = seeds[seed_idx1].name if seed_idx1 < playoff_size else "BYE"
                     p2_name = seeds[seed_idx2].name if seed_idx2 < playoff_size else "BYE"
-                    self.playoffs_canvas.create_text(x + 5, y - 10, text=f"{seed_idx1+1}. {p1_name}", anchor="w", font=("Segoe UI", 9))
-                    self.playoffs_canvas.create_text(x + 5, y + 10, text=f"{seed_idx2+1}. {p2_name}", anchor="w", font=("Segoe UI", 9))
+                    p1_label = f"{seed_idx1+1}. {p1_name}" if seed_idx1 < playoff_size else "BYE"
+                    p2_label = f"{seed_idx2+1}. {p2_name}" if seed_idx2 < playoff_size else "BYE"
+                    self.playoffs_canvas.create_text(x + 5, y - 10, text=p1_label, anchor="w", font=("Segoe UI", 9))
+                    self.playoffs_canvas.create_text(x + 5, y + 10, text=p2_label, anchor="w", font=("Segoe UI", 9))
                 else:
                     self.playoffs_canvas.create_text(x + 5, y, text="TBD" if r < rounds else "Champion", anchor="w", font=("Segoe UI", 9, "italic"), fill="#999")
 
@@ -3624,10 +3632,11 @@ class EloCalculatorApp:
         try:
             winner_id, loser_id, winner_games, loser_games = self._selected_match()
             preview = self.league.preview_match(
-                winner_id, loser_id, loser_games, winner_games
+                winner_id, loser_id, loser_games, winner_games,
+                is_playoff=self.is_playoff_var.get(),
             )
             draw_preview = (
-                self.league.preview_draw(winner_id, loser_id)
+                self.league.preview_draw(winner_id, loser_id, is_playoff=self.is_playoff_var.get())
                 if self.league.allow_draws
                 else None
             )
@@ -3953,3 +3962,10 @@ if __name__ == "__main__":
 # Upstream: elo_model.py accepts player names; elo_storage.py persists those names.
 # Upstream purpose: Preserve editable player identities across saves and restarts.
 # Changed line: 47 uses isdecimal() to match numeric regex tokens accepted by int().
+# Playoff fixes: 2026-09-27 16:24 America/New_York; Python 3.12 / Windows Tk 8.6.
+# Purpose: Keep playoff previews, first-round byes and rank graphs consistent.
+# Upstream: elo_model.py supplies playoff flags, ratings and regular-season stats;
+# upstream purpose: preserve optional playoff results without contaminating records.
+# Changed lines: 226-229 skip playoff ranking stats but retain rated Elo;
+# 1227-1229 checkbox refresh; 3388/3409-3415 power-of-two slots and bye labels;
+# 3633-3640 propagate playoff selection to win/draw previews.

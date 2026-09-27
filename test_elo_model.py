@@ -981,6 +981,7 @@ class EloModelTests(unittest.TestCase):
         app.league = League.new(2)
         app.league.allow_draws = False
         app.player_name_to_id = {"Player 1": 0, "Player 2": 1}
+        app.is_playoff_var = Mock(get=Mock(return_value=False))
         app.winner_var = Mock(get=Mock(return_value="Player 1"))
         app.loser_var = Mock(get=Mock(return_value="Player 2"))
         app.winner_games_var = Mock(get=Mock(return_value="3"))
@@ -2085,3 +2086,7 @@ class RankingModesTests(unittest.TestCase):
 # Review: 2026-09-15 America/New_York; Python 3.12 / Windows.
 # Purpose/upstream: Keep elo_model.py migration tests aligned with current schema.
 # Changed lines: 719/734 verify legacy schema-7 migration to LEAGUE_SCHEMA_VERSION.
+# Playoff fixture update: 2026-09-27 16:24 America/New_York; Python 3.12 / Windows.
+# Purpose: Keep the preview fixture aligned with the optional playoff checkbox.
+# Upstream: elo_calculator.py reads the checkbox to preview match rating policy.
+# Changed line: 984 provides a false playoff variable for the regular-match test.

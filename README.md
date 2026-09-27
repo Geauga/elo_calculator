@@ -16,6 +16,15 @@ change the licensing of the code or bundled third-party components.
 
 ## Rules
 
+- Source-only playoffs: League Settings controls bracket size and whether playoff
+  matches affect Elo. Mark a result with **Playoff match** when entering it.
+  Unrated playoffs leave ratings unchanged in both the preview and saved result.
+  Playoff results do not count toward regular-season match/game statistics or
+  head-to-head tiebreakers; rated playoff Elo changes still affect Elo-based ranks.
+  Rank history follows the same rule. Non-power-of-two brackets use byes instead
+  of duplicate entrants. The bracket is a seeding preview, not an automatically
+  progressing tournament. These source changes are not in the v26 executable.
+
 - Conferences are optional and **off by default**, including when loading an
   older league. In the main **Settings > Conferences...** dialog, enable them
   for the active league and assign a conference name to each player. Blank
@@ -137,11 +146,14 @@ automatically by retaining the original league and adding Players 9 through 12.
 The previous single-league database is also upgraded automatically to
 `League 1`, preserving its standings and match history.
 
-Current source writes league schema 10, preserving optional conferences as well
-as rank-sharing mode, Base Elo, victory-margin K scaling, and standings priority.
-Schema-9 and older saves upgrade with conferences disabled and existing settings
-retained. Older executables, including v25, cannot open schema-10 saves. Back up your data before
-upgrading; do not open upgraded saves in an older executable.
+Current source writes league schema 11, preserving playoff settings and match
+flags as well as conferences, rank sharing, Base Elo, victory-margin K scaling,
+and standings priority. Schemas 1-10 remain readable; older saves default to
+playoffs disabled, and schemas 1-9 also default to conferences disabled.
+The v26 executable uses schema 10 and cannot open schema-11 saves. Back up your
+data before upgrading; do not open upgraded saves in an older executable.
+The playoff Elo fix applies to newly recorded results; it does not automatically
+rewrite ratings or match transfers already saved by the earlier buggy source.
 
 The standings Settings menu's League Settings dialog saves ranking priorities and
 sequential, competition, or dense rank sharing with the same backup and audit
@@ -183,10 +195,11 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation: 148 tests, including optional conference defaults,
+Current source validation: 154 tests, including playoff Elo previews, save/replay,
+first-round byes and rank-history consistency, plus optional conference defaults,
 migration, assignments, filtered ranks, unchanged scheduling, full UI checks, ranking-settings persistence,
 rollback, schema migration, dialog styling, graph ranges, crowded labels and
 hover values, click-handler cleanup, rank replay across every priority order,
 graph-trace, season-report, SB-history, numeric-validation, and real Tk theme checks.
 The conference feature and Unicode-name fix are included in the v26 executable,
-which uses schema 10. Older packages are preserved.
+which uses schema 10. Playoff fixes are source-only; older packages are preserved.
