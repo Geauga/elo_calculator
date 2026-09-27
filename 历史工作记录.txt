@@ -829,3 +829,46 @@ Status: Completed.
 - Modified files: This append-only publication record; conference implementation remains the six-file feature commit. Incoming workflows and rewritten authorship history are preserved.
 - Tests and verification: 145/145 tests passed after replay in 4.692 seconds, with no skips. `git diff --check` passed; comparing the five feature source/test/README files against `0b428a6` produced no differences. Normal push succeeded; `git ls-remote` returned `4ab9169c9a3c60ebe8463eaf07f0d7c903cfe9b5`, matching local HEAD.
 - GitHub Timeline: Conference feature `4ab9169c9a3c60ebe8463eaf07f0d7c903cfe9b5` is pushed and verified on public GitHub main. This log-only publication record is pending a follow-up commit and normal push. The executable has not been rebuilt.
+
+## 2026-09-24 20:55:00 -04:00
+
+- User Prompt: "patch and push" following the review's Unicode player-name startup crash.
+- Execution location: Local Windows Git repository `C:\Users\danie\OneDrive\Documents\ChatGPT\elo`; publication target GitHub `Geauga/elo_calculator`, main.
+- Actions: Changed natural-sort numeric detection from isdigit() to isdecimal(), retaining superscript/circled digits as text while preserving natural numeric ordering for ASCII, Arabic-Indic and fullwidth decimal digits. Added isolated real-Tk rename/save/reopen coverage for superscript and circled player names. Existing league data and executable packages were not changed. Fetched four newer remote commits and fast-forwarded main to c299306, preserving the remote scan fixes and work-log updates without rewriting history.
+- Modified files: `elo_calculator.py` line 47 and provenance footer, new `test_elo_names.py`, append-only `历史工作记录.txt`.
+- Tests and verification: New tests reproduced six subcase errors on the original code. After the fix, all 148 tests passed in 5.322 seconds with no skips; git diff --check passed. UI tests used temporary storage only. Full suite will be repeated after the remote fast-forward before publication.
+- GitHub Timeline: Not committed (未 commit); local patch is ready for commit and normal push after final verification. No executable rebuild requested.
+
+## 2026-09-24 20:56:49 -04:00
+
+- User Prompt: "patch and push"; publication verification.
+- Actions: Repeated all 148 tests after the initial fast-forward (5.239 seconds), committed the fix as 6c483a3, and attempted a normal push. Push was rejected because remote main was externally rewritten again. Fetched and inspected the remote delta (only historyworklog.txt content differed); preserved the original fix on local branch codex/unicode-name-before-sync and replayed only that unpublished commit onto 7a0c033. Replayed source/tests exactly match the tested originals. Normal push then succeeded as 3544db7; no force-push, package rebuild, or user-data edit was performed.
+- Modified files: This append-only completion record; source and new regression tests are in the fix commit.
+- Tests and verification: Final integrated suite passed 148/148 tests in 5.231 seconds, no skips. git ls-remote confirmed GitHub main exactly matched local HEAD 3544db7dc5f0b43b91994ed7097823d39e4bc2a5.
+- GitHub Timeline: Initial push failed (push 失败) due to concurrent remote rewrite; fixed commit 3544db7dc5f0b43b91994ed7097823d39e4bc2a5 is now pushed (已 push) and verified. This log-only record is pending its follow-up commit and normal push.
+
+## 2026-09-25 17:07:41 -04:00
+
+- User Prompt summary: Build the next Windows package.
+- Execution location: Local Windows repository `C:\Users\danie\OneDrive\Documents\ChatGPT\elo`; isolated build, extraction and smoke-test directories under Windows `%TEMP%`. Source was clean synchronized commit `a00bc7a512036c9fe6bd726f7bc753451bed7b9e` before release-document edits.
+- Actions: Built v26 as a one-file Windows x64 executable with the existing spec and project Tcl/Tk hooks using Python 3.12.14 and PyInstaller 6.22.2. Added the versioned release folder, package README and ZIP without overwriting v25 or older releases. Updated the main README to identify optional conferences, schema-10 compatibility, the Unicode player-name sorting fix, source provenance and package hashes.
+- Modified files: `README.md`; `release/EloLeagueCalculator-v26-Windows-x64/EloLeagueCalculator.exe`; `release/EloLeagueCalculator-v26-Windows-x64/README.txt`; `release/EloLeagueCalculator-v26-Windows-x64.zip`; append-only `历史工作记录.txt`.
+- Tests and verification: The full suite discovered 148 tests; 129 executable tests passed and 19 source GUI tests skipped because the bundled development runtime could not initialize Tcl. The same integrated source had passed 148/148 tests with real Tk on September 24. Build analysis classified 1,003 entries, included `pyi_rth__tkinter.py`, Python and both Tcl/Tk DLLs, plus 830 Tcl and 172 Tk data entries. Warnings were optional/platform-specific imports only. Raw and ZIP-extracted executables each reached GUI input idle with separate temporary `LOCALAPPDATA`; only their exact test processes were stopped. The ZIP contains only the executable and README, and its extracted executable exactly matches the release executable. Startup checks are not a full manual UI acceptance test. EXE SHA-256: `9FE68303ED9383050B91B91A4B71D5339B33AB65FC0F0081853EF4C908541C61`; ZIP SHA-256: `531FAD98DFCC47A6E9FD40DE95FF80AC705293D0F49F5DF2016E512D31FCB2E6`.
+- Diagnostic paths: Build root `C:\Users\danie\AppData\Local\Temp\elo-v26-build-026910705c2c4aa39309542b02607a4a`; raw smoke data `C:\Users\danie\AppData\Local\Temp\EloLeagueCalculator-v26-raw-smoke-3f81a064798e40cf9bb86110fb2eaa97`; ZIP extraction `C:\Users\danie\AppData\Local\Temp\EloLeagueCalculator-v26-package-57c8d923a6284914be9250266dd26e77`; ZIP smoke data `C:\Users\danie\AppData\Local\Temp\EloLeagueCalculator-v26-zip-smoke-e20a65e46dbe4e68ae2821010abcfdc9`. No real league data or older release was modified; temporary directories were retained.
+- GitHub Timeline: v26 package, README update and this record are not committed or pushed yet. The user requested a build but did not request GitHub publication.
+
+## 2026-09-25 17:08:48 -04:00
+
+- User Prompt summary: Complete the local v26 package build.
+- Actions: Staged only the versioned v26 executable, ZIP, release README, main README update and initial append-only build record; passed the staged whitespace check; committed the verified release as `22385992686ae5509b17959a146d653a59c8f9bc` under the configured `Geauga` identity. Rechecked both artifact hashes after commit.
+- Modified files: This append-only completion record only; all package artifacts and release documentation are in commit `2238599`.
+- Tests and verification: Build and smoke results remain those recorded above. Post-commit EXE SHA-256 remains `9FE68303ED9383050B91B91A4B71D5339B33AB65FC0F0081853EF4C908541C61`; ZIP SHA-256 remains `531FAD98DFCC47A6E9FD40DE95FF80AC705293D0F49F5DF2016E512D31FCB2E6`; `git show --check` passed.
+- GitHub Timeline: v26 is committed locally as `22385992686ae5509b17959a146d653a59c8f9bc` and is not pushed. Local `main` is one commit ahead of `origin/main`; no push was requested.
+
+## 2026-09-25 17:10:34 -04:00
+
+- User Prompt summary: Push the verified v26 Windows package.
+- Actions: Confirmed the worktree was clean, both v26 commits passed `git show --check`, fetched GitHub and verified local `main` was ahead two and behind zero. Normally pushed the package and build-verification commits without rewriting history, then checked the exact remote branch hash.
+- Modified files: This append-only publication record only; v26 artifacts and documentation are in `2238599`, and the local build-verification record is in `59db314`.
+- Tests and verification: Publication retains the recorded v26 validation: EXE SHA-256 `9FE68303ED9383050B91B91A4B71D5339B33AB65FC0F0081853EF4C908541C61`; ZIP SHA-256 `531FAD98DFCC47A6E9FD40DE95FF80AC705293D0F49F5DF2016E512D31FCB2E6`; raw and ZIP-extracted startup checks reached GUI input idle. `git ls-remote` returned `59db31431c424a1541d85dbc42f669bf34a9998a` for `refs/heads/main`, matching local HEAD after the package push.
+- GitHub Timeline: v26 package commit `22385992686ae5509b17959a146d653a59c8f9bc` and verification commit `59db31431c424a1541d85dbc42f669bf34a9998a` are pushed and verified on GitHub `main`. This log-only publication record is pending its follow-up commit and normal push.

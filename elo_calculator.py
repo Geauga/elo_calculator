@@ -44,7 +44,7 @@ from elo_storage import AuditLog, BackupManager, LeagueCollection
 import re
 
 def _natural_sort_key(s: str) -> list:
-    return [int(t) if t.isdigit() else t.casefold() for t in re.split(r"(\d+)", s)]
+    return [int(t) if t.isdecimal() else t.casefold() for t in re.split(r"(\d+)", s)]
 
 TIEBREAKER_LABELS = {
     "rating": "Rating",
@@ -3948,3 +3948,8 @@ if __name__ == "__main__":
 # Changed lines: 74-127 scoped standings; 343-355 conference report section;
 # 1024-1163 settings entry/hidden-by-default filter layout; 3325-3426 transactional
 # conference dialog/filter; 3444-3446 scoped standings refresh.
+# Unicode-name fix: 2026-09-24 20:54 America/New_York; Python 3.12 / Windows Tk 8.6.
+# Purpose: Keep non-decimal digits as text so valid names cannot break app startup.
+# Upstream: elo_model.py accepts player names; elo_storage.py persists those names.
+# Upstream purpose: Preserve editable player identities across saves and restarts.
+# Changed line: 47 uses isdecimal() to match numeric regex tokens accepted by int().
