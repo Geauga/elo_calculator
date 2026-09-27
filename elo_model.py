@@ -1074,3 +1074,7 @@ class League:
 # upstream purpose: preview and record results without changing unrated Elo.
 # Changed lines: 418-444 and 497-516 validate flags and gate Elo; 472/532 forward
 # the flag when recording wins/draws so persisted transfers match replay policy.
+# Playoff integration update: 2026-09-27 America/New_York; Python 3.12 / Windows.
+# Purpose: Persist playoff configuration while retaining schemas 1-10.
+# Upstream: GUI playoff settings and saved league JSON; upstream purpose unchanged.
+# Changed lines: 21 writes schema 11; playoff settings serialize, validate and migrate.

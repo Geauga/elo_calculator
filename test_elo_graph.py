@@ -1,5 +1,5 @@
 # test_elo_graph.py
-# Request: Fix extreme-Elo graph crashes, slow rank histories and crowded labels.
+# Request: Test W-D-L series plus numeric, ranking and real-canvas graphs.
 """Numeric, ranking-equivalence and real-canvas graph regressions."""
 
 from copy import deepcopy
@@ -13,7 +13,7 @@ from unittest.mock import Mock, patch
 
 from elo_calculator import (
     EloCalculatorApp, _graph_bounds, _graph_fraction,
-    _player_rank_history, _ranked_players,
+    _player_rank_history, _player_wdl_history, _ranked_players,
 )
 from elo_model import League
 
@@ -116,6 +116,74 @@ class RankHistoryTests(unittest.TestCase):
                     self.assertEqual(_player_rank_history(league, player.id), expected[player.id])
 
 
+class WdlGraphTests(unittest.TestCase):
+    def setUp(self):
+        self.league = League.new(3)
+        self.league.record_match(0, 1, 0)
+        self.league.record_match(1, 2, 0)
+        self.league.record_draw(0, 2)
+        self.league.record_match(1, 0, 0)
+
+    def test_history_tracks_only_the_selected_players_matches(self):
+        wins, draws, losses, match_indices = _player_wdl_history(self.league, 0)
+
+        self.assertEqual(wins, [0, 1, 1, 1])
+        self.assertEqual(draws, [0, 0, 1, 1])
+        self.assertEqual(losses, [0, 0, 0, 1])
+        self.assertEqual(match_indices, [None, 0, 2, 3])
+
+    def test_graph_draws_three_series_with_hover_records_and_match_links(self):
+        app = object.__new__(EloCalculatorApp)
+        app.league = self.league
+        app.graph_canvas = Mock()
+        app.graph_canvas.winfo_width.return_value = 600
+        app.graph_canvas.winfo_height.return_value = 300
+        app.graph_canvas.create_oval.side_effect = range(100, 109)
+        app.graph_canvas.tag_bind.side_effect = [f"binding-{i}" for i in range(9)]
+        app.graph_player_combo = Mock(get=Mock(return_value="Player 1"))
+        app.player_name_to_id = {"Player 1": 0}
+        app.graph_metric_var = Mock(get=Mock(return_value="wdl"))
+        app.theme_var = Mock(get=Mock(return_value="light"))
+        app._show_match_from_graph = Mock()
+
+        app._refresh_graph()
+
+        series_lines = [
+            call for call in app.graph_canvas.create_line.call_args_list
+            if "wdl-series" in call.kwargs.get("tags", ())
+        ]
+        self.assertEqual(
+            [call.kwargs["tags"] for call in series_lines],
+            [
+                ("wdl-series", "wdl-wins"),
+                ("wdl-series", "wdl-draws"),
+                ("wdl-series", "wdl-losses"),
+            ],
+        )
+        colors = app._graph_colors()
+        self.assertEqual(
+            [call.kwargs["fill"] for call in series_lines],
+            [colors["win"], colors["draw"], colors["loss"]],
+        )
+        self.assertNotIn("dash", series_lines[0].kwargs)
+        self.assertEqual(series_lines[1].kwargs["dash"], (6, 3))
+        self.assertEqual(series_lines[2].kwargs["dash"], (2, 3))
+        self.assertEqual(app.graph_canvas.create_oval.call_count, 9)
+        expected_records = [
+            "W-D-L: 1-0-0", "W-D-L: 1-1-0", "W-D-L: 1-1-1",
+        ] * 3
+        self.assertEqual(
+            [details[2] for details in app._graph_point_labels.values()],
+            expected_records,
+        )
+        for call in app.graph_canvas.tag_bind.call_args_list:
+            call.args[2](None)
+        self.assertEqual(
+            [call.args[0] for call in app._show_match_from_graph.call_args_list],
+            [0, 2, 3, 0, 2, 3, 0, 2, 3],
+        )
+
+
 class TkGraphTests(unittest.TestCase):
     def setUp(self):
         try:
@@ -199,11 +267,18 @@ class TkGraphTests(unittest.TestCase):
         self.app._refresh_graph()
         initial_commands = len(self.canvas._tclCommands or [])
         self.assertEqual(initial_commands, 10)
-        for metric in ("rank", "match_pct", "game_pct", "sb", "elo"):
+        for metric, expected_commands in (
+            ("rank", 10),
+            ("match_pct", 10),
+            ("game_pct", 10),
+            ("sb", 10),
+            ("wdl", 30),
+            ("elo", 10),
+        ):
             self.app.graph_metric_var.set(metric)
             self.app._refresh_graph()
-            self.assertEqual(len(self.canvas._tclCommands or []), initial_commands)
-            self.assertEqual(len(self.app._graph_point_bindings), 10)
+            self.assertEqual(len(self.canvas._tclCommands or []), expected_commands)
+            self.assertEqual(len(self.app._graph_point_bindings), expected_commands)
             for marker, binding in self.app._graph_point_bindings:
                 self.assertIn(binding, self.canvas.tag_bind(marker, "<Button-1>"))
 
@@ -217,3 +292,6 @@ if __name__ == "__main__":
 # Changes: New file; range, replay-equivalence, labels/hover and callback tests.
 # Review: 2026-09-15 America/New_York; line 78 follows (rank, player) API;
 # lines 110-119 verify every history prefix for all three rank-sharing modes.
+# W-D-L update: 2026-09-27 16:14 America/New_York; test cumulative series,
+# unrelated-match filtering, themed series, full-record hover data, match links,
+# and callback cleanup when switching between single- and three-series graphs.

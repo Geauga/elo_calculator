@@ -81,8 +81,11 @@ change the licensing of the code or bundled third-party components.
   Season** records one concrete simulated round robin in the active league,
   with confirmation and an automatic backup before ratings and history are
   updated.
-- The Graphs tab plots Elo, league rank, match score percentage, game win percentage, SB
-  history, and head-to-head records for the selected player. Elo plots begin at
+- The Graphs tab plots Elo, league rank, cumulative match W-D-L, match score
+  percentage, game win percentage, SB history, and head-to-head records for the
+  selected player. The W-D-L view uses separate themed lines for wins, draws and
+  losses; hover shows the full record and each result point opens its source
+  match. Elo plots begin at
   the player's actual saved starting rating; percentage calculations are
   draw-aware, and SB history reflects later results from prior opponents. Its
   background, axes, grid, labels, plot line, and point markers follow the active
@@ -195,11 +198,15 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation: 154 tests, including playoff Elo previews, save/replay,
-first-round byes and rank-history consistency, plus optional conference defaults,
-migration, assignments, filtered ranks, unchanged scheduling, full UI checks, ranking-settings persistence,
+Current source validation discovered 156 tests: 136 passed and 20 GUI tests were
+skipped because this development runtime could not initialize Tcl/Tk. Coverage
+includes cumulative W-D-L graph history, three-series rendering and match links,
+playoff Elo previews, save/replay, first-round byes and rank-history consistency,
+plus optional conference defaults, migration, assignments, filtered ranks,
+unchanged scheduling, full UI checks, ranking-settings persistence,
 rollback, schema migration, dialog styling, graph ranges, crowded labels and
 hover values, click-handler cleanup, rank replay across every priority order,
 graph-trace, season-report, SB-history, numeric-validation, and real Tk theme checks.
 The conference feature and Unicode-name fix are included in the v26 executable,
-which uses schema 10. Playoff fixes are source-only; older packages are preserved.
+which uses schema 10. Playoff fixes and the W-D-L graph are source-only; older
+packages are preserved, and no package was rebuilt for these changes.

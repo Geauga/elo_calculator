@@ -829,7 +829,6 @@ Status: Completed.
 - Modified files: This append-only publication record; conference implementation remains the six-file feature commit. Incoming workflows and rewritten authorship history are preserved.
 - Tests and verification: 145/145 tests passed after replay in 4.692 seconds, with no skips. `git diff --check` passed; comparing the five feature source/test/README files against `0b428a6` produced no differences. Normal push succeeded; `git ls-remote` returned `4ab9169c9a3c60ebe8463eaf07f0d7c903cfe9b5`, matching local HEAD.
 - GitHub Timeline: Conference feature `4ab9169c9a3c60ebe8463eaf07f0d7c903cfe9b5` is pushed and verified on public GitHub main. This log-only publication record is pending a follow-up commit and normal push. The executable has not been rebuilt.
-
 ## 2026-09-24 20:55:00 -04:00
 
 - User Prompt: "patch and push" following the review's Unicode player-name startup crash.
@@ -873,6 +872,15 @@ Status: Completed.
 - Tests and verification: Publication retains the recorded v26 validation: EXE SHA-256 `9FE68303ED9383050B91B91A4B71D5339B33AB65FC0F0081853EF4C908541C61`; ZIP SHA-256 `531FAD98DFCC47A6E9FD40DE95FF80AC705293D0F49F5DF2016E512D31FCB2E6`; raw and ZIP-extracted startup checks reached GUI input idle. `git ls-remote` returned `59db31431c424a1541d85dbc42f669bf34a9998a` for `refs/heads/main`, matching local HEAD after the package push.
 - GitHub Timeline: v26 package commit `22385992686ae5509b17959a146d653a59c8f9bc` and verification commit `59db31431c424a1541d85dbc42f669bf34a9998a` are pushed and verified on GitHub `main`. This log-only publication record is pending its follow-up commit and normal push.
 
+## 2026-09-27 16:17:58 -04:00
+
+- User Prompt summary: Add a wins, draws and losses graph.
+- Execution location: Local Windows repository `C:\Users\danie\OneDrive\Documents\ChatGPT\elo`, branch `main`. No package rebuild or GitHub push was requested. The working tree contained pre-existing untracked `graph_patch.py` from September 8; it was inspected, identified as an obsolete graph draft, preserved unchanged and excluded from this update.
+- Actions: Added `Match W-D-L` to the Graphs metric selector. The new view plots cumulative wins, draws and losses for the selected player as three theme-aware colors and distinct solid/dashed/dotted lines with a legend. It ignores league matches that do not involve the selected player. Result points show the complete W-D-L record on hover and retain click-through to their exact Match History row. The zero-match view shows a baseline record. Existing single-series graphs and persistence remain unchanged.
+- Modified files: `elo_calculator.py`; `test_elo_graph.py`; `test_elo_model.py`; `README.md`; append-only `历史工作记录.txt`.
+- Tests and verification: Two focused W-D-L regressions and the existing graph format/theme checks passed. The full suite discovered 150 tests: 131 executable tests passed and 19 existing GUI tests skipped because the bundled development runtime could not initialize Tcl. New non-Tk coverage verifies unrelated-match filtering, exact W/D/L histories, three styled series, theme colors, full-record hover data and source-match callback mapping. Functional flake8 selectors `E999,F821,F822,F823` and `git diff --check` passed. The repository's broad pre-existing flake8 formatting backlog remains outside this task.
+- GitHub Timeline: Changes are not committed or pushed. During work, `origin/main` advanced via a history rewrite to playoff commit `a0fa8ee`; local main was ahead five/behind one. The W-D-L change will be committed, backed up, and replayed alone onto the new remote base so the new playoff feature is preserved without force-pushing or reintroducing dropped history.
+
 ## 2026-09-27 16:24:00 -04:00
 
 - User Prompt: "review code and push", then "yes" to fixing three confirmed playoff bugs and preserving both histories before publication.
@@ -882,6 +890,15 @@ Status: Completed.
 - Tests and verification: All 154 tests passed in 6.701 seconds with no skips, including real Tk. New coverage tests unrated/rated/global Elo settings, wins/draws, preview/save/load/resize/undo consistency, invalid flag atomicity, all bracket sizes 2-64 and roster clamping, rank equivalence at each mixed regular/playoff prefix for all sharing modes, and UI preview/record persistence. Initial full run exposed a legacy preview fixture missing the new checkbox variable; updated that fixture and reran successfully. git diff --check passed. Tests used temporary league storage only.
 - GitHub Timeline: History reconciliation is committed locally; playoff fixes are not committed (未 commit) or pushed yet. A scoped fix commit and normal push follow verification. No remote history rewrite authorized or attempted.
 
+## 2026-09-27 16:24:50 -04:00
+
+- User Prompt summary: Add a wins, draws and losses graph; complete the integration with the current playoff branch.
+- Execution location: Local Windows repository `C:\Users\danie\OneDrive\Documents\ChatGPT\elo`, branch `main`. No executable build or GitHub push was requested.
+- Actions: Committed the cumulative W-D-L graph locally, preserved that pre-sync state on `codex/wdl-before-sync`, and replayed only the graph commit onto the externally rewritten GitHub `main` base `a0fa8ee`, retaining the incoming playoff implementation. Resolved documentation and append-only log conflicts by preserving both feature histories. Corrected the incoming playoff branch's stale schema-10 ranking assertion and documentation to schema 11. Preserved unrelated untracked `graph_patch.py` and `.codex-playoff-fixes/` unchanged and excluded them from commits.
+- Modified files: The W-D-L feature commit changes `elo_calculator.py`, `test_elo_graph.py`, `test_elo_model.py`, `README.md`, and append-only `历史工作记录.txt`. Integration corrections additionally change `elo_model.py` provenance and `test_elo_ranking_settings.py`.
+- Tests and verification: The integrated suite discovered 147 tests: 130 passed and 17 GUI-only tests skipped because the bundled development runtime could not initialize Tcl/Tk. The corrected schema-11 migration test passed. Functional flake8 selectors `E999,F821,F822,F823` and `git diff --check` passed. Test-created bytecode cache changes were restored or removed without touching source or user data.
+- GitHub Timeline: The replayed W-D-L feature is committed locally as `bbcf5a6` on top of `origin/main` `a0fa8ee`. The schema/documentation integration correction and this completion record are pending amendment into the local feature commit. Nothing has been pushed; local publication and package status remain unchanged.
+
 ## 2026-09-27 16:25:49 -04:00
 
 - User Prompt: Publish the approved playoff fixes while retaining both histories.
@@ -889,3 +906,12 @@ Status: Completed.
 - Modified files: This append-only publication record; implementation is in 3720824. Existing v26 executable and ZIP remain byte-identical.
 - Tests and verification: 154/154 tests passed with no skips before publication; staged git diff --check passed. Verified v26 EXE SHA-256 9FE68303ED9383050B91B91A4B71D5339B33AB65FC0F0081853EF4C908541C61 and ZIP SHA-256 531FAD98DFCC47A6E9FD40DE95FF80AC705293D0F49F5DF2016E512D31FCB2E6. git ls-remote returned 37208247ea43de0157ef98b62b1e131581440a3e, matching the isolated branch HEAD.
 - GitHub Timeline: Fix commit 37208247ea43de0157ef98b62b1e131581440a3e is pushed (已 push) and verified on main. This log-only record is pending a follow-up commit and normal push. Playoff fixes are source-only; v26 cannot read schema-11 saves.
+
+## 2026-09-27 16:29:04 -04:00
+
+- User Prompt summary: Add a wins, draws and losses graph; final integration verification.
+- Execution location: Local Windows repository `C:\Users\danie\OneDrive\Documents\ChatGPT\elo`, branch `main`. No executable build or GitHub push was requested.
+- Actions: Replayed the W-D-L feature over the final published playoff/v26 history through `dd6bd17`, preserving both append-only work-log records and all playoff correctness fixes. The final graph provides cumulative wins, draws and losses with themed colors, distinct line styles, legend, full-record hover text and exact Match History links. Updated README validation and package-compatibility notes. Preserved unrelated untracked `graph_patch.py` and `.codex-playoff-fixes/` unchanged.
+- Modified files: `elo_calculator.py`, `test_elo_graph.py`, `test_elo_model.py`, `README.md`, `elo_model.py` provenance, and append-only `历史工作记录.txt`.
+- Tests and verification: Final integrated suite discovered 156 tests: 136 passed and 20 GUI tests skipped because the bundled development runtime could not initialize Tcl/Tk. All executable W-D-L, playoff, conference, persistence, migration and ranking tests passed. Functional flake8 selectors and whitespace validation are repeated before final commit amendment.
+- GitHub Timeline: The integrated W-D-L feature and final verification record are committed locally and not pushed. `origin/main` remains at published commit `dd6bd17`. No package was rebuilt.

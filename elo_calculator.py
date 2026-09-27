@@ -182,6 +182,31 @@ def _player_elo_history(league: League, player_id: int) -> list[float]:
     return values
 
 
+def _player_wdl_history(
+    league: League, player_id: int
+) -> tuple[list[int], list[int], list[int], list[int | None]]:
+    """Return cumulative match wins, draws, losses, and source-match indexes."""
+    league.player(player_id)
+    wins = [0]
+    draws = [0]
+    losses = [0]
+    match_indices: list[int | None] = [None]
+    for match_index, match in enumerate(league.matches):
+        if player_id not in (match.winner_id, match.loser_id):
+            continue
+        wins.append(wins[-1])
+        draws.append(draws[-1])
+        losses.append(losses[-1])
+        if match.is_draw:
+            draws[-1] += 1
+        elif match.winner_id == player_id:
+            wins[-1] += 1
+        else:
+            losses[-1] += 1
+        match_indices.append(match_index)
+    return wins, draws, losses, match_indices
+
+
 def _player_rank_history(league: League, player_id: int) -> list[int]:
     """Return historical position in the standings for a player."""
     league.player(player_id)
@@ -1353,6 +1378,7 @@ class EloCalculatorApp:
         metrics = {
             "elo": "Elo Rating",
             "rank": "League Rank",
+            "wdl": "Match W-D-L",
             "match_pct": "Match Win %",
             "game_pct": "Game Win %",
             "sb": "SB Score",
@@ -1391,7 +1417,9 @@ class EloCalculatorApp:
         self.graph_canvas.bind("<Leave>", self._hide_graph_hover)
 
     def _graph_colors(self) -> dict[str, str]:
-        colors = THEME_PALETTES[self.theme_var.get()]
+        theme = self.theme_var.get()
+        colors = THEME_PALETTES[theme]
+        dark_theme = theme == "dark"
         return {
             "background": colors["field"],
             "axis": colors["border"],
@@ -1399,6 +1427,9 @@ class EloCalculatorApp:
             "text": colors["muted"],
             "plot": colors["selection"],
             "plot_text": colors["selection_text"],
+            "win": "#6ccb5f" if dark_theme else "#107c10",
+            "draw": "#fce100" if dark_theme else "#8a6d00",
+            "loss": "#ff99a4" if dark_theme else "#c42b1c",
         }
 
     def _format_graph_value(self, metric: str, value: float) -> str:
@@ -1408,6 +1439,8 @@ class EloCalculatorApp:
             return f"#{int(value)}"
         if metric in ("match_pct", "game_pct"):
             return f"{value:.1f}%"
+        if metric == "wdl":
+            return str(int(value))
         return f"{value:.1f}"
 
     def _draw_graph_point(
@@ -1421,14 +1454,18 @@ class EloCalculatorApp:
         margin_y: int,
         graph_colors: dict[str, str],
         match_index: int | None,
+        point_color: str | None = None,
+        hover_text: str | None = None,
+        show_value: bool = True,
     ) -> None:
+        marker_color = point_color or graph_colors["plot"]
         marker_id = self.graph_canvas.create_oval(
             x - 3,
             y - 3,
             x + 3,
             y + 3,
-            fill=graph_colors["plot"],
-            outline=graph_colors["plot"],
+            fill=marker_color,
+            outline=marker_color,
         )
         if match_index is not None:
             binding = self.graph_canvas.tag_bind(
@@ -1446,8 +1483,10 @@ class EloCalculatorApp:
             anchor = f"{vertical_anchor}e"
         else:
             anchor = vertical_anchor
-        text = self._format_graph_value(metric, value)
+        text = hover_text or self._format_graph_value(metric, value)
         self._graph_point_labels[marker_id] = (x, label_y, text, anchor)
+        if not show_value:
+            return
         label_id = self.graph_canvas.create_text(
             x,
             label_y,
@@ -1506,6 +1545,130 @@ class EloCalculatorApp:
             )
             self.graph_canvas.tag_lower(box, label)
 
+    def _draw_wdl_graph(
+        self,
+        player_id: int,
+        width: int,
+        height: int,
+        graph_colors: dict[str, str],
+    ) -> None:
+        wins, draws, losses, match_indices = _player_wdl_history(
+            self.league, player_id
+        )
+        margin_x = 45
+        margin_top = 28
+        margin_bottom = 20
+        plot_width = width - margin_x - 10
+        plot_height = height - margin_top - margin_bottom
+        highest = max(wins + draws + losses)
+        axis_max = max(4, math.ceil(highest / 4) * 4)
+
+        self.graph_canvas.create_line(
+            margin_x,
+            height - margin_bottom,
+            width,
+            height - margin_bottom,
+            fill=graph_colors["axis"],
+        )
+        self.graph_canvas.create_line(
+            margin_x,
+            margin_top,
+            margin_x,
+            height - margin_bottom,
+            fill=graph_colors["axis"],
+        )
+        for tick in range(5):
+            value = axis_max - tick * (axis_max // 4)
+            y = margin_top + tick * plot_height / 4
+            self.graph_canvas.create_line(
+                margin_x,
+                y,
+                width,
+                y,
+                fill=graph_colors["grid"],
+                dash=(4, 4),
+            )
+            self.graph_canvas.create_text(
+                margin_x - 5,
+                y,
+                text=str(value),
+                anchor="e",
+                font=("Segoe UI", 8),
+                fill=graph_colors["text"],
+            )
+
+        series = (
+            ("wins", "Wins", wins, graph_colors["win"], None),
+            ("draws", "Draws", draws, graph_colors["draw"], (6, 3)),
+            ("losses", "Losses", losses, graph_colors["loss"], (2, 3)),
+        )
+        legend_width = max(1, (width - margin_x) / 3)
+        for series_index, (key, label, values, color, dash) in enumerate(series):
+            legend_x = margin_x + series_index * legend_width + 8
+            line_options = {"fill": color, "width": 2}
+            if dash is not None:
+                line_options["dash"] = dash
+            self.graph_canvas.create_line(
+                legend_x, 15, legend_x + 20, 15, **line_options
+            )
+            self.graph_canvas.create_text(
+                legend_x + 25,
+                15,
+                text=label,
+                anchor="w",
+                font=("Segoe UI", 8, "bold"),
+                fill=graph_colors["text"],
+            )
+
+            points = []
+            for index, value in enumerate(values):
+                x = (
+                    margin_x + plot_width / 2
+                    if len(values) == 1
+                    else margin_x + index * plot_width / (len(values) - 1)
+                )
+                y = margin_top + (1 - value / axis_max) * plot_height
+                points.extend((x, y))
+            if len(values) > 1:
+                self.graph_canvas.create_line(
+                    points,
+                    tags=("wdl-series", f"wdl-{key}"),
+                    **line_options,
+                )
+            for index in range(1, len(values)):
+                record = f"W-D-L: {wins[index]}-{draws[index]}-{losses[index]}"
+                self._draw_graph_point(
+                    points[index * 2],
+                    points[index * 2 + 1],
+                    values[index],
+                    "wdl",
+                    width,
+                    margin_x,
+                    margin_top,
+                    graph_colors,
+                    match_indices[index],
+                    point_color=color,
+                    hover_text=record,
+                    show_value=False,
+                )
+
+        if len(wins) == 1:
+            x = margin_x + plot_width / 2
+            y = margin_top + plot_height
+            self._draw_graph_point(
+                x,
+                y,
+                0,
+                "wdl",
+                width,
+                margin_x,
+                margin_top,
+                graph_colors,
+                None,
+                hover_text="W-D-L: 0-0-0",
+                show_value=False,
+            )
+
     def _refresh_graph(self) -> None:
         if not hasattr(self, "graph_canvas"): return
         graph_colors = self._graph_colors()
@@ -1529,6 +1692,10 @@ class EloCalculatorApp:
 
         metric = self.graph_metric_var.get()
         matches = self.league.matches
+
+        if metric == "wdl":
+            self._draw_wdl_graph(player_id, width, height, graph_colors)
+            return
 
         y_values = []
         match_indices: list[int | None] = [None]
@@ -3969,3 +4136,9 @@ if __name__ == "__main__":
 # Changed lines: 226-229 skip playoff ranking stats but retain rated Elo;
 # 1227-1229 checkbox refresh; 3388/3409-3415 power-of-two slots and bye labels;
 # 3633-3640 propagate playoff selection to win/draw previews.
+# W-D-L graph update: 2026-09-27 16:14 America/New_York; show cumulative match
+# wins, draws and losses as three themed line styles with a legend, full-record
+# hover text and existing point-to-Match-History navigation. Unrelated matches
+# are excluded from the selected player's timeline; no saved data is changed.
+# Changed lines: W-D-L history helper, graph metric/colors, point rendering options,
+# dedicated three-series renderer, and graph dispatch.

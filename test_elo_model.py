@@ -199,6 +199,7 @@ class EloModelTests(unittest.TestCase):
         self.assertEqual(app._format_graph_value("rank", 2.0), "#2")
         self.assertEqual(app._format_graph_value("match_pct", 2 / 3 * 100), "66.7%")
         self.assertEqual(app._format_graph_value("game_pct", 75.0), "75.0%")
+        self.assertEqual(app._format_graph_value("wdl", 2.0), "2")
         self.assertEqual(app._format_graph_value("sb", 1.26), "1.3")
 
     def test_elo_history_uses_the_saved_starting_rating(self) -> None:
