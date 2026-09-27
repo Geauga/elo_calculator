@@ -881,3 +881,11 @@ Status: Completed.
 - Modified files: `elo_model.py`, `elo_calculator.py`, `test_elo_model.py`, `test_elo_ranking_settings.py`, new `test_elo_playoffs.py`, `README.md`, append-only `历史工作记录.txt`. Preserved v26 package files from the local history merge.
 - Tests and verification: All 154 tests passed in 6.701 seconds with no skips, including real Tk. New coverage tests unrated/rated/global Elo settings, wins/draws, preview/save/load/resize/undo consistency, invalid flag atomicity, all bracket sizes 2-64 and roster clamping, rank equivalence at each mixed regular/playoff prefix for all sharing modes, and UI preview/record persistence. Initial full run exposed a legacy preview fixture missing the new checkbox variable; updated that fixture and reran successfully. git diff --check passed. Tests used temporary league storage only.
 - GitHub Timeline: History reconciliation is committed locally; playoff fixes are not committed (未 commit) or pushed yet. A scoped fix commit and normal push follow verification. No remote history rewrite authorized or attempted.
+
+## 2026-09-27 16:25:49 -04:00
+
+- User Prompt: Publish the approved playoff fixes while retaining both histories.
+- Actions: Committed the seven scoped fix/test/documentation files as 3720824 and normally pushed the isolated branch to GitHub main. The push also restores the previously published Unicode fix and v26 package history. No force-push or edits to the other task's original checkout were performed.
+- Modified files: This append-only publication record; implementation is in 3720824. Existing v26 executable and ZIP remain byte-identical.
+- Tests and verification: 154/154 tests passed with no skips before publication; staged git diff --check passed. Verified v26 EXE SHA-256 9FE68303ED9383050B91B91A4B71D5339B33AB65FC0F0081853EF4C908541C61 and ZIP SHA-256 531FAD98DFCC47A6E9FD40DE95FF80AC705293D0F49F5DF2016E512D31FCB2E6. git ls-remote returned 37208247ea43de0157ef98b62b1e131581440a3e, matching the isolated branch HEAD.
+- GitHub Timeline: Fix commit 37208247ea43de0157ef98b62b1e131581440a3e is pushed (已 push) and verified on main. This log-only record is pending a follow-up commit and normal push. Playoff fixes are source-only; v26 cannot read schema-11 saves.
