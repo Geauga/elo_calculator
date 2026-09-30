@@ -3543,6 +3543,27 @@ class EloCalculatorApp:
             )
         self.standings.delete(*self.standings.get_children())
         statistics = self.league.statistics()
+        
+        total_players = len(self.league.players)
+        playoff_size = self.league.playoff_size
+        clinched_ids = set()
+        if 0 < playoff_size < total_players:
+            max_points_by_player = {}
+            points_by_player = {}
+            for p in self.league.players:
+                stats = statistics[p.id]
+                played = stats.matches_won + stats.matches_drawn + stats.matches_lost
+                remaining = max(0, (total_players - 1) - played)
+                pts = stats.matches_won + 0.5 * stats.matches_drawn
+                points_by_player[p.id] = pts
+                max_points_by_player[p.id] = pts + remaining
+                
+            needed_to_beat = total_players - playoff_size
+            for p_id, pts in points_by_player.items():
+                beaten = sum(1 for opp_id, opp_max in max_points_by_player.items() if opp_id != p_id and pts > opp_max)
+                if beaten >= needed_to_beat:
+                    clinched_ids.add(p_id)
+
         ranked_players = _ranked_players(
             self.league, statistics=statistics, player_ids=self._conference_player_ids()
         )
@@ -3553,13 +3574,14 @@ class EloCalculatorApp:
                 if show_draws
                 else f"{stats.matches_won}-{stats.matches_lost}"
             )
+            display_name = player.name + " (Clinched)" if player.id in clinched_ids else player.name
             self.standings.insert(
                 "",
                 "end",
                 iid=str(player.id),
                 values=(
                     rank,
-                    player.name,
+                    display_name,
                     self._format_elo(player.rating),
                     f"{stats.sb_score:.1f}",
                     match_record,
