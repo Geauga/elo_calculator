@@ -117,6 +117,31 @@ class RankHistoryTests(unittest.TestCase):
 
 
 class WdlGraphTests(unittest.TestCase):
+    def test_playoff_only_history_has_no_regular_season_results(self):
+        league = League.new(2)
+        league.record_match(0, 1, 0, is_playoff=True)
+        league.record_draw(0, 1, is_playoff=True)
+        league.record_match(1, 0, 0, is_playoff=True)
+        self.assertEqual(_player_wdl_history(league, 0), ([0], [0], [0], [None]))
+
+    def test_mixed_history_matches_standings_and_preserves_source_indexes(self):
+        league = League.new(3)
+        league.record_match(0, 1, 0, is_playoff=True)  # index 0: excluded
+        league.record_match(0, 1, 0)                  # index 1: win
+        league.record_draw(0, 1, is_playoff=True)     # index 2: excluded
+        league.record_match(1, 2, 0)                  # index 3: unrelated
+        league.record_draw(0, 2)                      # index 4: draw
+        league.record_match(1, 0, 0, is_playoff=True)  # index 5: excluded
+        league.record_match(2, 0, 0)                  # index 6: loss
+        before = league.to_dict()
+        wins, draws, losses, indexes = _player_wdl_history(league, 0)
+        self.assertEqual((wins, draws, losses, indexes),
+                         ([0, 1, 1, 1], [0, 0, 1, 1], [0, 0, 0, 1], [None, 1, 4, 6]))
+        stats = league.statistics()[0]
+        self.assertEqual((wins[-1], draws[-1], losses[-1]),
+                         (stats.matches_won, stats.matches_drawn, stats.matches_lost))
+        self.assertEqual(league.to_dict(), before)
+
     def setUp(self):
         self.league = League.new(3)
         self.league.record_match(0, 1, 0)
@@ -295,3 +320,7 @@ if __name__ == "__main__":
 # W-D-L update: 2026-09-27 16:14 America/New_York; test cumulative series,
 # unrelated-match filtering, themed series, full-record hover data, match links,
 # and callback cleanup when switching between single- and three-series graphs.
+# Review update: 2026-09-30 18:00 America/New_York; Python 3.12 / Windows Tk 8.6.
+# Purpose: Verify regular-season W-D-L counts and exact original match indexes.
+# Upstream: elo_calculator.py builds histories from elo_model.py playoff flags.
+# Changed lines: 120-143 add playoff-only and mixed-history regression tests.

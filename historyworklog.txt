@@ -1253,3 +1253,9 @@ Major Changes:
 - Rewrote the 4 most recent AI commits to fix the author email to 'actacomes@users.noreply.github.com' and force pushed to GitHub.
 
 2026-09-25 21:59:34 - Added Playoffs support: Configurable playoff size, playoff rated toggle, Match.is_playoff flag, visual Playoff bracket tab in UI.
+2026-09-27 16:40:04 - Reverted author rewrite to restore Geauga authored commits.
+## 2026-09-27 21:21
+- Opened the default web browser as requested.
+
+2026-09-30 17:42:28 - Added mathematical playoff clinch indicator (Clinched) to Standings tab.
+2026-09-30 17:45:34 - Built v27 package with PyInstaller, created versioned release folder, generated ZIP with README.txt, updated README.md with hashes and test results.

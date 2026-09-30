@@ -16,14 +16,20 @@ change the licensing of the code or bundled third-party components.
 
 ## Rules
 
-- Source-only playoffs: League Settings controls bracket size and whether playoff
+- Playoffs: League Settings controls bracket size and whether playoff
   matches affect Elo. Mark a result with **Playoff match** when entering it.
   Unrated playoffs leave ratings unchanged in both the preview and saved result.
   Playoff results do not count toward regular-season match/game statistics or
   head-to-head tiebreakers; rated playoff Elo changes still affect Elo-based ranks.
   Rank history follows the same rule. Non-power-of-two brackets use byes instead
   of duplicate entrants. The bracket is a seeding preview, not an automatically
-  progressing tournament. These source changes are not in the v26 executable.
+  progressing tournament. Playoff support is included in v27, but not v26.
+- Current source uses the league's configured standings order for bracket seeds.
+  **Playoff position** marks the current top players in that order, not a
+  guaranteed berth: no fixed season schedule or remaining-match limit is stored.
+  Repeated opponents do not imply that a season is complete. Conference filters
+  do not change these league-wide seeds, and shared ranks still fill only the
+  configured number of slots, using the existing standings order for ties.
 
 - Conferences are optional and **off by default**, including when loading an
   older league. In the main **Settings > Conferences...** dialog, enable them
@@ -83,7 +89,8 @@ change the licensing of the code or bundled third-party components.
   updated.
 - The Graphs tab plots Elo, league rank, cumulative match W-D-L, match score
   percentage, game win percentage, SB history, and head-to-head records for the
-  selected player. The W-D-L view uses separate themed lines for wins, draws and
+  selected player. The W-D-L view counts only regular-season results, matching
+  the standings, and uses separate themed lines for wins, draws and
   losses; hover shows the full record and each result point opens its source
   match. Elo plots begin at
   the player's actual saved starting rating; percentage calculations are
@@ -153,8 +160,8 @@ Current source writes league schema 11, preserving playoff settings and match
 flags as well as conferences, rank sharing, Base Elo, victory-margin K scaling,
 and standings priority. Schemas 1-10 remain readable; older saves default to
 playoffs disabled, and schemas 1-9 also default to conferences disabled.
-The v26 executable uses schema 10 and cannot open schema-11 saves. Back up your
-data before upgrading; do not open upgraded saves in an older executable.
+The v27 executable uses schema 11 and cannot open future schema saves. Back up your
+data before upgrading; do not open upgraded saves in an older executable, including v26.
 The playoff Elo fix applies to newly recorded results; it does not automatically
 rewrite ratings or match transfers already saved by the earlier buggy source.
 
@@ -167,30 +174,30 @@ season reports use the selected ranking mode.
 ## Standalone Windows package
 
 The current packaged release is
-`release/EloLeagueCalculator-v26-Windows-x64.zip`.
+`release/EloLeagueCalculator-v27-Windows-x64.zip`.
 It contains `EloLeagueCalculator.exe` and `README.txt`; Python does not need to
 be installed. Extract the ZIP, then double-click the executable to start it.
-Version 26 adds optional conference standings and filtering, conference sections
-in season exports, schema-10 persistence, and safe sorting for player names that
-contain superscript, circled, or other non-decimal Unicode digits. It also
-includes the v25 graph, ranking, season export, backup, and audit improvements.
+Version 27 adds playoff bracket support, the original playoff clinch indicator,
+and the ability to toggle rated/unrated playoff matches. It also includes the v26
+features like optional conferences and safe sorting for non-decimal Unicode digits.
+The packaged clinch indicator can incorrectly claim guaranteed qualification;
+current source replaces it with current playoff positions. This correction and
+the W-D-L graph require running current source until a new package is built.
 It was built from source commit
-`a00bc7a512036c9fe6bd726f7bc753451bed7b9e` on September 25, 2026.
+`cd25a6c70507a4cc95affc29469223b93bd41a7e` on September 30, 2026.
 Older releases are preserved. Back up your application data before upgrading;
-older executables, including v25, cannot read schema-10 saves.
+older executables, including v26, cannot read schema-11 saves.
 
 Package verification:
 
 - Executable SHA-256:
-  `9FE68303ED9383050B91B91A4B71D5339B33AB65FC0F0081853EF4C908541C61`
+  `CC4DA2EFC893954E9959E1CEEF79569C51CA22959E2F2A3CCCBB397D808C82A7`
 - ZIP SHA-256:
-  `531FAD98DFCC47A6E9FD40DE95FF80AC705293D0F49F5DF2016E512D31FCB2E6`
-- Validation: The full suite discovered 148 tests; 129 executable tests passed
-  and 19 source GUI tests skipped because the development runtime could not
-  initialize Tcl. All 148 tests passed on the integrated source before this
-  build. The package contains Python and Tcl/Tk; raw and ZIP-extracted builds
-  reached GUI input idle with isolated application data. This is not a full
-  manual UI acceptance test.
+  `013BF9001D3CE9C50640D7513C3505C2A5A7DB5F2E03B3E1FBBA4EF2214AA81C`
+- Validation: The full suite discovered 154 tests; all 154 tests passed on the
+  integrated source before this build. The package contains Python and Tcl/Tk;
+  raw and ZIP-extracted builds reached GUI input idle with isolated application data.
+  This is not a full manual UI acceptance test.
 
 ## Test
 
@@ -198,15 +205,17 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation discovered 156 tests: 136 passed and 20 GUI tests were
-skipped because this development runtime could not initialize Tcl/Tk. Coverage
+Current source validation: 163 tests, including real Tk UI checks. Coverage
 includes cumulative W-D-L graph history, three-series rendering and match links,
+playoff exclusion with original match indexes, bracket/position consistency,
+custom priorities, repeated opponents, shared ranks and conference filters,
 playoff Elo previews, save/replay, first-round byes and rank-history consistency,
 plus optional conference defaults, migration, assignments, filtered ranks,
 unchanged scheduling, full UI checks, ranking-settings persistence,
 rollback, schema migration, dialog styling, graph ranges, crowded labels and
 hover values, click-handler cleanup, rank replay across every priority order,
 graph-trace, season-report, SB-history, numeric-validation, and real Tk theme checks.
-The conference feature and Unicode-name fix are included in the v26 executable,
-which uses schema 10. Playoff fixes and the W-D-L graph are source-only; older
-packages are preserved, and no package was rebuilt for these changes.
+The playoff features, conference feature, and Unicode-name fix are included in the
+v27 executable, which uses schema 11. Older packages are preserved.
+The W-D-L graph and corrected playoff-position labels are source-only updates;
+the existing v27 executable still contains the earlier clinch indicator.

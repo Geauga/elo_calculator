@@ -9,7 +9,7 @@ import tkinter as tk
 import unittest
 from unittest.mock import Mock, patch
 
-from elo_calculator import EloCalculatorApp, _player_rank_history, _ranked_players
+from elo_calculator import EloCalculatorApp, _player_rank_history, _playoff_seeds, _ranked_players
 from elo_model import League
 from elo_storage import LeagueCollection
 
@@ -135,6 +135,100 @@ class PlayoffBracketTests(unittest.TestCase):
                     self.assertEqual(labels.count('BYE'), slots - roster_size)
 
 
+class PlayoffPositionTests(unittest.TestCase):
+    @staticmethod
+    def render(league, visible_ids=None):
+        app = object.__new__(EloCalculatorApp)
+        app.league = league
+        app.standings = Mock()
+        app.standings.selection.return_value = ()
+        app.standings.get_children.return_value = ()
+        app._conference_player_ids = Mock(return_value=visible_ids)
+        app._refresh_standings()
+        rows = {int(call.kwargs['iid']): call.kwargs['values'] for call in
+                app.standings.insert.call_args_list}
+        app.playoffs_canvas = Mock()
+        app.playoffs_canvas.winfo_width.return_value = 900
+        app.playoffs_canvas.winfo_height.return_value = 600
+        app._refresh_playoffs_tab()
+        labels = [call.kwargs['text'] for call in app.playoffs_canvas.create_text.call_args_list]
+        return rows, labels
+
+    def test_labels_match_bracket_when_match_points_and_elo_disagree(self):
+        league = League.new(4)
+        league.playoff_size = 2
+        league.calculate_elo = False
+        for player, rating in zip(league.players, (1000, 1600, 1550, 1500)):
+            player.rating = rating
+        for winner, loser in ((0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)):
+            league.record_match(winner, loser, 0)
+        before = league.to_dict()
+        rows, labels = self.render(league)
+        self.assertEqual(rows[0][1], 'Player 1')
+        self.assertEqual({p_id for p_id, row in rows.items()
+                          if row[1].endswith(' (Playoff position)')}, {1, 2})
+        self.assertIn('1. Player 2', labels)
+        self.assertIn('2. Player 3', labels)
+        self.assertFalse(any('Clinched' in row[1] for row in rows.values()))
+        self.assertEqual(league.to_dict(), before)
+
+    def test_repeated_opponents_do_not_guarantee_a_future_berth(self):
+        league = League.new(4)
+        league.playoff_size = 2
+        league.calculate_elo = False
+        league.tiebreaker_hierarchy = ['match_pct']
+        for winner, loser in ((0, 1), (0, 1), (0, 1), (2, 3), (3, 2), (2, 3)):
+            league.record_match(winner, loser, 0)
+        rows, _ = self.render(league)
+        self.assertEqual(rows[0][1], 'Player 1 (Playoff position)')
+        for _ in range(8):
+            league.record_match(1, 0, 0)
+        rows, labels = self.render(league)
+        self.assertEqual(rows[0][1], 'Player 1')
+        self.assertNotIn('Player 1', ' '.join(labels))
+        self.assertFalse(any('Clinched' in row[1] for row in rows.values()))
+
+    def test_seed_order_uses_configured_priorities_and_natural_names(self):
+        league = League.new(12)
+        league.playoff_size = 3
+        self.assertEqual([p.id for p in _playoff_seeds(league)], [0, 1, 2])
+        league.calculate_elo = False
+        league.tiebreaker_hierarchy = ['match_pct', 'name']
+        league.record_match(10, 0, 0)
+        league.record_match(2, 1, 0)
+        rows, labels = self.render(league)
+        self.assertEqual([p.id for p in _playoff_seeds(league)], [2, 10, 0])
+        for seed, player in enumerate(_playoff_seeds(league), 1):
+            self.assertIn(f'{seed}. {player.name}', labels)
+            self.assertTrue(rows[player.id][1].endswith(' (Playoff position)'))
+
+    def test_disabled_clamped_and_shared_rank_fields(self):
+        league = League.new(4)
+        league.tiebreaker_hierarchy = ['rating']
+        for mode in ('sequential', 'competition', 'dense'):
+            league.ranking_mode = mode
+            for size in (0, 1, 2, 4, 8):
+                with self.subTest(mode=mode, size=size):
+                    league.playoff_size = size
+                    self.assertEqual([p.id for p in _playoff_seeds(league)],
+                                     list(range(min(size, 4))))
+                    rows, _ = self.render(league)
+                    marked = {p_id for p_id, row in rows.items()
+                              if row[1].endswith(' (Playoff position)')}
+                    self.assertEqual(marked, set(range(min(size, 4))))
+
+    def test_conference_filter_does_not_change_league_wide_qualifiers(self):
+        league = League.new(4)
+        league.playoff_size = 2
+        league.configure_conferences(True, {0: 'East', 1: 'West', 2: 'East', 3: 'West'})
+        rows, labels = self.render(league, {0, 2})
+        self.assertEqual(set(rows), {0, 2})
+        self.assertEqual(rows[0][1], 'Player 1 (Playoff position)')
+        self.assertEqual(rows[2][1], 'Player 3')
+        self.assertIn('1. Player 1', labels)
+        self.assertIn('2. Player 2', labels)
+
+
 class TkPlayoffPreviewTests(unittest.TestCase):
     def test_checkbox_updates_preview_and_saved_result(self):
         try:
@@ -176,3 +270,9 @@ if __name__ == '__main__':
 # ranks and brackets; elo_storage.py persists leagues for reload/replay checks.
 # Environment: Python 3.12 / Windows Tk 8.6.
 # Generated: 2026-09-27 16:22 America/New_York. Changes: New playoff test suite.
+# Review update: 2026-09-30 18:00 America/New_York; Python 3.12 / Windows Tk 8.6.
+# Purpose: Keep current-position labels and bracket entrants aligned without
+# claiming guaranteed berths for leagues with no fixed schedule.
+# Upstream: elo_calculator.py ranks and renders players; elo_model.py owns results.
+# Changed lines: import shared seeds; add PlayoffPositionTests for differing Elo/
+# points, repeats, custom/natural ordering, ties, disabled/clamped fields and filters.

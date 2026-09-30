@@ -153,6 +153,16 @@ def _ranked_players(
     return ranked
 
 
+def _playoff_seeds(
+    league: League, *, statistics: dict[int, PlayerStatistics] | None = None
+) -> list[Player]:
+    """Return current league-wide qualifiers, not guaranteed future berths."""
+    if league.playoff_size <= 0:
+        return []
+    ranked = _ranked_players(league, statistics=statistics)
+    return [player for _, player in ranked[:league.playoff_size]]
+
+
 def _player_elo_history(league: League, player_id: int) -> list[float]:
     """Return exact saved Elo history for one player, including its true start."""
     player = league.player(player_id)
@@ -185,14 +195,14 @@ def _player_elo_history(league: League, player_id: int) -> list[float]:
 def _player_wdl_history(
     league: League, player_id: int
 ) -> tuple[list[int], list[int], list[int], list[int | None]]:
-    """Return cumulative match wins, draws, losses, and source-match indexes."""
+    """Return regular-season W-D-L and original source-match indexes."""
     league.player(player_id)
     wins = [0]
     draws = [0]
     losses = [0]
     match_indices: list[int | None] = [None]
     for match_index, match in enumerate(league.matches):
-        if player_id not in (match.winner_id, match.loser_id):
+        if match.is_playoff or player_id not in (match.winner_id, match.loser_id):
             continue
         wins.append(wins[-1])
         draws.append(draws[-1])
@@ -3536,16 +3546,9 @@ class EloCalculatorApp:
             self.playoffs_canvas.create_text(width/2, height/2, text="Playoffs are disabled. Enable them in League Settings.", font=("Segoe UI", 12), fill="#666666")
             return
 
-        players = self.league.players
-        stats = self.league.statistics()
-        def get_sort_key(p):
-            st = stats[p.id]
-            return (-p.rating, -st.match_win_percentage, -st.sb_score, p.name)
-        
-        sorted_players = sorted(players, key=get_sort_key)
-        playoff_size = min(self.league.playoff_size, len(sorted_players))
+        seeds = _playoff_seeds(self.league)
+        playoff_size = len(seeds)
         if playoff_size == 0: return
-        seeds = sorted_players[:playoff_size]
         
         self.playoffs_canvas.create_text(width/2, 20, text=f"Top {playoff_size} Playoffs Bracket", font=("Segoe UI", 14, "bold"))
         
@@ -3710,6 +3713,10 @@ class EloCalculatorApp:
             )
         self.standings.delete(*self.standings.get_children())
         statistics = self.league.statistics()
+
+        qualifier_ids = {player.id for player in
+                         _playoff_seeds(self.league, statistics=statistics)}
+
         ranked_players = _ranked_players(
             self.league, statistics=statistics, player_ids=self._conference_player_ids()
         )
@@ -3720,13 +3727,15 @@ class EloCalculatorApp:
                 if show_draws
                 else f"{stats.matches_won}-{stats.matches_lost}"
             )
+            display_name = (player.name + " (Playoff position)"
+                            if player.id in qualifier_ids else player.name)
             self.standings.insert(
                 "",
                 "end",
                 iid=str(player.id),
                 values=(
                     rank,
-                    player.name,
+                    display_name,
                     self._format_elo(player.rating),
                     f"{stats.sb_score:.1f}",
                     match_record,
@@ -4142,3 +4151,10 @@ if __name__ == "__main__":
 # are excluded from the selected player's timeline; no saved data is changed.
 # Changed lines: W-D-L history helper, graph metric/colors, point rendering options,
 # dedicated three-series renderer, and graph dispatch.
+# Review fixes: 2026-09-30 18:00 America/New_York; Python 3.12 / Windows Tk 8.6.
+# Purpose: Replace unsupported clinch claims with current ranked playoff positions
+# and keep W-D-L history consistent with regular-season standings.
+# Upstream: elo_model.py supplies match flags/settings and regular-season statistics;
+# upstream purpose: persist results without assuming a fixed future schedule.
+# Changed lines: 156-164 shared playoff seeds; W-D-L helper skips playoff matches
+# while retaining source indexes; bracket/standings consume the same ranked seeds.
