@@ -150,8 +150,8 @@ Current source writes league schema 11, preserving playoff settings and match
 flags as well as conferences, rank sharing, Base Elo, victory-margin K scaling,
 and standings priority. Schemas 1-10 remain readable; older saves default to
 playoffs disabled, and schemas 1-9 also default to conferences disabled.
-The v26 executable uses schema 10 and cannot open schema-11 saves. Back up your
-data before upgrading; do not open upgraded saves in an older executable.
+The v27 executable uses schema 11 and cannot open future schema saves. Back up your
+data before upgrading; do not open upgraded saves in an older executable, including v26.
 The playoff Elo fix applies to newly recorded results; it does not automatically
 rewrite ratings or match transfers already saved by the earlier buggy source.
 
@@ -164,28 +164,26 @@ season reports use the selected ranking mode.
 ## Standalone Windows package
 
 The current packaged release is
-`release/EloLeagueCalculator-v26-Windows-x64.zip`.
+`release/EloLeagueCalculator-v27-Windows-x64.zip`.
 It contains `EloLeagueCalculator.exe` and `README.txt`; Python does not need to
 be installed. Extract the ZIP, then double-click the executable to start it.
-Version 26 adds optional conference standings and filtering, conference sections
-in season exports, schema-10 persistence, and safe sorting for player names that
-contain superscript, circled, or other non-decimal Unicode digits. It also
-includes the v25 graph, ranking, season export, backup, and audit improvements.
+Version 27 adds playoff bracket support, a mathematical playoff clinch indicator,
+and the ability to toggle rated/unrated playoff matches. It also includes the v26
+features like optional conferences and safe sorting for non-decimal Unicode digits.
 It was built from source commit
-`a00bc7a512036c9fe6bd726f7bc753451bed7b9e` on September 25, 2026.
+`cd25a6c70507a4cc95affc29469223b93bd41a7e` on September 30, 2026.
 Older releases are preserved. Back up your application data before upgrading;
-older executables, including v25, cannot read schema-10 saves.
+older executables, including v26, cannot read schema-11 saves.
 
 Package verification:
 
 - Executable SHA-256:
-  `9FE68303ED9383050B91B91A4B71D5339B33AB65FC0F0081853EF4C908541C61`
+  `CC4DA2EFC893954E9959E1CEEF79569C51CA22959E2F2A3CCCBB397D808C82A7`
 - ZIP SHA-256:
-  `531FAD98DFCC47A6E9FD40DE95FF80AC705293D0F49F5DF2016E512D31FCB2E6`
-- Validation: The full suite discovered 148 tests; 129 executable tests passed
-  and 19 source GUI tests skipped because the development runtime could not
-  initialize Tcl. All 148 tests passed on the integrated source before this
-  build. The package contains Python and Tcl/Tk; raw and ZIP-extracted builds
+  `013BF9001D3CE9C50640D7513C3505C2A5A7DB5F2E03B3E1FBBA4EF2214AA81C`
+- Validation: The full suite discovered 154 tests; all 154 tests passed on the
+  integrated source before this build. The package contains Python and Tcl/Tk;
+  raw and ZIP-extracted builds reached GUI input idle with isolated application data.
   reached GUI input idle with isolated application data. This is not a full
   manual UI acceptance test.
 
@@ -201,5 +199,5 @@ migration, assignments, filtered ranks, unchanged scheduling, full UI checks, ra
 rollback, schema migration, dialog styling, graph ranges, crowded labels and
 hover values, click-handler cleanup, rank replay across every priority order,
 graph-trace, season-report, SB-history, numeric-validation, and real Tk theme checks.
-The conference feature and Unicode-name fix are included in the v26 executable,
-which uses schema 10. Playoff fixes are source-only; older packages are preserved.
+The playoff features, conference feature, and Unicode-name fix are included in the
+v27 executable, which uses schema 11. Older packages are preserved.
