@@ -174,27 +174,24 @@ season reports use the selected ranking mode.
 ## Standalone Windows package
 
 The current packaged release is
-`release/EloLeagueCalculator-v27-Windows-x64.zip`.
+`release/EloLeagueCalculator-v28-Windows-x64.zip`.
 It contains `EloLeagueCalculator.exe` and `README.txt`; Python does not need to
 be installed. Extract the ZIP, then double-click the executable to start it.
-Version 27 adds playoff bracket support, the original playoff clinch indicator,
-and the ability to toggle rated/unrated playoff matches. It also includes the v26
-features like optional conferences and safe sorting for non-decimal Unicode digits.
-The packaged clinch indicator can incorrectly claim guaranteed qualification;
-current source replaces it with current playoff positions. This correction and
-the W-D-L graph require running current source until a new package is built.
+Version 28 adds a Wins, Draws, and Losses graph, fixes playoff position logic,
+and ensures proper seeding in playoff brackets. It also includes the v27
+features like rated/unrated playoff toggles and earlier fixes.
 It was built from source commit
-`cd25a6c70507a4cc95affc29469223b93bd41a7e` on September 30, 2026.
+`42a21b6d1b7a2d42b934ea2778f889c1692257d0` on October 1, 2026.
 Older releases are preserved. Back up your application data before upgrading;
 older executables, including v26, cannot read schema-11 saves.
 
 Package verification:
 
 - Executable SHA-256:
-  `CC4DA2EFC893954E9959E1CEEF79569C51CA22959E2F2A3CCCBB397D808C82A7`
+  `40FFF3E941E2078A8816DA11809C0ACB478628828C47B64A70E8FD4BACBD3570`
 - ZIP SHA-256:
-  `013BF9001D3CE9C50640D7513C3505C2A5A7DB5F2E03B3E1FBBA4EF2214AA81C`
-- Validation: The full suite discovered 154 tests; all 154 tests passed on the
+  `A90F83CD309636871DA61A76B647D32246B615B54D0942E4AE721813379FB6E5`
+- Validation: The full suite discovered 163 tests; all 163 tests passed on the
   integrated source before this build. The package contains Python and Tcl/Tk;
   raw and ZIP-extracted builds reached GUI input idle with isolated application data.
   This is not a full manual UI acceptance test.
@@ -215,7 +212,5 @@ unchanged scheduling, full UI checks, ranking-settings persistence,
 rollback, schema migration, dialog styling, graph ranges, crowded labels and
 hover values, click-handler cleanup, rank replay across every priority order,
 graph-trace, season-report, SB-history, numeric-validation, and real Tk theme checks.
-The playoff features, conference feature, and Unicode-name fix are included in the
-v27 executable, which uses schema 11. Older packages are preserved.
-The W-D-L graph and corrected playoff-position labels are source-only updates;
-the existing v27 executable still contains the earlier clinch indicator.
+The W-D-L graph and playoff position fixes are included in the
+v28 executable, which uses schema 11. Older packages are preserved.
