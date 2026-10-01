@@ -950,3 +950,11 @@ Status: Completed.
 - Modified files: new `elo_bracket.py`, new `test_elo_bracket.py`, `elo_model.py`, `elo_calculator.py`, `test_elo_playoffs.py`, `test_elo_ranking_settings.py`, `README.md`, append-only `历史工作记录.txt`.
 - Tests and verification: 176/176 tests passed in 8.799 seconds with no skips, including real Tk. Tournament runs cover every size 2-64 with varied results, exactly two losses per eliminated player, n-1 single-elimination matches, and 2n-2/2n-1 double-elimination matches depending on the reset. Coverage includes invalid/out-of-order routes, frozen seeds, save/reload, rated playoff Elo, regular-season exclusion, undo/reset/roster changes, failed-save rollback, actual score/settings controls, backups/audit, theme switching and 64-player scrolling. Functional flake8 selectors E999/F821/F822/F823 and git diff --check passed. The initial sandbox run could not initialize Tcl; authorized real-Tk validation outside the sandbox used temporary league data and passed. The replay implementation was simplified to process dependencies in one pass, reducing targeted validation from about 54 seconds to about 4 seconds.
 - GitHub Timeline: Not committed (未 commit) at record creation; the scoped local feature commit follows. Not pushed; no release package changed or rebuilt.
+
+## 2026-10-01 16:20:15 -04:00
+
+- User Prompt summary: Complete double-elimination playoff brackets.
+- Actions: Committed the eight verified source/test/documentation/work-log files locally as `773d6c1334903007542cfec56c3145257ccad5f6`. Checked committed whitespace and exact changed paths. Unrelated untracked graph_patch.py and .codex-playoff-fixes/ remain untouched and excluded.
+- Modified files: This append-only completion record; implementation is in `773d6c1`.
+- Tests and verification: 176/176 tests passed with real Tk and no skips; functional flake8 selectors and git show --check passed. No application user data or release artifacts changed.
+- GitHub Timeline: Feature committed locally and not pushed (已 commit 未 push). This log-only completion record follows in a local commit. No executable package rebuilt.
