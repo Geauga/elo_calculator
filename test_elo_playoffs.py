@@ -127,7 +127,8 @@ class PlayoffBracketTests(unittest.TestCase):
                     app.playoffs_canvas.winfo_height.return_value = 800
                     app._refresh_playoffs_tab()
                     labels = [call.kwargs['text'] for call in
-                              app.playoffs_canvas.create_text.call_args_list]
+                              app.playoffs_canvas.create_text.call_args_list
+                              if 'first_round' in call.kwargs.get('tags', ())]
                     entrants = [label for label in labels if '. Player ' in label]
                     self.assertCountEqual(entrants, [f'{i + 1}. Player {i + 1}'
                                                     for i in range(roster_size)])
@@ -276,3 +277,6 @@ if __name__ == '__main__':
 # Upstream: elo_calculator.py ranks and renders players; elo_model.py owns results.
 # Changed lines: import shared seeds; add PlayoffPositionTests for differing Elo/
 # points, repeats, custom/natural ordering, ties, disabled/clamped fields and filters.
+# Updated 2026-10-01 America/New_York: 129-131 check unique first-round seed labels
+# while progressing brackets may show those players again in later rounds.
+# Purpose/upstream/environment unchanged; double-elimination tests are separate.

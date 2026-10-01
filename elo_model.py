@@ -1,5 +1,5 @@
 # elo_model.py
-# Request: Add optional, default-off conferences while preserving league rules and saves.
+# Request: Persist single/double-elimination playoff brackets, results and frozen seeds.
 """Core Elo rules and persistence for leagues with adjustable rosters."""
 
 from __future__ import annotations
@@ -11,6 +11,8 @@ import math
 from pathlib import Path
 from typing import Any
 
+from elo_bracket import PLAYOFF_SINGLE, PLAYOFF_FORMATS, build_bracket
+
 
 DEFAULT_PLAYER_COUNT = 12
 # Kept as an alias for compatibility with earlier imports.
@@ -18,7 +20,7 @@ PLAYER_COUNT = DEFAULT_PLAYER_COUNT
 LEGACY_PLAYER_COUNT = 8
 MIN_PLAYER_COUNT = 2
 MAX_PLAYER_COUNT = 64
-LEAGUE_SCHEMA_VERSION = 11
+LEAGUE_SCHEMA_VERSION = 12
 INITIAL_RATING = 1500.0
 K_FACTOR = 32.0
 MIN_K_FACTOR = 0.01
@@ -295,6 +297,7 @@ class Match:
     elo_decimal_places: int | None = None
     is_draw: bool = False
     is_playoff: bool = False
+    playoff_match_id: str = ""
 
 
 @dataclass
@@ -336,6 +339,8 @@ class League:
     conferences_enabled: bool = False
     playoff_size: int = 0
     playoffs_rated: bool = False
+    playoff_format: str = PLAYOFF_SINGLE
+    playoff_seed_ids: list[int] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.k_factor = validate_k_factor(self.k_factor)
@@ -356,6 +361,15 @@ class League:
             raise ValueError("Playoff size must be a non-negative integer.")
         if not isinstance(self.playoffs_rated, bool):
             raise ValueError("The playoffs-rated setting must be true or false.")
+        if not isinstance(self.playoff_format, str) or self.playoff_format not in PLAYOFF_FORMATS:
+            raise ValueError("Select single or double elimination.")
+        valid_ids = {player.id for player in self.players}
+        if (not isinstance(self.playoff_seed_ids, list)
+                or any(not isinstance(p, int) or isinstance(p, bool) or p not in valid_ids
+                       for p in self.playoff_seed_ids)
+                or len(set(self.playoff_seed_ids)) != len(self.playoff_seed_ids)
+                or (self.playoff_seed_ids and len(self.playoff_seed_ids) != min(self.playoff_size, len(self.players)))):
+            raise ValueError("Saved playoff seeds must match the configured field and roster.")
         self.configure_conferences(
             self.conferences_enabled, {player.id: player.conference for player in self.players}
         )
@@ -553,6 +567,31 @@ class League:
         self.matches.append(match)
         return match
 
+    def playoff_bracket(self, seed_ids: list[int] | None = None):
+        """Replay only results explicitly recorded through the bracket controls."""
+        seeds = self.playoff_seed_ids or seed_ids or []
+        results = [(m.playoff_match_id, m.winner_id, m.loser_id, m.winner_games, m.loser_games)
+                   for m in self.matches if m.playoff_match_id]
+        return build_bracket(seeds, self.playoff_format, results)
+
+    def record_bracket_match(self, match_id: str, winner_id: int, loser_games: int,
+                             winner_games: int | None = None,
+                             seed_ids: list[int] | None = None) -> Match:
+        seeds = self.playoff_seed_ids or seed_ids or []
+        if (len(seeds) != min(self.playoff_size, len(self.players))
+                or any(not isinstance(p, int) or isinstance(p, bool)
+                       or p not in {player.id for player in self.players} for p in seeds)):
+            raise ValueError("The playoff entrants do not match the configured field.")
+        bracket = self.playoff_bracket(seeds)
+        node = next((m for m in bracket.ready if m.id == match_id), None)
+        if node is None or winner_id not in node.players or isinstance(winner_id, bool):
+            raise ValueError("Select a ready bracket match and one of its players as winner.")
+        loser_id = next(p for p in node.players if p != winner_id)
+        match = self.record_match(winner_id, loser_id, loser_games, winner_games, is_playoff=True)
+        match.playoff_match_id = match_id
+        self.playoff_seed_ids = list(seeds)
+        return match
+
     def undo_last_match(self) -> Match:
         if not self.matches:
             raise ValueError("There is no match to undo.")
@@ -560,6 +599,8 @@ class League:
         match = self.matches.pop()
         self.player(match.winner_id).rating = match.winner_rating_before
         self.player(match.loser_id).rating = match.loser_rating_before
+        if match.playoff_match_id and not any(m.playoff_match_id for m in self.matches):
+            self.playoff_seed_ids.clear()
         return match
 
     def reset_standings(self) -> None:
@@ -567,6 +608,7 @@ class League:
         for player in self.players:
             player.rating = self.base_elo
         self.matches.clear()
+        self.playoff_seed_ids.clear()
 
     def resize_players(self, player_count: int) -> dict[str, Any]:
         """Resize the roster and consistently rebuild retained match results."""
@@ -663,6 +705,7 @@ class League:
                     elo_decimal_places=old_match.elo_decimal_places,
                     is_draw=old_match.is_draw,
                     is_playoff=old_match.is_playoff,
+                    playoff_match_id=old_match.playoff_match_id,
                 )
             )
             replayed_ratings[old_match.winner_id] = winner_after
@@ -671,6 +714,10 @@ class League:
         for player in self.players:
             player.rating = replayed_ratings[player.id]
         self.matches = rebuilt_matches
+        if removed_ids.intersection(self.playoff_seed_ids):
+            self.playoff_seed_ids.clear()
+            for match in self.matches:
+                match.playoff_match_id = ""
         return {
             "added": [],
             "removed": [player.name for player in removed_players],
@@ -812,6 +859,8 @@ class League:
             "conferences_enabled": self.conferences_enabled,
             "playoff_size": self.playoff_size,
             "playoffs_rated": self.playoffs_rated,
+            "playoff_format": self.playoff_format,
+            "playoff_seed_ids": list(self.playoff_seed_ids),
         }
 
     @classmethod
@@ -819,7 +868,7 @@ class League:
         if not isinstance(data, dict):
             raise ValueError("The save file must contain a JSON object.")
         schema_version = data.get("schema_version")
-        if schema_version not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, LEAGUE_SCHEMA_VERSION):
+        if schema_version not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, LEAGUE_SCHEMA_VERSION):
             raise ValueError("Unsupported save-file version.")
 
         try:
@@ -964,6 +1013,8 @@ class League:
             conferences_enabled=data.get("conferences_enabled", False),
             playoff_size=playoff_size,
             playoffs_rated=playoffs_rated,
+            playoff_format=data.get("playoff_format", PLAYOFF_SINGLE),
+            playoff_seed_ids=data.get("playoff_seed_ids", []),
         )
         valid_ids = {player.id for player in players}
         for match in matches:
@@ -1011,6 +1062,8 @@ class League:
                 != match.elo_decimal_places
                 or not isinstance(match.is_draw, bool)
                 or not isinstance(match.is_playoff, bool)
+                or not isinstance(match.playoff_match_id, str)
+                or (match.playoff_match_id and (not match.is_playoff or match.is_draw))
             ):
                 raise ValueError("The save file contains an invalid match.")
             try:
@@ -1019,6 +1072,8 @@ class League:
                 raise ValueError(
                     "The save file contains an invalid match."
                 ) from error
+        if any(m.playoff_match_id for m in matches):
+            league.playoff_bracket()
         return league
 
     def save(self, path: Path) -> None:
@@ -1078,3 +1133,9 @@ class League:
 # Purpose: Persist playoff configuration while retaining schemas 1-10.
 # Upstream: GUI playoff settings and saved league JSON; upstream purpose unchanged.
 # Changed lines: 21 writes schema 11; playoff settings serialize, validate and migrate.
+# Double-elimination update: 2026-10-01 America/New_York; Python 3.12 / Windows.
+# Purpose: Persist format, frozen entrants and routed results; preserve Elo/undo.
+# Upstream: elo_bracket.py validates routing; GUI supplies ready-match results.
+# Upstream purpose: Manage progressing tournaments without counting playoff stats.
+# Changed lines: 23 schema 12; 300/342-371 bracket fields/validation; 570-593 record;
+# 602-611 undo/reset; 708-720 roster replay; 862-1077 persistence/migration checks.

@@ -1,5 +1,5 @@
 # elo_calculator.py
-# Request: Add optional, default-off conference groups and standings without changing scheduling.
+# Request: Add single/double-elimination playoff brackets with saved progress.
 """Tkinter desktop interface for the twelve-player Elo calculator."""
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 import shutil
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, font as tkfont, messagebox, ttk
 
 from elo_model import (
     DEFAULT_PLAYER_COUNT,
@@ -40,6 +40,7 @@ from elo_simulator import (
     simulation_limit,
 )
 from elo_storage import AuditLog, BackupManager, LeagueCollection
+from elo_bracket import PLAYOFF_FORMATS
 
 import re
 
@@ -2188,6 +2189,8 @@ class EloCalculatorApp:
                 child.after_idle(lambda window=child: self._set_title_bar_theme(window))
         if hasattr(self, "graph_canvas"):
             self._refresh_graph()
+        if hasattr(self, "playoffs_canvas"):
+            self._refresh_playoffs_tab()
 
         if save:
             try:
@@ -3493,6 +3496,12 @@ class EloCalculatorApp:
         ttk.Spinbox(playoffs_frame, from_=0, to=MAX_PLAYER_COUNT, textvariable=self.psize_var, width=5).pack(side="left")
         self.prated_var = tk.BooleanVar(value=self.league.playoffs_rated)
         ttk.Checkbutton(playoffs_frame, text="Playoff matches affect Elo", variable=self.prated_var).pack(side="left", padx=(16, 0))
+        ttk.Label(frame, text="Bracket format:").pack(anchor="w", pady=(8, 4))
+        playoff_format_var = tk.StringVar(value=PLAYOFF_FORMATS[self.league.playoff_format])
+        ttk.Combobox(frame, textvariable=playoff_format_var, state="readonly",
+                     values=list(PLAYOFF_FORMATS.values())).pack(fill="x")
+        ttk.Label(frame, text="0 disables playoffs. Seeds lock after the first bracket result.",
+                  wraplength=420).pack(anchor="w", pady=(4, 0))
 
         def save():
             label_to_tb = {v: k for k, v in TIEBREAKER_LABELS.items()}
@@ -3502,6 +3511,14 @@ class EloCalculatorApp:
                 )
                 new_mode = validate_ranking_mode(mode_var.get())
                 new_playoff_size = int(self.psize_var.get())
+                if not 0 <= new_playoff_size <= MAX_PLAYER_COUNT or new_playoff_size == 1:
+                    raise ValueError("Playoff size must be 0 (disabled) or 2-64.")
+                new_format = next(key for key, label in PLAYOFF_FORMATS.items()
+                                  if label == playoff_format_var.get())
+                if self.league.playoff_seed_ids and (
+                        new_playoff_size != self.league.playoff_size
+                        or new_format != self.league.playoff_format):
+                    raise ValueError("Undo the bracket results or reset the league before changing its size or format.")
             except (ValueError, tk.TclError) as error:
                 self._show_error("Invalid settings", str(error), parent=window)
                 return
@@ -3510,10 +3527,12 @@ class EloCalculatorApp:
             self.league.ranking_mode = new_mode
             self.league.playoff_size = new_playoff_size
             self.league.playoffs_rated = self.prated_var.get()
+            self.league.playoff_format = new_format
             try:
                 self._commit_edit(
                     previous_state, "ranking_edited",
-                    f"Rank sharing={new_mode}; priorities={' > '.join(new_hierarchy)}.",
+                    f"Rank sharing={new_mode}; priorities={' > '.join(new_hierarchy)}; "
+                    f"playoff size={new_playoff_size}; format={new_format}; rated={self.league.playoffs_rated}.",
                 )
             except (OSError, ValueError) as error:
                 self._restore_collection(previous_state)
@@ -3529,72 +3548,194 @@ class EloCalculatorApp:
         window.minsize(window.winfo_reqwidth(), window.winfo_reqheight())
 
     def _build_playoffs_tab(self, parent) -> None:
-        parent.rowconfigure(0, weight=1)
+        parent.rowconfigure(1, weight=1)
         parent.columnconfigure(0, weight=1)
-        self.playoffs_canvas = tk.Canvas(parent, bg="white", highlightthickness=0)
-        self.playoffs_canvas.grid(row=0, column=0, sticky="nsew")
+        toolbar = ttk.Frame(parent)
+        toolbar.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 8))
+        toolbar.columnconfigure(1, weight=1)
+        ttk.Label(toolbar, text="Ready match:").grid(row=0, column=0, padx=(0, 8))
+        self.bracket_match_combo = ttk.Combobox(toolbar, state="readonly")
+        self.bracket_match_combo.grid(row=0, column=1, sticky="ew")
+        self.bracket_record_button = ttk.Button(toolbar, text="Record bracket result",
+                                                command=self._show_bracket_result)
+        self.bracket_record_button.grid(row=0, column=2, padx=(8, 0))
+        colors = THEME_PALETTES[self.theme_var.get()]
+        self.playoffs_canvas = tk.Canvas(parent, bg=colors["background"], highlightthickness=0)
+        self.playoffs_canvas.grid(row=1, column=0, sticky="nsew")
+        vertical = ttk.Scrollbar(parent, orient="vertical", command=self.playoffs_canvas.yview)
+        vertical.grid(row=1, column=1, sticky="ns")
+        horizontal = ttk.Scrollbar(parent, orient="horizontal", command=self.playoffs_canvas.xview)
+        horizontal.grid(row=2, column=0, sticky="ew")
+        self.playoffs_canvas.configure(yscrollcommand=vertical.set, xscrollcommand=horizontal.set)
         self.playoffs_canvas.bind("<Configure>", lambda e: self._refresh_playoffs_tab())
+        self.playoffs_canvas.bind("<Button-1>", self._select_bracket_match)
 
     def _refresh_playoffs_tab(self) -> None:
-        if not hasattr(self, "playoffs_canvas"): return
-        self.playoffs_canvas.delete("all")
-        width = self.playoffs_canvas.winfo_width()
-        height = self.playoffs_canvas.winfo_height()
-        if width < 50 or height < 50: return
-
-        if self.league.playoff_size <= 0:
-            self.playoffs_canvas.create_text(width/2, height/2, text="Playoffs are disabled. Enable them in League Settings.", font=("Segoe UI", 12), fill="#666666")
+        if not hasattr(self, "playoffs_canvas"):
             return
-
-        seeds = _playoff_seeds(self.league)
-        playoff_size = len(seeds)
-        if playoff_size == 0: return
-        
-        self.playoffs_canvas.create_text(width/2, 20, text=f"Top {playoff_size} Playoffs Bracket", font=("Segoe UI", 14, "bold"))
-        
-        import math
-        rounds = math.ceil(math.log2(playoff_size))
-        if rounds == 0: return
-        bracket_slots = 2 ** rounds
-
-        box_width = 120
-        box_height = 40
-        x_margin = 40
-        y_margin = 60
-        
-        x_step = (width - 2 * x_margin - box_width) / rounds if rounds > 0 else 0
-        
-        for r in range(rounds + 1):
-            num_matches = 2 ** (rounds - r - 1) if r < rounds else 1
-            y_step = (height - 2 * y_margin) / max(1, num_matches)
-            
-            for m in range(num_matches):
-                x = x_margin + r * x_step
-                y = y_margin + m * y_step + (y_step / 2)
-                
-                self.playoffs_canvas.create_rectangle(x, y - box_height/2, x + box_width, y + box_height/2, fill="#f0f0f0", outline="#cccccc")
-                
-                if r == 0:
-                    seed_idx1 = m
-                    seed_idx2 = bracket_slots - 1 - m
-                    p1_name = seeds[seed_idx1].name if seed_idx1 < playoff_size else "BYE"
-                    p2_name = seeds[seed_idx2].name if seed_idx2 < playoff_size else "BYE"
-                    p1_label = f"{seed_idx1+1}. {p1_name}" if seed_idx1 < playoff_size else "BYE"
-                    p2_label = f"{seed_idx2+1}. {p2_name}" if seed_idx2 < playoff_size else "BYE"
-                    self.playoffs_canvas.create_text(x + 5, y - 10, text=p1_label, anchor="w", font=("Segoe UI", 9))
-                    self.playoffs_canvas.create_text(x + 5, y + 10, text=p2_label, anchor="w", font=("Segoe UI", 9))
+        canvas = self.playoffs_canvas
+        canvas.delete("all")
+        width = max(320, canvas.winfo_width())
+        colors = THEME_PALETTES[self.theme_var.get() if hasattr(self, "theme_var") else "light"]
+        canvas.configure(background=colors["background"])
+        self.bracket_hit_boxes = []
+        self.bracket_ready_choices = {}
+        if self.league.playoff_size <= 0:
+            canvas.create_text(20, 30, anchor="nw", text="Playoffs are disabled. Enable them in League Settings.",
+                               font=("Segoe UI", 11), fill=colors["foreground"], width=width - 40)
+            canvas.configure(scrollregion=(0, 0, width, 100))
+            self._update_bracket_choices()
+            return
+        seed_ids = self.league.playoff_seed_ids or [p.id for p in _playoff_seeds(self.league)]
+        if len(seed_ids) < 2:
+            canvas.create_text(20, 30, anchor="nw", text="At least two playoff entrants are required.",
+                               fill=colors["foreground"])
+            self._update_bracket_choices()
+            return
+        bracket = self.league.playoff_bracket(seed_ids)
+        canvas.create_text(20, 16, anchor="nw", text=f"{PLAYOFF_FORMATS[self.league.playoff_format]} - {len(seed_ids)} players",
+                           font=("Segoe UI", 14, "bold"), fill=colors["foreground"])
+        canvas.create_text(20, 44, anchor="nw", text="Click a ready match to record its result. Scroll to see all rounds.",
+                           font=("Segoe UI", 10), fill=colors["foreground"])
+        positions = {}
+        y_start, total_width = 84, width
+        for section, title in (("W", "Winners' bracket"), ("L", "Losers' bracket"), ("F", "Grand final / reset")):
+            nodes = [m for m in bracket.matches if m.section == section]
+            if not nodes:
+                continue
+            canvas.create_text(20, y_start, anchor="nw", text=title,
+                               font=("Segoe UI", 12, "bold"), fill=colors["foreground"])
+            rounds = sorted({m.round for m in nodes})
+            count = max(sum(m.round == r for m in nodes) for r in rounds)
+            section_height = count * 104
+            for column, round_number in enumerate(rounds):
+                round_nodes = [m for m in nodes if m.round == round_number]
+                x = 20 + column * 286
+                canvas.create_text(x, y_start + 26, anchor="nw", text=f"Round {round_number}",
+                                   fill=colors["foreground"], font=("Segoe UI", 9))
+                for row, node in enumerate(round_nodes):
+                    y = y_start + 50 + (row + 0.5) * section_height / len(round_nodes) - 44
+                    positions[node.id] = (x, y, x + 250, y + 88)
+                total_width = max(total_width, x + 270)
+            y_start += section_height + 76
+        # Route solid winner edges and dashed loser-drop edges behind the cards.
+        for node in bracket.matches:
+            x, y, _, _ = positions[node.id]
+            for kind, source in node.sources:
+                if kind == "seed":
+                    continue
+                sx, sy, ex, ey = positions[source]
+                if node.section == next(m.section for m in bracket.matches if m.id == source):
+                    canvas.create_line(ex, (sy + ey) / 2, x - 14, (sy + ey) / 2,
+                                       x - 14, y + 44, x, y + 44, fill=colors["border"],
+                                       arrow="last", dash=(4, 3) if kind == "loser" else ())
+        seed_numbers = {player_id: i for i, player_id in enumerate(seed_ids, 1)}
+        label_font = tkfont.Font(self.root, family="Segoe UI", size=9, weight="bold") if hasattr(self, "root") else None
+        layout_scale = max(1.0, label_font.metrics("linespace") / 18) if label_font is not None else 1.0
+        for node in bracket.matches:
+            x, y, ex, ey = positions[node.id]
+            canvas.create_rectangle(x, y, ex, ey, fill=colors["field"],
+                                    outline=colors["selection"] if node.status == "ready" else colors["border"],
+                                    width=2 if node.status == "ready" else 1)
+            status = {"ready": "Ready", "pending": "Waiting", "bye": "Bye",
+                      "complete": node.score, "not_needed": "Reset not needed"}[node.status]
+            canvas.create_text(x + 8, y + 10, anchor="w", text=f"{node.id} | {status}",
+                               fill=colors["foreground"], font=("Segoe UI", 9, "bold"))
+            for index, player_id in enumerate(node.players):
+                kind, source = node.sources[index]
+                if player_id is not None:
+                    label = self.league.player(player_id).name
+                    if node.section == "W" and node.round == 1:
+                        label = f"{seed_numbers[player_id]}. {label}"
+                elif kind == "seed" or node.status == "bye":
+                    label = "BYE"
                 else:
-                    self.playoffs_canvas.create_text(x + 5, y, text="TBD" if r < rounds else "Champion", anchor="w", font=("Segoe UI", 9, "italic"), fill="#999")
+                    label = f"{'Winner' if kind == 'winner' else 'Loser'} {source}"
+                if label_font is not None and label_font.measure(label) > 234 * layout_scale:
+                    while label and label_font.measure(label + "...") > 234 * layout_scale:
+                        label = label[:-1]
+                    label += "..."
+                tags = ("first_round",) if node.section == "W" and node.round == 1 else ()
+                canvas.create_text(x + 8, y + 32 + index * 22, anchor="w", text=label,
+                                   tags=tags, fill=colors["foreground"],
+                                   font=("Segoe UI", 9, "bold" if player_id == node.winner and player_id is not None else "normal"))
+            if node.status == "ready":
+                first, second = (self.league.player(p).name for p in node.players)
+                label = f"{node.id}: {first} vs {second}"
+                self.bracket_ready_choices[label] = node.id
+                self.bracket_hit_boxes.append((x, y, ex, ey, label))
+        if bracket.champion is not None:
+            canvas.create_text(20, y_start, anchor="nw", text=f"Champion: {self.league.player(bracket.champion).name}",
+                               font=("Segoe UI", 14, "bold"), fill=colors["foreground"])
+        canvas.scale("all", 0, 0, layout_scale, layout_scale)
+        self.bracket_hit_boxes = [(x * layout_scale, y * layout_scale, ex * layout_scale, ey * layout_scale, label)
+                                  for x, y, ex, ey, label in self.bracket_hit_boxes]
+        canvas.configure(scrollregion=(0, 0, total_width * layout_scale, (y_start + 60) * layout_scale))
+        self._update_bracket_choices()
 
-                if r > 0 and r <= rounds:
-                    prev_x = x_margin + (r - 1) * x_step + box_width
-                    prev_y1 = y_margin + (m * 2) * (height - 2 * y_margin) / max(1, num_matches * 2) + ((height - 2 * y_margin) / max(1, num_matches * 2) / 2)
-                    prev_y2 = y_margin + (m * 2 + 1) * (height - 2 * y_margin) / max(1, num_matches * 2) + ((height - 2 * y_margin) / max(1, num_matches * 2) / 2)
-                    
-                    self.playoffs_canvas.create_line(prev_x, prev_y1, x - 20, prev_y1, fill="#cccccc")
-                    self.playoffs_canvas.create_line(prev_x, prev_y2, x - 20, prev_y2, fill="#cccccc")
-                    self.playoffs_canvas.create_line(x - 20, prev_y1, x - 20, prev_y2, fill="#cccccc")
-                    self.playoffs_canvas.create_line(x - 20, y, x, y, fill="#cccccc")
+    def _update_bracket_choices(self) -> None:
+        if not hasattr(self, "bracket_match_combo"):
+            return
+        choices = list(self.bracket_ready_choices)
+        selected = self.bracket_match_combo.get()
+        self.bracket_match_combo.configure(values=choices)
+        self.bracket_match_combo.set(selected if selected in choices else choices[0] if choices else "")
+        self.bracket_record_button.configure(state="normal" if choices else "disabled")
+
+    def _select_bracket_match(self, event) -> None:
+        x, y = self.playoffs_canvas.canvasx(event.x), self.playoffs_canvas.canvasy(event.y)
+        for left, top, right, bottom, label in self.bracket_hit_boxes:
+            if left <= x <= right and top <= y <= bottom:
+                self.bracket_match_combo.set(label)
+                self._show_bracket_result()
+                break
+
+    def _save_bracket_result(self, match_id, winner_id, winner_games, loser_games, seed_ids) -> None:
+        previous_state = self.collection.to_dict()
+        try:
+            match = self.league.record_bracket_match(match_id, winner_id, loser_games, winner_games, seed_ids)
+            self._commit_edit(previous_state, "bracket_result_recorded",
+                              f"{match_id}: {self.league.player(match.winner_id).name} defeated "
+                              f"{self.league.player(match.loser_id).name} {winner_games}-{loser_games}; "
+                              f"format={self.league.playoff_format}; rated={match.rated}.")
+        except (OSError, ValueError):
+            self._restore_collection(previous_state)
+            raise
+        self._refresh_all()
+
+    def _show_bracket_result(self) -> None:
+        key = self.bracket_ready_choices.get(self.bracket_match_combo.get())
+        if not key:
+            return
+        seeds = self.league.playoff_seed_ids or [p.id for p in _playoff_seeds(self.league)]
+        node = next(m for m in self.league.playoff_bracket(seeds).ready if m.id == key)
+        window = tk.Toplevel(self.root)
+        window.title(f"Record bracket result - {key}")
+        self._configure_dialog(window, self.root, resizable=(True, False))
+        frame = ttk.Frame(window, padding=16)
+        frame.pack(fill="both", expand=True)
+        players = {self.league.player(p).name: p for p in node.players}
+        ttk.Label(frame, text="Winner (bracket matches cannot end in a draw):").pack(anchor="w")
+        winner = tk.StringVar(value=next(iter(players)))
+        ttk.Combobox(frame, textvariable=winner, values=list(players), state="readonly").pack(fill="x", pady=(4, 12))
+        winner_score = tk.StringVar(value=str(self.league.win_condition.games_to_win))
+        loser_score = tk.StringVar(value="0")
+        for title, variable in (("Winner score:", winner_score), ("Loser score:", loser_score)):
+            ttk.Label(frame, text=title).pack(anchor="w")
+            ttk.Entry(frame, textvariable=variable,
+                      state="readonly" if variable is winner_score and self.league.win_condition.score_mode == SCORE_MODE_FIXED else "normal").pack(fill="x", pady=(4, 8))
+
+        def save():
+            try:
+                self._save_bracket_result(key, players[winner.get()], int(winner_score.get()), int(loser_score.get()), seeds)
+            except (ValueError, OSError) as error:
+                self._show_error("Bracket result not saved", str(error), parent=window)
+                return
+            window.destroy()
+
+        ttk.Button(frame, text="Record result", command=save, style="Accent.TButton").pack(side="right", pady=(8, 0))
+        ttk.Button(frame, text="Cancel", command=window.destroy).pack(side="right", padx=8, pady=(8, 0))
+        self._center_dialog(window, self.root)
 
     def _show_conference_settings(self) -> None:
         window = tk.Toplevel(self.root)
@@ -4158,3 +4299,10 @@ if __name__ == "__main__":
 # upstream purpose: persist results without assuming a fixed future schedule.
 # Changed lines: 156-164 shared playoff seeds; W-D-L helper skips playoff matches
 # while retaining source indexes; bracket/standings consume the same ranked seeds.
+# Double-elimination update: 2026-10-01 America/New_York; Python 3.12 / Windows Tk 8.6.
+# Purpose: Select bracket format, record ready results, and render themed scrolling
+# winners/losers/final brackets, including the conditional final reset.
+# Upstream: elo_bracket.py routes results; elo_model.py preserves seeds/results;
+# elo_storage.py backs up, saves and audits edits. Existing Elo policy is retained.
+# Changed lines: imports; theme refresh; 3500-3536 format controls/active guard;
+# 3550-3740 bracket toolbar, scrolling, rendering, hit testing and result dialog.

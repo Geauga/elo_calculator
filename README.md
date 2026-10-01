@@ -16,14 +16,30 @@ change the licensing of the code or bundled third-party components.
 
 ## Rules
 
-- Playoffs: League Settings controls bracket size and whether playoff
-  matches affect Elo. Mark a result with **Playoff match** when entering it.
+- Playoffs: League Settings controls bracket size, **Single elimination** or
+  **Double elimination**, and whether playoff matches affect Elo. Use **0** to
+  disable playoffs, or choose **2-64** entrants (clamped to the roster).
+  In the **Playoffs** tab, click a ready match or select it from the dropdown and
+  choose **Record bracket result**. Select the winner and enter the score using
+  the league's First-to-N or custom-score rules. Winners advance automatically;
+  double elimination has separate winners' and losers' brackets, elimination
+  after the second loss, and a grand-final reset when the losers' finalist wins
+  the first final. Byes advance without recording a loss or changing Elo.
+  Both brackets and all rounds have horizontal/vertical scrolling and follow
+  the light/dark theme. Winner names are bold on completed match cards.
+  Seeds lock on the first bracket result and survive restarts, rating changes,
+  and renames. Undo last reopens the affected match; undoing all bracket results
+  unlocks the seeds. Reset league clears the tournament. Removing a seeded
+  player clears bracket progress while retaining any surviving historical results.
+  Size/format changes are blocked while bracket results exist.
+  Manual results entered using **Playoff match** retain their earlier behavior
+  and do not advance the bracket; draws are allowed there if enabled, whereas
+  bracket matches require a winner.
   Unrated playoffs leave ratings unchanged in both the preview and saved result.
   Playoff results do not count toward regular-season match/game statistics or
   head-to-head tiebreakers; rated playoff Elo changes still affect Elo-based ranks.
-  Rank history follows the same rule. Non-power-of-two brackets use byes instead
-  of duplicate entrants. The bracket is a seeding preview, not an automatically
-  progressing tournament. Playoff support is included in v27, but not v26.
+  Rank history follows the same rule. Basic playoff support is included in v27;
+  progressing single/double-elimination brackets are source-only updates.
 - Current source uses the league's configured standings order for bracket seeds.
   **Playoff position** marks the current top players in that order, not a
   guaranteed berth: no fixed season schedule or remaining-match limit is stored.
@@ -156,11 +172,12 @@ automatically by retaining the original league and adding Players 9 through 12.
 The previous single-league database is also upgraded automatically to
 `League 1`, preserving its standings and match history.
 
-Current source writes league schema 11, preserving playoff settings and match
-flags as well as conferences, rank sharing, Base Elo, victory-margin K scaling,
-and standings priority. Schemas 1-10 remain readable; older saves default to
+Current source writes league schema 12, preserving bracket format, frozen seeds
+and result routing along with playoff settings, conferences, rank sharing, Base
+Elo, victory-margin K scaling, and standings priority. Schemas 1-11 remain readable;
+old leagues default to single elimination with no linked bracket results. Older saves default to
 playoffs disabled, and schemas 1-9 also default to conferences disabled.
-The v27 executable uses schema 11 and cannot open future schema saves. Back up your
+The v27 executable uses schema 11 and cannot open schema-12 saves. Back up your
 data before upgrading; do not open upgraded saves in an older executable, including v26.
 The playoff Elo fix applies to newly recorded results; it does not automatically
 rewrite ratings or match transfers already saved by the earlier buggy source.
@@ -205,7 +222,10 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation: 163 tests, including real Tk UI checks. Coverage
+Current source validation: 176 tests passed with no skips, including real Tk UI checks. Coverage
+also verifies complete single/double-elimination runs for every field size 2-64,
+two-loss elimination, both grand-final outcomes, byes, frozen seeds, save/reload,
+undo/reset/roster changes, rollback, and bracket controls/themes/scrolling. It
 includes cumulative W-D-L graph history, three-series rendering and match links,
 playoff exclusion with original match indexes, bracket/position consistency,
 custom priorities, repeated opponents, shared ranks and conference filters,
@@ -217,5 +237,6 @@ hover values, click-handler cleanup, rank replay across every priority order,
 graph-trace, season-report, SB-history, numeric-validation, and real Tk theme checks.
 The playoff features, conference feature, and Unicode-name fix are included in the
 v27 executable, which uses schema 11. Older packages are preserved.
-The W-D-L graph and corrected playoff-position labels are source-only updates;
+The progressing single/double-elimination brackets, W-D-L graph and corrected
+playoff-position labels are source-only updates;
 the existing v27 executable still contains the earlier clinch indicator.
