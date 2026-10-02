@@ -967,3 +967,11 @@ Status: Completed.
 - Modified files: `README.md` compatibility/merge resolution and append-only `历史工作记录.txt`; incoming `historyworklog.txt` and v28 package files are preserved from the remote commit.
 - Tests and verification: Source validation remains 176/176 tests passed with real Tk and no skips. Verified no source/test changes during integration, so tests were not redundantly rerun for the documentation/release-only merge. Both pending commits passed git show --check. v28 hashes exactly match published documentation: EXE 40FFF3E941E2078A8816DA11809C0ACB478628828C47B64A70E8FD4BACBD3570; ZIP A90F83CD309636871DA61A76B647D32246B615B54D0942E4AE721813379FB6E5. Staged whitespace verification precedes merge commit/publication.
 - GitHub Timeline: Bracket feature `773d6c1` and verification `6ee8f14` are committed locally but not pushed (已 commit 未 push) at record creation. The resolved integration is not committed (未 commit) yet; a merge commit and normal push follow. No force-push.
+
+## 2026-10-02 17:27:59 -04:00
+
+- User Prompt summary: Push the verified double-elimination bracket feature.
+- Actions: Committed the v28/bracket integration as `0eaa1a3c535627c0f2145aae6cf59d0bbc847ec5` and normally pushed main. Confirmed the exact GitHub branch hash equals local HEAD. Both histories and the existing v28 package are preserved; unrelated untracked files remain excluded.
+- Modified files: This append-only completion record; published source and release-note integration are in `0eaa1a3`.
+- Tests and verification: Source remains the version that passed 176/176 tests with real Tk and no skips. Staged whitespace check passed with Windows CRLF preservation. git ls-remote returned `0eaa1a3c535627c0f2145aae6cf59d0bbc847ec5` for refs/heads/main. Working source is clean.
+- GitHub Timeline: Double-elimination bracket feature and merge are pushed (已 push) and verified on GitHub main. This log-only record follows in a normal commit/push. No executable rebuilt; v28 uses schema 11 and the bracket source uses schema 12.
