@@ -984,3 +984,11 @@ Status: Completed.
 - Modified files: elo_model.py, test_elo_bracket.py and append-only 历史工作记录.txt.
 - Tests and verification: Baseline 176/176 passed. New growth regressions reproduced the bug before the fix (both model formats and the real-Tk database reload failed). Final suite 179/179 passed in 8.855 seconds with real Tk and no skips. Source whitespace check passed. Git fetch confirmed main and origin/main were synchronized before publication. No executable rebuilt.
 - GitHub Timeline: Fix and review record are not committed (未 commit) at record creation; the verified changes will be committed and normally pushed to main, with the exact remote hash checked afterward. No force-push.
+
+## 2026-10-02 17:59:12 -04:00
+
+- User Prompt summary: Review code and push; publication verification.
+- Actions: Committed and normally pushed the frozen-playoff-field fix and regressions as 787f98de79a1f34eefd073ff84d04341a9230873. Verified git ls-remote reports exactly that commit for GitHub main; tracked source is clean and unrelated untracked files remain excluded.
+- Modified files: This append-only completion record; source and regressions are in 787f98d.
+- Tests and verification: Published source passed all 179 tests with real Tk, no skips, and staged whitespace validation. No source changes after testing and no executable rebuild.
+- GitHub Timeline: Reviewed fix is pushed (已 push) and verified on GitHub main. This completion record follows in a log-only commit/push; no force-push.
