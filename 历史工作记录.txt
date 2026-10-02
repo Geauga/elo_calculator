@@ -975,3 +975,12 @@ Status: Completed.
 - Modified files: This append-only completion record; published source and release-note integration are in `0eaa1a3`.
 - Tests and verification: Source remains the version that passed 176/176 tests with real Tk and no skips. Staged whitespace check passed with Windows CRLF preservation. git ls-remote returned `0eaa1a3c535627c0f2145aae6cf59d0bbc847ec5` for refs/heads/main. Working source is clean.
 - GitHub Timeline: Double-elimination bracket feature and merge are pushed (已 push) and verified on GitHub main. This log-only record follows in a normal commit/push. No executable rebuilt; v28 uses schema 11 and the bracket source uses schema 12.
+
+## 2026-10-02 17:58:25 -04:00
+
+- User Prompt summary: Review code and push.
+- Execution location: Local Windows Git repository C:\Users\danie\OneDrive\Documents\ChatGPT\elo; publication target is GitHub Geauga/elo_calculator main.
+- Actions: Reviewed progressing single/double-elimination routing, result persistence, undo, roster edits, settings guards and themed GUI controls. Reproduced a save-integrity bug: with a configured field larger than the original roster, adding a player after the first bracket result made reload reject the frozen entrant count and blocked subsequent bracket results. Preserved bounded frozen fields through roster growth while requiring the full configured field for new brackets. Added regressions for both tournament formats, reload after each result, removal of an unseeded player, invalid initial/saved fields and real-Tk roster editing/save/reload/continued results. Unrelated untracked files and existing release binaries remain untouched.
+- Modified files: elo_model.py, test_elo_bracket.py and append-only 历史工作记录.txt.
+- Tests and verification: Baseline 176/176 passed. New growth regressions reproduced the bug before the fix (both model formats and the real-Tk database reload failed). Final suite 179/179 passed in 8.855 seconds with real Tk and no skips. Source whitespace check passed. Git fetch confirmed main and origin/main were synchronized before publication. No executable rebuilt.
+- GitHub Timeline: Fix and review record are not committed (未 commit) at record creation; the verified changes will be committed and normally pushed to main, with the exact remote hash checked afterward. No force-push.

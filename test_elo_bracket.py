@@ -105,6 +105,41 @@ class BracketPersistenceTests(unittest.TestCase):
         league.undo_last_match()
         self.assertEqual(league.playoff_seed_ids, [])
 
+    def test_roster_growth_preserves_started_field_reload_and_progress(self):
+        for format_name in ("single", "double"):
+            with self.subTest(format=format_name):
+                league = self.league()
+                league.playoff_size = 8
+                league.playoff_format = format_name
+                league.record_bracket_match("W1-1", 0, 0, seed_ids=[0, 1, 2, 3])
+                before = league.playoff_bracket()
+                league.resize_players(5)
+                restored = League.from_dict(league.to_dict())
+                self.assertEqual(restored.playoff_size, 8)
+                self.assertEqual(restored.playoff_seed_ids, [0, 1, 2, 3])
+                self.assertEqual(restored.playoff_bracket(), before)
+                while restored.playoff_bracket().champion is None:
+                    node = restored.playoff_bracket().ready[0]
+                    self.assertNotIn(4, node.players)
+                    restored.record_bracket_match(node.id, node.players[0], 0)
+                    restored = League.from_dict(restored.to_dict())
+                restored.resize_players(4)
+                self.assertEqual(League.from_dict(restored.to_dict()).playoff_seed_ids,
+                                 [0, 1, 2, 3])
+
+    def test_new_bracket_still_requires_full_configured_field(self):
+        league = self.league()
+        before = league.to_dict()
+        with self.assertRaises(ValueError):
+            league.record_bracket_match("W1-1", 0, 0, seed_ids=[0, 1])
+        self.assertEqual(league.to_dict(), before)
+        for seeds in ([0], [0, 1, 2, 3, 4]):
+            data = self.league(5).to_dict()
+            data["playoff_size"] = 4
+            data["playoff_seed_ids"] = seeds
+            with self.assertRaises(ValueError):
+                League.from_dict(data)
+
     def test_generic_playoff_results_do_not_advance_bracket(self):
         league = self.league(2)
         league.record_match(0, 1, 0, is_playoff=True)
@@ -245,8 +280,29 @@ class TkBracketTests(unittest.TestCase):
         self.assertEqual(app.league.playoff_format, "double")
         dialog.destroy()
 
+    def test_roster_growth_saves_started_bracket_and_next_result(self):
+        app = self.app
+        app.league.resize_players(4)
+        app.league.playoff_size = 8
+        app._save_bracket_result("W1-1", 0, 3, 0, [0, 1, 2, 3])
+        with patch.object(app, "_ask_integer", return_value=5), \
+                patch.object(app, "_show_error") as error:
+            app._change_player_count()
+            error.assert_not_called()
+        restored = LeagueCollection.load(self.data_path).active.league
+        self.assertEqual(len(restored.players), 5)
+        self.assertEqual(restored.playoff_seed_ids, [0, 1, 2, 3])
+        app._save_bracket_result("W1-2", 1, 3, 0, restored.playoff_seed_ids)
+        self.assertEqual(len(LeagueCollection.load(self.data_path).active.league.matches), 2)
+
 
 # Purpose: Verify tournament elimination, byes, reset finals and save/undo safety.
 # Upstream: elo_bracket.py routes results; elo_model.py persists them; GUI backs
 # up, saves and audits edits. Python 3.12 / Windows Tk 8.6, isolated test data.
 # Generated: 2026-10-01 America/New_York. Changes: New regression suite.
+# Review update: 2026-10-02 17:57 America/New_York; Python 3.12 / Windows Tk 8.6.
+# Purpose: Reproduce and prevent unreadable saves/progress after roster growth.
+# Upstream: elo_model.py freezes entrants; GUI roster/results persist the league.
+# Upstream purpose: Allow roster edits without modifying an active tournament.
+# Changed lines: 108-143 growth/reload/progress and initial-field validation;
+# 283-296 real-Tk roster edit, database reload and subsequent bracket result.

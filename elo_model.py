@@ -368,7 +368,9 @@ class League:
                 or any(not isinstance(p, int) or isinstance(p, bool) or p not in valid_ids
                        for p in self.playoff_seed_ids)
                 or len(set(self.playoff_seed_ids)) != len(self.playoff_seed_ids)
-                or (self.playoff_seed_ids and len(self.playoff_seed_ids) != min(self.playoff_size, len(self.players)))):
+                # The roster may grow after the entrants have been frozen.
+                or (self.playoff_seed_ids and not 2 <= len(self.playoff_seed_ids)
+                    <= min(self.playoff_size, len(self.players)))):
             raise ValueError("Saved playoff seeds must match the configured field and roster.")
         self.configure_conferences(
             self.conferences_enabled, {player.id: player.conference for player in self.players}
@@ -578,7 +580,9 @@ class League:
                              winner_games: int | None = None,
                              seed_ids: list[int] | None = None) -> Match:
         seeds = self.playoff_seed_ids or seed_ids or []
-        if (len(seeds) != min(self.playoff_size, len(self.players))
+        field_size = min(self.playoff_size, len(self.players))
+        if (not 2 <= len(seeds) <= field_size
+                or (not self.playoff_seed_ids and len(seeds) != field_size)
                 or any(not isinstance(p, int) or isinstance(p, bool)
                        or p not in {player.id for player in self.players} for p in seeds)):
             raise ValueError("The playoff entrants do not match the configured field.")
@@ -1139,3 +1143,9 @@ class League:
 # Upstream purpose: Manage progressing tournaments without counting playoff stats.
 # Changed lines: 23 schema 12; 300/342-371 bracket fields/validation; 570-593 record;
 # 602-611 undo/reset; 708-720 roster replay; 862-1077 persistence/migration checks.
+# Review update: 2026-10-02 17:57 America/New_York; Python 3.12 / Windows Tk 8.6.
+# Purpose: Preserve a started bracket's entrants after adding roster players.
+# Upstream: GUI roster edits and saved JSON; upstream purpose: retain tournament
+# progress across roster growth without admitting new entrants mid-bracket.
+# Changed lines: 371-373 accept bounded frozen fields; 583-586 require the full
+# configured field only when recording the first bracket result.
