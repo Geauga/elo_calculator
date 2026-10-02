@@ -1259,3 +1259,4 @@ Major Changes:
 
 2026-09-30 17:42:28 - Added mathematical playoff clinch indicator (Clinched) to Standings tab.
 2026-09-30 17:45:34 - Built v27 package with PyInstaller, created versioned release folder, generated ZIP with README.txt, updated README.md with hashes and test results.
+2026-10-01 16:18:42 - Built v28 package with PyInstaller to include new W-D-L graph and playoff position fixes. Created ZIP and updated README.md with hashes and test results.
