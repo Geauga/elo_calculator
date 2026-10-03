@@ -1270,3 +1270,4 @@ Major Changes:
 2026-09-30 17:45:34 - Built v27 package with PyInstaller, created versioned release folder, generated ZIP with README.txt, updated README.md with hashes and test results.
 2026-10-01 16:18:42 - Built v28 package with PyInstaller to include new W-D-L graph and playoff position fixes. Created ZIP and updated README.md with hashes and test results.2026-10-03 19:41:31 - Added missing docstrings to Python data classes in elo_model.py and elo_simulator.py. Added descriptive comments to GitHub Actions workflows (bandit.yml, codeql.yml, flake8.yml) and dependabot.yml.
 2026-10-03 19:47:27 - Added HTML descriptions to community standard files (CODE_OF_CONDUCT.md, CONTRIBUTING.md, SECURITY.md, SUPPORT.md).
+2026-10-03 19:59:53 - Added American mock betting odds to the Match Preview display in the desktop GUI based on win probabilities.
