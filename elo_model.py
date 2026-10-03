@@ -59,6 +59,7 @@ def _is_finite_number(value: Any) -> bool:
 
 @dataclass
 class WinCondition:
+    """Defines the scoring requirements for winning a match."""
     games_to_win: int = 3
     score_multipliers: dict[int, float] = field(default_factory=lambda: {0: 1.0, 1: 0.75, 2: 0.50})
     score_mode: str = SCORE_MODE_FIXED
@@ -275,6 +276,7 @@ def draw_rating_change(
 
 @dataclass
 class Player:
+    """Represents a competitor with a rating and activity status."""
     id: int
     name: str
     rating: float = INITIAL_RATING
@@ -283,6 +285,7 @@ class Player:
 
 @dataclass
 class Match:
+    """Records the outcome of a single match between two players."""
     timestamp: str
     winner_id: int
     loser_id: int
@@ -302,6 +305,7 @@ class Match:
 
 @dataclass
 class PlayerStatistics:
+    """Tracks the cumulative match and game records for a player."""
     matches_won: int = 0
     matches_drawn: int = 0
     matches_lost: int = 0
@@ -323,6 +327,7 @@ class PlayerStatistics:
 
 @dataclass
 class League:
+    """Manages the roster, settings, and full history of a league."""
     players: list[Player]
     matches: list[Match] = field(default_factory=list)
     win_condition: WinCondition = field(default_factory=WinCondition)

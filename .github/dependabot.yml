@@ -1,3 +1,4 @@
+# Description: Configures Dependabot to automatically check for updates to pip packages and GitHub Actions.
 version: 2
 updates:
   - package-ecosystem: "pip"

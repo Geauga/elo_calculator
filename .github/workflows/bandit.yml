@@ -1,4 +1,5 @@
 name: "Bandit Security Scan"
+# Description: This workflow performs a security linting scan using Bandit to identify common security issues in Python code.
 
 on:
   push:

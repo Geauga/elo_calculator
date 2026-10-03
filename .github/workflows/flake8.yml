@@ -1,4 +1,5 @@
 name: "Python Linting Scan"
+# Description: This workflow performs a Python linting scan using Flake8 to enforce PEP 8 style guidelines and identify potential errors.
 
 on:
   push:
