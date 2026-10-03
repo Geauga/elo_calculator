@@ -1,3 +1,4 @@
+<!-- Description: This document provides guidelines and instructions for contributing to the project. -->
 # Contributing
 
 Bug reports, reproducible test cases, documentation improvements, and focused

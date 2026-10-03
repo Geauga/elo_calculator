@@ -1,3 +1,4 @@
+<!-- Description: This document outlines our community standards and expectations for behavior. -->
 # Code of Conduct
 
 ## Scope and expectations
