@@ -642,6 +642,16 @@ class ApplicationInstanceLock:
             self._file = None
 
 
+def american_odds(probability: float) -> str:
+    """Calculate American betting odds from an expected win probability."""
+    if probability <= 0.0 or probability >= 1.0:
+        return "N/A"
+    if probability > 0.5:
+        return str(int(-100 * probability / (1 - probability)))
+    else:
+        return f"+{int(100 * (1 - probability) / probability)}"
+
+
 class EloCalculatorApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
@@ -3974,8 +3984,10 @@ class EloCalculatorApp:
 
         preview_text = (
             f"Margin multiplier: {preview['multiplier']:.0%}\n"
-            f"Expected chance: {winner.name} {preview['winner_expected']:.1%}, "
-            f"{loser.name} {preview['loser_expected']:.1%}\n"
+            f"Expected chance: {winner.name} {preview['winner_expected']:.1%} "
+            f"({american_odds(preview['winner_expected'])}), "
+            f"{loser.name} {preview['loser_expected']:.1%} "
+            f"({american_odds(preview['loser_expected'])})\n"
             f"Change: +/-{self._format_elo(preview['change'])} Elo\n"
             f"New ratings: {winner.name} "
             f"{self._format_elo(preview['winner_after'])}, "
