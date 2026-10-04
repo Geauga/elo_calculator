@@ -1272,3 +1272,4 @@ Major Changes:
 2026-10-03 19:47:27 - Added HTML descriptions to community standard files (CODE_OF_CONDUCT.md, CONTRIBUTING.md, SECURITY.md, SUPPORT.md).
 2026-10-03 19:59:53 - Added American mock betting odds to the Match Preview display in the desktop GUI based on win probabilities.
 2026-10-03 20:03:50 - Built v29 package with PyInstaller including the mock betting lines. Created ZIP and updated README.md with hashes and test results.
+2026-10-04 17:09:47 - Re-added mathematical playoff clinch indicator (Clinched) to Standings tab for qualified players and updated associated tests to expect the indicator.
