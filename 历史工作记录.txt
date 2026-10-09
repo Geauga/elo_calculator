@@ -1018,3 +1018,11 @@ Status: Completed.
 - Modified files: Integration of the nine remote commits; obsolete/generated paths remain deleted; one blank-line whitespace cleanup in elo_calculator.py; append-only work record. Incoming helper removals: add_desc.py, add_mock_lines.py, fix_clinch_display.py, fix_failing_tests.py, fix_tests.py, update_model.py and update_readme.py.
 - Tests and verification: Integrated source passed 179/179 tests in 9.258 seconds with real Tk and no skips. No functional application changes relative to incoming main. Incoming release files are preserved byte-for-byte. Final index/conflict/whitespace and release-hash checks precede publication.
 - GitHub Timeline: Cleanup commit 12b339b is committed locally, not pushed (已 commit 未 push). The resolved integration is not committed (未 commit) at record creation; normal merge commit and push follow.
+
+## 2026-10-09 16:12:35 -04:00
+
+- User Prompt summary: Push the verified cleanup.
+- Actions: Committed the history-preserving integration as 2003389a6611aa6b856e4436d41f26ff718c8d1e and normally pushed main. Verified GitHub main reports exactly that commit and the working tree is clean. Recovery files remain outside the repository. Existing v29 executable/ZIP and incoming application behavior are unchanged; no package rebuild.
+- Modified files: This append-only publication record; cleanup/integration is in 12b339b and 2003389.
+- Tests and verification: 179/179 integrated tests passed with real Tk and no skips. All merge conflicts resolved; staged whitespace check passed. No tracked generated cache/build/dist artifacts remain. Whitespace-insensitive application/test/release comparison against incoming main is empty. v29 EXE SHA-256 FF54EF08495DC17FBC5B5F28E628E0FB307FF82C609757A01CEF64D60D7BA98C; ZIP SHA-256 472635E01E44C9C9DE0133A5F54F9D5762A2318E50636C465529EE612DA7C5A3, both matching incoming documentation.
+- GitHub Timeline: Cleanup and integration are pushed (已 push), with exact remote hash verified. This log-only completion record follows in a normal commit/push; no force-push.
