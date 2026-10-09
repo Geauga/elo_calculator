@@ -1,0 +1,11 @@
+# Generated Python caches and temporary build/review outputs.
+# Keep application source, packaging dependencies and published release files.
+__pycache__/
+*.pyc
+*.pyo
+/.test-pycache-tmp/
+/build/
+/build-*/
+/dist/
+/dist-*/
+/.codex-*/

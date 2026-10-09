@@ -992,3 +992,21 @@ Status: Completed.
 - Modified files: This append-only completion record; source and regressions are in 787f98d.
 - Tests and verification: Published source passed all 179 tests with real Tk, no skips, and staged whitespace validation. No source changes after testing and no executable rebuild.
 - GitHub Timeline: Reviewed fix is pushed (已 push) and verified on GitHub main. This completion record follows in a log-only commit/push; no force-push.
+
+## 2026-10-09 16:08 America/New_York
+
+- User Prompt: "delete unneeded files in te code folder".
+- Execution location: Local Windows repository C:\Users\danie\OneDrive\Documents\ChatGPT\elo. No GitHub mutation requested or performed.
+- Actions: Inspected project protocol, recent work history, Git status, references, generated directories and worktree metadata. Moved 1,729 obsolete/generated files out of the code folder: Python bytecode/cache trees (including cached bytecode within retained .build_tools), build/build-v9, duplicate dist/dist-v9 outputs and obsolete apply_patch.py, resolve.py, my_sort_changes.patch and graph_patch.py. Removed three empty accidentally tracked Git links (.codex-graph-point-results, .codex-sb-log-history, .codex-standings-wl). Verified the clean codex/playoff-fixes worktree branch is an ancestor of main before removal. Git worktree remove hit Windows/OneDrive permission-denied errors for the working copy and its metadata; after confirming Git had unregistered that worktree, moved its remaining 3,541 files and orphaned metadata into the recovery directory. The branch and all commits remain in Git. Preserved source, tests, history logs, build dependency sources/binaries, packaging hooks and every published release file. Added .gitignore rules for generated caches/builds and temporary agent folders.
+- Recovery location: C:\Users\danie\AppData\Local\Temp\elo-cleanup-20261009-dc8dce80bb0e4266920af931905f074e. Removed files are recoverable here; tracked files and the completed branch are also recoverable from Git. Temporary recovery storage may be cleared by Windows, so retain needed files before temp cleanup.
+- Modified files: New .gitignore and this append-only work record; 1,728 tracked obsolete/generated files deleted locally, three stale Git links deleted from the index, untracked graph_patch.py and completed temporary working copy removed from the code folder. No application source or release changes.
+- Tests and verification: All 179 tests passed in 10.210 seconds with real Tk and no skips. Retained PyInstaller reports version 6.22.0. All 64 published release files remain. Unstaged/staged whitespace checks passed; ignore rules match representative generated paths; no active source/document/spec references to removed patch helpers remain.
+- GitHub Timeline: Cleanup is not committed (未 commit) and not pushed. Three stale Git-link removals are staged because Git index cleanup requires it; other deletions and the new ignore/log changes remain uncommitted. User requested local cleanup only, so no commit/push was performed.
+
+## 2026-10-09 16:10 America/New_York
+
+- User Prompt: "push" (publish the verified code-folder cleanup).
+- Actions: Rechecked Git status and cleanup scope, then fetched GitHub main. Found nine newer remote commits ending at e3a637e, including v29, application features and documentation changes. Commit the cleanup locally, preserve incoming application/release history through a normal merge, remove regenerated cache/build artifacts from the integration, and verify the integrated source before publication. No force-push.
+- Modified files: Append-only work record, .gitignore, previously verified generated/obsolete file deletions and stale Git-link removals. The recovery folder remains outside the repository.
+- Tests and verification: Pre-integration cleanup passed all 179 tests with real Tk and no skips; PyInstaller 6.22.0 remains usable. Active application source and releases were unchanged by cleanup. Integration checks and full tests follow before push.
+- GitHub Timeline: Cleanup is not committed (未 commit) and not pushed at record creation. Incoming GitHub main is nine commits ahead; normal history-preserving integration is required before publication.
