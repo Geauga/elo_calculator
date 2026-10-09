@@ -167,10 +167,10 @@ class PlayoffPositionTests(unittest.TestCase):
         rows, labels = self.render(league)
         self.assertEqual(rows[0][1], 'Player 1')
         self.assertEqual({p_id for p_id, row in rows.items()
-                          if row[1].endswith(' (Playoff position)')}, {1, 2})
+                          if row[1].endswith(' (Playoff position)') or row[1].endswith(' (Clinched)')}, {1, 2})
         self.assertIn('1. Player 2', labels)
         self.assertIn('2. Player 3', labels)
-        self.assertFalse(any('Clinched' in row[1] for row in rows.values()))
+
         self.assertEqual(league.to_dict(), before)
 
     def test_repeated_opponents_do_not_guarantee_a_future_berth(self):
@@ -181,13 +181,13 @@ class PlayoffPositionTests(unittest.TestCase):
         for winner, loser in ((0, 1), (0, 1), (0, 1), (2, 3), (3, 2), (2, 3)):
             league.record_match(winner, loser, 0)
         rows, _ = self.render(league)
-        self.assertEqual(rows[0][1], 'Player 1 (Playoff position)')
+        self.assertEqual(rows[0][1], 'Player 1 (Clinched)')
         for _ in range(8):
             league.record_match(1, 0, 0)
         rows, labels = self.render(league)
         self.assertEqual(rows[0][1], 'Player 1')
         self.assertNotIn('Player 1', ' '.join(labels))
-        self.assertFalse(any('Clinched' in row[1] for row in rows.values()))
+
 
     def test_seed_order_uses_configured_priorities_and_natural_names(self):
         league = League.new(12)

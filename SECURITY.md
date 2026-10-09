@@ -1,3 +1,4 @@
+<!-- Description: This document details our security policies and how to report vulnerabilities safely. -->
 # Security Policy
 
 ## Supported Versions

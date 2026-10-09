@@ -1,4 +1,6 @@
-name: "CodeQL"
+name: CodeQL Analysis
+# Description: This workflow performs CodeQL static analysis to detect security vulnerabilities and errors in Python code.
+
 
 on:
   push:

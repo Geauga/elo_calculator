@@ -177,7 +177,7 @@ and result routing along with playoff settings, conferences, rank sharing, Base
 Elo, victory-margin K scaling, and standings priority. Schemas 1-11 remain readable;
 old leagues default to single elimination with no linked bracket results. Older saves default to
 playoffs disabled, and schemas 1-9 also default to conferences disabled.
-The v28 executable uses schema 11 and cannot open schema-12 saves. Back up your
+The v29 executable uses schema 12 and cannot open schema-12 saves. Back up your
 data before upgrading; do not open upgraded saves in an older executable, including v26.
 The playoff Elo fix applies to newly recorded results; it does not automatically
 rewrite ratings or match transfers already saved by the earlier buggy source.
@@ -205,10 +205,10 @@ older executables, including v26, cannot read schema-11 saves.
 Package verification:
 
 - Executable SHA-256:
-  `40FFF3E941E2078A8816DA11809C0ACB478628828C47B64A70E8FD4BACBD3570`
+  `FF54EF08495DC17FBC5B5F28E628E0FB307FF82C609757A01CEF64D60D7BA98C`
 - ZIP SHA-256:
-  `A90F83CD309636871DA61A76B647D32246B615B54D0942E4AE721813379FB6E5`
-- Validation: The full suite discovered 163 tests; all 163 tests passed on the
+  `472635E01E44C9C9DE0133A5F54F9D5762A2318E50636C465529EE612DA7C5A3`
+- Validation: The full suite discovered 179 tests; all 179 tests passed on the
   integrated source before this build. The package contains Python and Tcl/Tk;
   raw and ZIP-extracted builds reached GUI input idle with isolated application data.
   This is not a full manual UI acceptance test.
@@ -219,7 +219,7 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation: 176 tests passed with no skips, including real Tk UI checks. Coverage
+Current source validation: 179 tests passed with no skips, including real Tk UI checks. Coverage
 also verifies complete single/double-elimination runs for every field size 2-64,
 two-loss elimination, both grand-final outcomes, byes, frozen seeds, save/reload,
 undo/reset/roster changes, rollback, and bracket controls/themes/scrolling. It
@@ -233,6 +233,6 @@ rollback, schema migration, dialog styling, graph ranges, crowded labels and
 hover values, click-handler cleanup, rank replay across every priority order,
 graph-trace, season-report, SB-history, numeric-validation, and real Tk theme checks.
 The W-D-L graph and playoff position fixes are included in the
-v28 executable, which uses schema 11. Older packages are preserved.
+v29 executable, which uses schema 12. Older packages are preserved.
 The progressing single/double-elimination brackets are source-only updates and
-use schema 12; they are not included in the v28 executable.
+use schema 12; they are not included in the v29 executable.

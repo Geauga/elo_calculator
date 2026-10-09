@@ -1,3 +1,4 @@
+<!-- Description: This document explains how to get help and find support for the project. -->
 # Support
 
 Start with the [README](README.md) for installation, league rules, save

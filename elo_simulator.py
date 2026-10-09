@@ -16,6 +16,7 @@ MAX_GAME_TRIALS = 10_000_000
 
 @dataclass(frozen=True)
 class PlayerSimulationResult:
+    """Represents the aggregate simulation results for a single player across all seasons."""
     player_id: int
     name: str
     title_probability: float
@@ -28,6 +29,7 @@ class PlayerSimulationResult:
 
 @dataclass(frozen=True)
 class LeagueSimulationResult:
+    """Contains the overall league simulation parameters and results for all players."""
     simulations: int
     games_to_win: int
     matches_per_simulation: int
@@ -36,6 +38,7 @@ class LeagueSimulationResult:
 
 @dataclass(frozen=True)
 class SimulatedMatch:
+    """Records the outcome of a single simulated match between two players."""
     winner_id: int
     loser_id: int
     winner_games: int

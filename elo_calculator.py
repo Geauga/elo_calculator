@@ -642,6 +642,16 @@ class ApplicationInstanceLock:
             self._file = None
 
 
+def american_odds(probability: float) -> str:
+    """Calculate American betting odds from an expected win probability."""
+    if probability <= 0.0 or probability >= 1.0:
+        return "N/A"
+    if probability > 0.5:
+        return str(int(-100 * probability / (1 - probability)))
+    else:
+        return f"+{int(100 * (1 - probability) / probability)}"
+
+
 class EloCalculatorApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
@@ -3858,6 +3868,26 @@ class EloCalculatorApp:
         qualifier_ids = {player.id for player in
                          _playoff_seeds(self.league, statistics=statistics)}
 
+        total_players = len(self.league.players)
+        playoff_size = self.league.playoff_size
+        clinched_ids = set()
+        if 0 < playoff_size < total_players:
+            max_points_by_player = {}
+            points_by_player = {}
+            for p in self.league.players:
+                p_stats = statistics[p.id]
+                played = p_stats.matches_won + p_stats.matches_drawn + p_stats.matches_lost
+                remaining = max(0, (total_players - 1) - played)
+                pts = p_stats.matches_won + 0.5 * p_stats.matches_drawn
+                points_by_player[p.id] = pts
+                max_points_by_player[p.id] = pts + remaining
+
+            needed_to_beat = total_players - playoff_size
+            for p_id, pts in points_by_player.items():
+                beaten = sum(1 for opp_id, opp_max in max_points_by_player.items() if opp_id != p_id and pts > opp_max)
+                if beaten >= needed_to_beat:
+                    clinched_ids.add(p_id)
+
         ranked_players = _ranked_players(
             self.league, statistics=statistics, player_ids=self._conference_player_ids()
         )
@@ -3868,8 +3898,12 @@ class EloCalculatorApp:
                 if show_draws
                 else f"{stats.matches_won}-{stats.matches_lost}"
             )
-            display_name = (player.name + " (Playoff position)"
-                            if player.id in qualifier_ids else player.name)
+            if player.id in clinched_ids and player.id in qualifier_ids:
+                display_name = player.name + " (Clinched)"
+            elif player.id in qualifier_ids:
+                display_name = player.name + " (Playoff position)"
+            else:
+                display_name = player.name
             self.standings.insert(
                 "",
                 "end",
@@ -3974,8 +4008,10 @@ class EloCalculatorApp:
 
         preview_text = (
             f"Margin multiplier: {preview['multiplier']:.0%}\n"
-            f"Expected chance: {winner.name} {preview['winner_expected']:.1%}, "
-            f"{loser.name} {preview['loser_expected']:.1%}\n"
+            f"Expected chance: {winner.name} {preview['winner_expected']:.1%} "
+            f"({american_odds(preview['winner_expected'])}), "
+            f"{loser.name} {preview['loser_expected']:.1%} "
+            f"({american_odds(preview['loser_expected'])})\n"
             f"Change: +/-{self._format_elo(preview['change'])} Elo\n"
             f"New ratings: {winner.name} "
             f"{self._format_elo(preview['winner_after'])}, "
