@@ -143,6 +143,10 @@ change the licensing of the code or bundled third-party components.
   and the chosen theme.
 - Create, rename, switch between, and delete independent leagues from the top
   toolbar. Each league has its own players, ratings, standings, and history.
+- The Schedule button generates balanced single or double round-robin fixtures
+  for the active roster. Odd-sized rosters receive one bye per player per leg.
+  Schedules can be previewed, copied, or exported as UTF-8 text without changing
+  ratings or match history; regular-season schedules exclude playoff matches.
 - The Export Season button saves the active league as a UTF-8 text document with
   its rules, final standings, player statistics, and complete chronological match
   history, including scores, Elo changes, K-factors, margin multipliers, and
@@ -219,7 +223,7 @@ Package verification:
 python -m unittest -v
 ```
 
-Current source validation: 179 tests passed with no skips, including real Tk UI checks. Coverage
+Current source validation: 183 tests, including schedule generation, including real Tk UI checks. Coverage
 also verifies complete single/double-elimination runs for every field size 2-64,
 two-loss elimination, both grand-final outcomes, byes, frozen seeds, save/reload,
 undo/reset/roster changes, rollback, and bracket controls/themes/scrolling. It

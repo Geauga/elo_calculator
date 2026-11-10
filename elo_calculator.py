@@ -1,5 +1,5 @@
 # elo_calculator.py
-# Request: Add single/double-elimination playoff brackets with saved progress.
+# Request: Add a round-robin schedule generator with preview, copy, and export.
 """Tkinter desktop interface for the twelve-player Elo calculator."""
 
 from __future__ import annotations
@@ -309,6 +309,84 @@ def _graph_fraction(value: float, low: float, high: float) -> float:
     """Normalize before subtraction so opposite extreme values cannot overflow."""
     scale = max(abs(low), abs(high), 1.0)
     return (value / scale - low / scale) / (high / scale - low / scale)
+
+
+def _generate_round_robin_schedule(
+    players: list[Player],
+    legs: int = 1,
+) -> list[list[tuple[str, str | None]]]:
+    """Return balanced rounds; a None opponent represents one player's bye."""
+    if not isinstance(legs, int) or isinstance(legs, bool) or legs not in (1, 2):
+        raise ValueError("Schedule legs must be 1 or 2.")
+    if len(players) < 2:
+        raise ValueError("At least two players are required to generate a schedule.")
+
+    rotation: list[str | None] = [player.name for player in players]
+    if len(rotation) % 2:
+        rotation.append(None)
+    first_leg: list[list[tuple[str, str | None]]] = []
+    for round_index in range(len(rotation) - 1):
+        round_matches: list[tuple[str, str | None]] = []
+        for pair_index in range(len(rotation) // 2):
+            first = rotation[pair_index]
+            second = rotation[-1 - pair_index]
+            if first is None or second is None:
+                round_matches.append((second or first or "", None))
+            elif (round_index + pair_index) % 2:
+                round_matches.append((second, first))
+            else:
+                round_matches.append((first, second))
+        first_leg.append(round_matches)
+        rotation = [rotation[0], rotation[-1], *rotation[1:-1]]
+
+    if legs == 1:
+        return first_leg
+    return first_leg + [
+        [
+            (first, None) if second is None else (second, first)
+            for first, second in round_matches
+        ]
+        for round_matches in first_leg
+    ]
+
+
+def _build_schedule_document(
+    league_name: str,
+    league: League,
+    legs: int = 1,
+    generated_at: str | None = None,
+) -> str:
+    """Build a readable regular-season round-robin fixture document."""
+    schedule = _generate_round_robin_schedule(league.players, legs)
+    generated_at = generated_at or datetime.now().astimezone().isoformat(
+        timespec="seconds"
+    )
+    match_count = sum(
+        second is not None
+        for round_matches in schedule
+        for _first, second in round_matches
+    )
+    schedule_name = "Single round robin" if legs == 1 else "Double round robin"
+    lines = [
+        f"{league_name} - Schedule",
+        "=" * (len(league_name) + 11),
+        f"Generated: {generated_at}",
+        f"Format: {schedule_name}",
+        f"Players: {len(league.players)}",
+        f"Rounds: {len(schedule)}",
+        f"Matches: {match_count}",
+        "Regular-season schedule; playoff matches are not included.",
+    ]
+    for round_number, round_matches in enumerate(schedule, start=1):
+        lines.extend(["", f"Round {round_number}", "-" * (6 + len(str(round_number)))])
+        match_number = 0
+        for first, second in round_matches:
+            if second is None:
+                lines.append(f"Bye: {first}")
+            else:
+                match_number += 1
+                lines.append(f"{match_number}. {first} vs {second}")
+    return "\n".join(lines) + "\n"
 
 
 def _build_season_report(
@@ -1117,6 +1195,9 @@ class EloCalculatorApp:
         ttk.Button(
             league_tools, text="Export Season", command=self._export_season
         ).grid(row=0, column=8, padx=3)
+        ttk.Button(
+            league_tools, text="Schedule", command=self._open_schedule_generator
+        ).grid(row=0, column=9, padx=3)
 
         standings_frame = ttk.LabelFrame(outer, text="Standings", padding=10)
         standings_frame.grid(
@@ -3153,6 +3234,165 @@ class EloCalculatorApp:
         )
         self._refresh_all()
 
+    def _open_schedule_generator(self) -> None:
+        window = tk.Toplevel(self.root)
+        window.title("Schedule Generator")
+        self._configure_dialog(window, self.root, resizable=(True, True))
+        dialog_width, dialog_height = fit_window_to_screen(
+            window.winfo_screenwidth(), window.winfo_screenheight(), 760, 620
+        )
+        window.geometry(f"{dialog_width}x{dialog_height}")
+        window.minsize(min(560, dialog_width), min(400, dialog_height))
+
+        content = ttk.Frame(window, padding=14)
+        content.pack(fill="both", expand=True)
+        content.columnconfigure(0, weight=1)
+        content.rowconfigure(2, weight=1)
+
+        ttk.Label(
+            content,
+            text=(
+                "Generate a balanced regular-season schedule for every player. "
+                "Odd-sized rosters receive one bye per round. This preview does "
+                "not change ratings or match history."
+            ),
+            wraplength=max(360, dialog_width - 55),
+            justify="left",
+        ).grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+
+        legs_var = tk.IntVar(window, value=1)
+        options = ttk.Frame(content)
+        options.grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 10))
+        ttk.Label(options, text="Format:").pack(side="left", padx=(0, 8))
+
+        colors = THEME_PALETTES[self.theme_var.get()]
+        preview = tk.Text(
+            content,
+            wrap="none",
+            state="disabled",
+            background=colors["field"],
+            foreground=colors["foreground"],
+            insertbackground=colors["foreground"],
+            selectbackground=colors["selection"],
+            selectforeground=colors["selection_text"],
+            relief="solid",
+            borderwidth=1,
+            font=("Consolas", 10),
+        )
+        preview.grid(row=2, column=0, sticky="nsew")
+        scroll_y = ttk.Scrollbar(content, orient="vertical", command=preview.yview)
+        scroll_y.grid(row=2, column=1, sticky="ns")
+        scroll_x = ttk.Scrollbar(content, orient="horizontal", command=preview.xview)
+        scroll_x.grid(row=3, column=0, sticky="ew")
+        preview.configure(yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+
+        def schedule_text() -> str:
+            return _build_schedule_document(
+                self.collection.active.name,
+                self.league,
+                legs_var.get(),
+            )
+
+        def refresh_preview() -> None:
+            try:
+                text = schedule_text()
+            except ValueError as error:
+                self._show_error("Schedule not generated", str(error), parent=window)
+                return
+            preview.configure(state="normal")
+            preview.delete("1.0", "end")
+            preview.insert("1.0", text)
+            preview.configure(state="disabled")
+
+        def copy_schedule() -> None:
+            try:
+                text = schedule_text()
+                self.root.clipboard_clear()
+                self.root.clipboard_append(text)
+                self.root.update_idletasks()
+            except (ValueError, tk.TclError) as error:
+                self._show_error("Schedule not copied", str(error), parent=window)
+                return
+            self.status_var.set("Schedule copied to the clipboard.")
+
+        for label, value in (("Single round robin", 1), ("Double round robin", 2)):
+            ttk.Radiobutton(
+                options,
+                text=label,
+                variable=legs_var,
+                value=value,
+                command=refresh_preview,
+            ).pack(side="left", padx=(0, 12))
+
+        buttons = ttk.Frame(content)
+        buttons.grid(row=4, column=0, columnspan=2, sticky="e", pady=(12, 0))
+        ttk.Button(buttons, text="Copy", command=copy_schedule).pack(side="left")
+        ttk.Button(
+            buttons,
+            text="Save...",
+            command=lambda: self._export_schedule(legs_var.get(), parent=window),
+        ).pack(side="left", padx=(8, 0))
+        ttk.Button(buttons, text="Close", command=window.destroy).pack(
+            side="left", padx=(8, 0)
+        )
+
+        refresh_preview()
+        self._center_dialog(window, self.root)
+
+    def _export_schedule(self, legs: int, parent: tk.Misc | None = None) -> None:
+        active = self.collection.active
+        safe_name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", active.name).strip(" .")
+        if not safe_name:
+            safe_name = "League"
+        target_text = filedialog.asksaveasfilename(
+            parent=parent or self.root,
+            title="Save generated schedule",
+            defaultextension=".txt",
+            filetypes=(("Text documents", "*.txt"), ("All files", "*.*")),
+            initialfile=(
+                f"{safe_name}-schedule-"
+                f"{datetime.now().astimezone().date().isoformat()}.txt"
+            ),
+        )
+        if not target_text:
+            return
+
+        target = Path(target_text)
+        try:
+            document = _build_schedule_document(active.name, active.league, legs)
+            target.write_text(document, encoding="utf-8")
+        except (OSError, UnicodeError, ValueError) as error:
+            self._show_error(
+                "Schedule not saved",
+                f"The schedule could not be saved.\n\n{error}",
+                parent=parent or self.root,
+            )
+            return
+
+        format_name = "single" if legs == 1 else "double"
+        try:
+            self.audit_log.append(
+                "schedule_exported",
+                active.id,
+                active.name,
+                f"Exported {format_name} round-robin schedule to {target.name}.",
+            )
+        except OSError as error:
+            self._show_warning(
+                "Schedule saved; activity not logged",
+                f"The schedule was saved to:\n{target}\n\n"
+                f"The activity log could not be updated.\n\n{error}",
+                parent=parent or self.root,
+            )
+        else:
+            self._show_info(
+                "Schedule saved",
+                f"The schedule was saved to:\n{target}",
+                parent=parent or self.root,
+            )
+        self.status_var.set(f"Schedule exported to {target.name}.")
+        self._refresh_activity_log()
+
     def _export_season(self) -> None:
         active = self.collection.active
         safe_name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", active.name).strip(" .")
@@ -4342,3 +4582,8 @@ if __name__ == "__main__":
 # elo_storage.py backs up, saves and audits edits. Existing Elo policy is retained.
 # Changed lines: imports; theme refresh; 3500-3536 format controls/active guard;
 # 3550-3740 bracket toolbar, scrolling, rendering, hit testing and result dialog.
+# Schedule update: 2026-09-27 16:11 America/New_York; Python 3.12 / Windows Tk.
+# Purpose: Generate, preview, copy and export balanced single/double round robins.
+# Upstream: League provides the active validated roster; AuditLog records exports.
+# Changed areas: round-robin/document helpers; toolbar Schedule action; themed,
+# screen-capped preview dialog; clipboard and UTF-8 save/audit workflows.

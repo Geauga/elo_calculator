@@ -712,6 +712,15 @@
 - Tests and verification: 112 tests discovered; 108 executed tests passed and four existing real-Tk theme tests were skipped because the bundled Python runtime cannot locate `init.tcl`. New coverage validates every metric's label format, one label per SB observation, marker coordinates, edge/top placement, and theme-aware label color. `git diff --check` passed and no unresolved Python conflict markers were found. Final validation follows after this append-only record.
 - GitHub Timeline: Changes are not committed and not pushed. The isolated branch is synchronized with `origin/main`; the user has not requested publication in this turn.
 
+## 2026-11-09 20:39:46 -05:00
+
+- User Prompt summary: Push the prepared schedule generator.
+- Execution location: Local worktree C:\Code\elo_calculator\.codex-schedule-generator; GitHub target origin/main.
+- Actions: Committed the prepared feature and rebased it onto current origin/main, retaining 40 incoming commits, schema 12, current playoffs and repository cleanup. Resolved overlapping documentation/comments and retained the current schema regression. Schedule generator adds preview, copy and UTF-8 export for single/double round robins.
+- Modified files: elo_calculator.py; test_elo_model.py; README.md; this append-only work record. Current test_elo_ranking_settings.py is retained unchanged from origin/main. No executable rebuild.
+- Tests and verification: 183 tests discovered, 160 passed and 23 Tk-dependent tests skipped because the available Python runtime cannot locate init.tcl. Full suite result OK (skipped=23). No unresolved Python conflict markers found.
+- GitHub Timeline: Implementation is committed locally and rebasing is being finalized; not pushed yet. User authorized normal publication; remote hash will be verified after push.
+
 ## 2026-09-12 18:38:07 -04:00
 
 - User Prompt summary: Push the graph-point result labels.
@@ -1026,3 +1035,12 @@ Status: Completed.
 - Modified files: This append-only publication record; cleanup/integration is in 12b339b and 2003389.
 - Tests and verification: 179/179 integrated tests passed with real Tk and no skips. All merge conflicts resolved; staged whitespace check passed. No tracked generated cache/build/dist artifacts remain. Whitespace-insensitive application/test/release comparison against incoming main is empty. v29 EXE SHA-256 FF54EF08495DC17FBC5B5F28E628E0FB307FF82C609757A01CEF64D60D7BA98C; ZIP SHA-256 472635E01E44C9C9DE0133A5F54F9D5762A2318E50636C465529EE612DA7C5A3, both matching incoming documentation.
 - GitHub Timeline: Cleanup and integration are pushed (已 push), with exact remote hash verified. This log-only completion record follows in a normal commit/push; no force-push.
+
+## 2026-09-27 16:16:47 -04:00
+
+- User Prompt summary: Add a schedule generator.
+- Execution location: Isolated local Windows Git worktree `C:\Code\elo_calculator\.codex-schedule-generator`, branch `codex/schedule-generator`, based on `origin/main` commit `a0fa8ee`. The isolated worktree preserves extensive unrelated build/cache changes in the original checkout.
+- Actions: Added a top-toolbar Schedule generator using the deterministic circle method. It supports single and double round robins, every active-league roster from 2 to 64 players, one bye per odd-roster player per leg, reversed second-leg fixtures, a theme-aware and screen-capped preview, clipboard copy, and UTF-8 text export with activity logging. Schedule generation is read-only and excludes playoff matches; conferences do not alter league-wide fixtures. Corrected one pre-existing stale ranking regression that expected schema 10 although the current model schema is 11.
+- Modified files: `elo_calculator.py`; `test_elo_model.py`; `test_elo_ranking_settings.py`; `README.md`; `历史工作记录.txt`. No executable, ZIP, build output, cache, real league data, or dirty file in the original checkout was changed.
+- Tests and verification: All 149 tests pass in the available runtime, with 132 executed and 17 existing real-Tk tests skipped because this bundled Python cannot locate `init.tcl`. New coverage proves every even-roster pair appears exactly once per leg, every odd-roster player gets one bye, second-leg fixtures reverse correctly, document totals are exact, and UTF-8 export/audit behavior works. A 64-player double round robin produced 126 rounds, 4,032 fixtures and 2,016 unique pairs. `git diff --check` and Python conflict-marker checks passed before this append; final checks follow.
+- GitHub Timeline: Changes are not committed and not pushed. The isolated branch is synchronized with `origin/main`; the user has not requested publication in this turn.

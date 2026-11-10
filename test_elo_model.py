@@ -1,5 +1,5 @@
 # test_elo_model.py
-# Request: Test graph-point labels and source-match tracing.
+# Request: Test the round-robin schedule generator, preview data, and export.
 """Tests for the Elo league rules."""
 
 from pathlib import Path
@@ -12,7 +12,9 @@ from elo_calculator import (
     EloCalculatorApp,
     STANDINGS_COLUMN_IDS,
     THEME_PALETTES,
+    _build_schedule_document,
     _build_season_report,
+    _generate_round_robin_schedule,
     _match_sb_history,
     _player_elo_history,
     _ranked_players,
@@ -501,6 +503,116 @@ class EloModelTests(unittest.TestCase):
         app.status_var.set.assert_called_once_with(
             "Selected match 1: Player 1 3-1 Player 2."
         )
+
+    def test_single_round_robin_schedules_every_pair_once(self) -> None:
+        league = League.new(4)
+
+        schedule = _generate_round_robin_schedule(league.players)
+
+        self.assertEqual(len(schedule), 3)
+        self.assertTrue(all(len(round_matches) == 2 for round_matches in schedule))
+        pairs = [
+            frozenset((first, second))
+            for round_matches in schedule
+            for first, second in round_matches
+        ]
+        expected = {
+            frozenset((first.name, second.name))
+            for index, first in enumerate(league.players)
+            for second in league.players[index + 1 :]
+        }
+        self.assertEqual(set(pairs), expected)
+        self.assertEqual(len(pairs), len(expected))
+        for round_matches in schedule:
+            participants = [name for match in round_matches for name in match]
+            self.assertEqual(len(participants), len(set(participants)))
+
+        for invalid_legs in (0, 3, True, "1"):
+            with self.subTest(invalid_legs=invalid_legs):
+                with self.assertRaisesRegex(ValueError, "legs"):
+                    _generate_round_robin_schedule(league.players, invalid_legs)
+
+    def test_odd_round_robin_gives_every_player_one_bye(self) -> None:
+        league = League.new(5)
+
+        schedule = _generate_round_robin_schedule(league.players)
+
+        self.assertEqual(len(schedule), 5)
+        byes = [
+            first
+            for round_matches in schedule
+            for first, second in round_matches
+            if second is None
+        ]
+        self.assertCountEqual(byes, [player.name for player in league.players])
+        for round_matches in schedule:
+            self.assertEqual(sum(second is None for _first, second in round_matches), 1)
+            participants = []
+            for first, second in round_matches:
+                participants.append(first)
+                if second is not None:
+                    participants.append(second)
+            self.assertEqual(len(participants), 5)
+            self.assertEqual(len(participants), len(set(participants)))
+
+    def test_double_round_robin_reverses_every_second_leg_fixture(self) -> None:
+        league = League.new(4)
+
+        schedule = _generate_round_robin_schedule(league.players, legs=2)
+
+        self.assertEqual(len(schedule), 6)
+        for first_leg, second_leg in zip(schedule[:3], schedule[3:]):
+            self.assertEqual(
+                second_leg,
+                [(second, first) for first, second in first_leg],
+            )
+
+    def test_schedule_document_and_export_include_complete_fixture_summary(self) -> None:
+        league = League.new(4)
+        document = _build_schedule_document(
+            "Autumn League",
+            league,
+            legs=2,
+            generated_at="2026-09-27T16:11:20-04:00",
+        )
+        self.assertIn("Autumn League - Schedule", document)
+        self.assertIn("Generated: 2026-09-27T16:11:20-04:00", document)
+        self.assertIn("Format: Double round robin", document)
+        self.assertIn("Rounds: 6", document)
+        self.assertIn("Matches: 12", document)
+        self.assertIn("Round 6", document)
+
+        with TemporaryDirectory() as directory:
+            target = Path(directory) / "schedule.txt"
+            app = object.__new__(EloCalculatorApp)
+            app.collection = LeagueCollection.new()
+            app.collection.active.league.resize_players(4)
+            app.root = Mock()
+            app.audit_log = Mock()
+            app.status_var = Mock()
+            app._show_error = Mock()
+            app._show_warning = Mock()
+            app._show_info = Mock()
+            app._refresh_activity_log = Mock()
+
+            with patch(
+                "elo_calculator.filedialog.asksaveasfilename",
+                return_value=str(target),
+            ):
+                app._export_schedule(2)
+
+            exported = target.read_text(encoding="utf-8")
+            self.assertIn("League 1 - Schedule", exported)
+            self.assertIn("Matches: 12", exported)
+            app.audit_log.append.assert_called_once_with(
+                "schedule_exported",
+                app.collection.active.id,
+                "League 1",
+                "Exported double round-robin schedule to schedule.txt.",
+            )
+            app._show_error.assert_not_called()
+            app._show_info.assert_called_once()
+            app._refresh_activity_log.assert_called_once()
 
     def test_season_report_contains_rules_standings_and_match_history(self) -> None:
         league = League.new(2)
@@ -2091,3 +2203,5 @@ class RankingModesTests(unittest.TestCase):
 # Purpose: Keep the preview fixture aligned with the optional playoff checkbox.
 # Upstream: elo_calculator.py reads the checkbox to preview match rating policy.
 # Changed line: 984 provides a false playoff variable for the regular-match test.
+# Schedule update: Validate exhaustive even-roster pairings, odd-roster byes,
+# reversed second legs, document totals, UTF-8 export and audit logging.
