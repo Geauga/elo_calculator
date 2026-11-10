@@ -721,6 +721,14 @@
 - Tests and verification: 183 tests discovered, 160 passed and 23 Tk-dependent tests skipped because the available Python runtime cannot locate init.tcl. Full suite result OK (skipped=23). No unresolved Python conflict markers found.
 - GitHub Timeline: Implementation is committed locally and rebasing is being finalized; not pushed yet. User authorized normal publication; remote hash will be verified after push.
 
+## 2026-11-09 20:42:10 -05:00
+
+- User Prompt summary: Complete schedule-generator publication.
+- Actions: Normally pushed implementation facd894 to GitHub main and verified the exact remote branch hash. Worktree was clean and synchronized after publication.
+- Modified files: This append-only publication record; implementation files are in facd894.
+- Tests and verification: 160 tests passed; 23 Tk-dependent tests skipped due to unavailable init.tcl. Whitespace checks passed; no executable was rebuilt. git ls-remote returned facd894b220bf79e9a2e53db0cd19f60821731a0.
+- GitHub Timeline: Implementation facd894b220bf79e9a2e53db0cd19f60821731a0 is pushed and verified. This verification record follows in a log-only commit and normal push.
+
 ## 2026-09-12 18:38:07 -04:00
 
 - User Prompt summary: Push the graph-point result labels.
